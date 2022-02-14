@@ -266,10 +266,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
 
                 # Validate
                 if (epoch + 1) % int(cfg.VAL_INTERVAL) == 0:
-                    val_loss = do_validate(
-                        model,
-                        dataloader_val,
-                    )
+                    val_loss = do_validate(model, dataloader_val, loss_fn)
                     hist_val_loss.append(val_loss)
                     logger.info(f"Val. Epoch: {epoch+1} Loss: {val_loss:4f}")
                     writer.write_scalars("Epoch_Loss", {"val": val_loss}, epoch + 1)
@@ -334,7 +331,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
 def do_validate(model, dataloader, loss_fn):
     hist_loss = []
     model.eval()
-    device = next(model.parameters()).device()
+    device = next(model.parameters()).device
     for i, data in enumerate(tqdm(dataloader)):
         with torch.no_grad():
             data = data.to(device, non_blocking=True).float()
