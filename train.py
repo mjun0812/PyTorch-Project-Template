@@ -25,7 +25,7 @@ from kunai.torch_utils import (
     set_device,
     worker_init_fn,
 )
-from kunai.utils import get_cmd, get_git_hash, setup_logger
+from kunai.utils import get_cmd, get_git_hash, setup_logger, make_output_dirs
 
 from src.dataloaders import Dataset
 from src.losses import build_loss
@@ -35,7 +35,6 @@ from src.utils import (
     TensorboardLogger,
     build_lr_scheduler,
     build_optimizer,
-    make_output_dirs,
     plot_multi_graph,
     post_slack,
 )
@@ -61,6 +60,14 @@ def build_dataset(cfg, phase="train"):
 
 
 def init_process(rank, num_gpus, fn, fn_kwargs):
+    """Initialize Process when multi GPU Training
+
+    Args:
+        rank (int): process rank
+        num_gpus (int): number of gpus
+        fn (function): training finction
+        fn_kwargs (dict): training arguments
+    """
     torch.distributed.init_process_group(
         backend="nccl",
         init_method="env://",
@@ -72,22 +79,23 @@ def init_process(rank, num_gpus, fn, fn_kwargs):
         f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
     )
     fn_kwargs["device"] = torch.device(rank)
+    setup_logger(rank, os.path.join(fn_kwargs["output_dir"], "train.log"))
     fn(rank, **fn_kwargs)
 
 
 def load_last_weight(model, weight, multi_gpu=False):
-    logger.info("Load weight from %s", weight)
+    logger.info(f"Load weight from {weight}")
 
-    # load final Epoch num
     try:
+        # If continue train, get final Epoch number
         last_epoch = os.path.splitext(weight)[0].split("_")[-1]
         last_epoch = int(last_epoch)
     except Exception:
+        # Load Pretrained Weight
         last_epoch = 0
 
-    # get device from weight
+    # get device from model
     device = next(model.parameters()).device
-
     try:
         if multi_gpu:
             model.module.load_state_dict(torch.load(weight, map_location=device))
@@ -95,8 +103,7 @@ def load_last_weight(model, weight, multi_gpu=False):
             model.load_state_dict(torch.load(weight, map_location=device))
     except RuntimeError:
         # fine tuning
-        logger.warning("Class num changed from loading weights")
-
+        logger.warning("Class num changed from loading weights. Do Fine Tuning?")
     return model, last_epoch
 
 
@@ -117,8 +124,6 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
         num_gpus (int, optional): Multi　GPUのときに利用．GPUの数. Defaults to 1.
     """
 
-    setup_logger(rank, os.path.join(output_dir, "train.log"))
-
     save_model_path = os.path.join(output_dir, "models")
 
     # ###### Build Model #######
@@ -128,21 +133,18 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = DDP(model, device_ids=[rank], find_unused_parameters=False)
     # Train from Trained weight
+    last_epoch = 0
     if bool(cfg.CONTINUE_TRAIN):
         model, last_epoch = load_last_weight(model, cfg.MODEL.WEIGHT, cfg.GPU.MULTI)
     # Train from Pretrained weight
     elif bool(cfg.MODEL.PRE_TRAINED) and cfg.MODEL.PRE_TRAINED_WEIGHT:
         model, _ = load_last_weight(model, cfg.MODEL.PRE_TRAINED_WEIGHT, cfg.GPU.MULTI)
-        last_epoch = 0
-    else:
-        last_epoch = 0
     if rank in [-1, 0]:
         # Model構造を出力
         save_model_info(
             output_dir,
             model,
-            input_size=(1, cfg.MODEL.INPUT_SIZE, cfg.MODEL.INPUT_SIZE),
-            multi_gpu=cfg.GPU.MULTI,
+            input_size=(1, 3, cfg.MODEL.INPUT_SIZE, cfg.MODEL.INPUT_SIZE),
         )
         # save initial model
         save_model(
@@ -159,6 +161,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
     else:
         writer = None
 
+    # ####### Build Dataset #######
     # Build Train Dataset and Dataloader
     logger.info("Loading Dataset...")
     common_kwargs = {
@@ -173,9 +176,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
         common_kwargs["sampler"] = DistributedSampler(
             dataset_train, rank=rank, num_replicas=num_gpus, shuffle=True
         )
-
     dataloader_train = DataLoader(dataset_train, **common_kwargs)
-
     # Build Val Dataset and Dataloader
     if rank in [-1, 0]:
         dataset_val = build_dataset(cfg, phase="val")
@@ -204,11 +205,11 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
     try:
         # Train Loop
         for epoch in range(last_epoch, max_epoch, 1):
-            np.random.seed(initial_seed + epoch + rank)
-            progress_bar = enumerate(dataloader_train)
             model.train()
 
             hist_epoch_loss = 0
+            np.random.seed(initial_seed + epoch + rank)
+            progress_bar = enumerate(dataloader_train)
 
             if rank in [-1, 0]:
                 logger.info(f"Start Epoch {epoch+1}")
@@ -228,11 +229,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
                     continue
                 hist_epoch_loss += loss * data.size(0)
                 if rank in [-1, 0]:
-                    progress_bar.set_description(
-                        f"Epoch: {epoch + 1}/{max_epoch}. "
-                        f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}G, "
-                        f"Loss: {loss.item():.5f}"
-                    )
+                    progress_bar.set_description(f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():.5f}")
 
                 loss.backward()
                 optimizer.step()
@@ -247,7 +244,11 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
             scheduler.step(epoch_loss)
 
             if rank in [-1, 0]:
-                logger.info(f"Epoch: {epoch + 1}/{max_epoch}. Loss: {epoch_loss:.5f}")
+                logger.info(
+                    f"Epoch: {epoch + 1}/{max_epoch}. "
+                    f"Loss: {epoch_loss:.5f}"
+                    f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
+                )
                 lr = optimizer.param_groups[0]["lr"]
                 writer.write_scalars("Epoch_Loss", {"train": epoch_loss}, epoch + 1)
                 writer.write_scalar("Learning_Rate", lr, epoch + 1)
@@ -304,8 +305,8 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
     # Finish Training Process below
     if rank in [-1, 0]:
         writer.writer_close()
-        # サンプル不足でのグラフ描画エラーの処理
         try:
+            # サンプル不足でのグラフ描画エラーの処理
             # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
             # なので、x軸を補間することで、グラフを合わせる
             x = np.arange(len(hist_loss))
@@ -323,8 +324,11 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
             logger.error("Cannot draw graph")
 
         save_model(model, os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
+
+    # Clean Up multi gpu process
     if rank == 0:
         dist.destroy_process_group()
+
     return best_loss
 
 
@@ -346,30 +350,31 @@ def do_validate(model, dataloader, loss_fn):
 
 @hydra.main(config_path="./config", config_name="config")
 def main(cfg: DictConfig):
-
+    # Hydra Setting
     set_hydra(cfg)
     output_dir = make_output_dirs(
         cfg.OUTPUT_PATH,
         prefix=f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}",
         child_dirs=["logs", "tensorboard", "figs", "models"],
     )
-    setup_logger(-1, os.path.join(output_dir, "train.log"))
     OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
 
+    # Logging
+    setup_logger(-1, os.path.join(output_dir, "train.log"))
     logger.info(f"Command: {get_cmd()}")
     logger.info(f"Make output_dir at {output_dir}")
     logger.info(f"Git Hash: {get_git_hash()}")
     with open(os.path.join(output_dir, "cmd_histry.log"), "a") as f:
         print(get_cmd(), file=f)
 
-    # set Device
+    # set CPU or GPU Device
     device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
     num_gpus = torch.cuda.device_count()
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
-        assert num_gpus > 1, "ERROR USE GPU NUM <= 1"
-        # Master Process(Process 0)を探すためのIP, Port
+        assert num_gpus > 1, f"plz check gpu num. current gpu num: {num_gpus}"
+        # Master Process's IP and Port.
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["MASTER_PORT"] = "12355"
         mp.spawn(

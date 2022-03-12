@@ -25,6 +25,24 @@ def build_transforms(cfg, phase="train"):
     return transforms.Compose(transes)
 
 
+# Use below Compose when using transforms has multi input.
+# class Compose:
+#     def __init__(self, transforms: list):
+#         self.transforms = transforms
+
+#     def __call__(self, img, mask, annotations, camera_matrix):
+#         for t in self.transforms:
+#             img, mask, annotations = t(img, mask, annotations)
+#         return img, mask, annotations
+
+#     def __repr__(self):
+#         format_string = self.__class__.__name__ + "("
+#         for t in self.transforms:
+#             format_string += "\n"
+#             format_string += "    {0}".format(t)
+#         format_string += "\n)"
+#         return format_string
+
 # @TRANSFORM_REGISTRY.register()
 # def list_to_tensor(list_obj, label):
 #     """リストをtensorにキャストするだけ

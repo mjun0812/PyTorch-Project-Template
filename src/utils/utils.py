@@ -10,54 +10,6 @@ import requests
 logger = logging.getLogger()
 
 
-def draw_image_graph(images, captions, filename, row, col, all_title="", dpi=300):
-    """matplotlibで画像を並べたグラフを保存する
-
-    Args:
-        images ([type]): 表示したい画像のList
-        titles ([type]): 画像に付けるキャプションのリスト
-        filename ([type]): 保存する画像の パス
-        row ([type]): 行
-        col ([type]): 列
-        all_title (str, optional): グラフ全体のタイトル. Defaults to "".
-        dpi (int, optional): 保存する際のDPI. Defaults to 300.
-    """
-    plt.gcf().clear()
-
-    # 論文用にFontを変更する
-    font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
-    plt.rcParams.update(
-        {
-            "font.family": "Times New Roman",
-            "font.size": 18,
-            # "text.usetex": True,
-            "ps.useafm": True,
-            "pdf.use14corefonts": True,
-        }
-    )
-
-    # 比率が合わないときはfigsizeをいじる
-    fig, axs = plt.subplots(row, col, figsize=(col * 2, row * 2))
-    plt.subplots_adjust(wspace=0.1, hspace=0.1)
-    # 1次元にしてforで回せるように。行->列の順
-    a = axs.ravel()
-    for i in range(len(images)):
-        a[i].imshow(images[i])
-        a[i].axis("off")
-        a[i].set_title(captions[i], y=-0.06 * col, fontsize=5)  # 下にキャプション
-        # a[i].set_title(captions[i], fontsize=7)  # 上にキャプション
-    # 全体のタイトル
-    if all_title:
-        fig.suptitle(all_title, fontsize=5)
-        fig.tight_layout(rect=[0, 0, 1, 0.98])
-
-    # DPIがでかすぎるとファイルサイズも大きくなり、プログラムの速度も落ちる
-    # DPI * figsizeの解像度の画像ができる
-    plt.savefig(filename, dpi=dpi, bbox_inches="tight")
-    plt.gcf().clear()
-    plt.close()
-
-
 def plot_graph(title, labels, data, output_dir):
     plt.gcf().clear()
 
@@ -113,18 +65,21 @@ def plot_multi_graph(filename, titles, data, dpi=300):
 
 
 def post_slack(channel="#通知", username="通知", message=""):
-    load_dotenv()
-    SLACK_TOKEN = os.getenv("SLACK_TOKEN")
-    response = requests.post(
-        "https://slack.com/api/chat.postMessage",
-        headers={"Content-Type": "application/json"},
-        params={
-            "token": SLACK_TOKEN,
-            "channel": channel,
-            "text": message,
-            "username": username,
-        },
-    )
+    try:
+        load_dotenv()
+        SLACK_TOKEN = os.getenv("SLACK_TOKEN")
+        response = requests.post(
+            "https://slack.com/api/chat.postMessage",
+            headers={"Content-Type": "application/json"},
+            params={
+                "token": SLACK_TOKEN,
+                "channel": channel,
+                "text": message,
+                "username": username,
+            },
+        )
+    except Exception:
+        pass
     return response.status_code
 
 

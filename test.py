@@ -39,6 +39,7 @@ def do_test(cfg, output_dir, device):
     logger.info("Complete load model")
 
     inference_speed = 0
+    metric = 0
     results = []
     model.requires_grad_(False)
     model.eval()
@@ -50,7 +51,7 @@ def do_test(cfg, output_dir, device):
             y = model(input_data)
             inference_speed += time_synchronized() - t
 
-            # ここで評価を行う
+            # calc metrics below
             result = y
             results.append(result)
 
@@ -61,7 +62,7 @@ def do_test(cfg, output_dir, device):
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
         writer = csv.writer(f)
         writer.writerows(results)
-    return results
+    return metric
 
 
 @hydra.main(config_path="./config", config_name="config")
@@ -71,7 +72,6 @@ def main(cfg: DictConfig):
 
     # Validate Model Weight Path
     config_path = os.path.basename(HydraConfig.get().runtime.config_sources[1].path)
-    print(config_path)
     if config_path not in cfg.MODEL.WEIGHT:
         weight_dir_list = cfg.MODEL.WEIGHT.split("/")
         weight_dir_list[-3] = config_path
