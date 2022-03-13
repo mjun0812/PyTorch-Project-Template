@@ -2,18 +2,19 @@ black
 flake8
 hydra-core
 hydra-optuna-sweeper
+kunai @ git+https://github.com/mjun0812/kunai
 matplotlib
 numpy
 opencv-python
 optuna
-pandas
 Pillow
+pandas
 python-dotenv
 requests
 scikit-learn
+tabulate
 tensorboard
 torch
 torchinfo
 torchvision
 tqdm
-kunai @ git+https://github.com/mjun0812/kunai
