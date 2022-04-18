@@ -302,9 +302,9 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
             # サンプル不足でのグラフ描画エラーの処理
             # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
             # なので、x軸を補間することで、グラフを合わせる
-            x = np.arange(len(histories["train"]["loss"]))
-            val_x = np.linspace(0, len(histories["train"]["loss"]), len(histories["val"]["loss"]))
-            histories["val"]["loss"] = np.interp(x, val_x, histories["val"]["loss"])
+            x = np.arange(len(histories["train"]["Loss"]))
+            val_x = np.linspace(0, len(histories["train"]["Loss"]), len(histories["val"]["Loss"]))
+            histories["val"]["Loss"] = np.interp(x, val_x, histories["val"]["Loss"])
 
             plot_data = {}
             for title in ["Loss", "Learning Rate"]:
