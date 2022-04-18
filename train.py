@@ -4,6 +4,7 @@ import os
 import shutil
 import sys
 import traceback
+import pathlib
 
 import torch
 import torch.distributed as dist
@@ -18,13 +19,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from kunai.hydra_utils import set_hydra
-from kunai.torch_utils import (
-    fix_seed,
-    save_model,
-    save_model_info,
-    set_device,
-    worker_init_fn,
-)
+from kunai.torch_utils import fix_seed, save_model, save_model_info, set_device, worker_init_fn
 from kunai.utils import get_cmd, get_git_hash, setup_logger, make_output_dirs
 
 from src.dataloaders import Dataset
@@ -83,7 +78,18 @@ def init_process(rank, num_gpus, fn, fn_kwargs):
     fn(rank, **fn_kwargs)
 
 
-def load_last_weight(model, weight, multi_gpu=False):
+def load_last_weight(model, weight):
+    """Load PreTrained or Continued Model
+
+    Args:
+        model (torch.nn.Model): Load model
+        weight (str): PreTrained weight path
+
+    Returns:
+        model: Loaded Model
+        last_epoch: number of last epoch from weight file name
+                    ex. 'weight/model_epoch_15.pth' return '15'
+    """
     logger.info(f"Load weight from {weight}")
 
     try:
@@ -97,10 +103,9 @@ def load_last_weight(model, weight, multi_gpu=False):
     # get device from model
     device = next(model.parameters()).device
     try:
-        if multi_gpu:
-            model.module.load_state_dict(torch.load(weight, map_location=device))
-        else:
-            model.load_state_dict(torch.load(weight, map_location=device))
+        if isinstance(model, torch.nn.DataParallel) or isinstance(model, DDP):
+            model = model.module
+        model.load_state_dict(torch.load(weight, map_location=device))
     except RuntimeError:
         # fine tuning
         logger.warning("Class num changed from loading weights. Do Fine Tuning?")
@@ -124,7 +129,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
         num_gpus (int, optional): Multi　GPUのときに利用．GPUの数. Defaults to 1.
     """
 
-    save_model_path = os.path.join(output_dir, "models")
+    save_model_path = pathlib.Path(output_dir, "models")
 
     # ###### Build Model #######
     model = build_model(cfg).to(device)
@@ -134,11 +139,11 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
         model = DDP(model, device_ids=[rank], find_unused_parameters=False)
     # Train from Trained weight
     last_epoch = 0
-    if bool(cfg.CONTINUE_TRAIN):
-        model, last_epoch = load_last_weight(model, cfg.MODEL.WEIGHT, cfg.GPU.MULTI)
+    if cfg.CONTINUE_TRAIN:
+        model, last_epoch = load_last_weight(model, cfg.MODEL.WEIGHT)
     # Train from Pretrained weight
-    elif bool(cfg.MODEL.PRE_TRAINED) and cfg.MODEL.PRE_TRAINED_WEIGHT:
-        model, _ = load_last_weight(model, cfg.MODEL.PRE_TRAINED_WEIGHT, cfg.GPU.MULTI)
+    elif cfg.MODEL.PRE_TRAINED and cfg.MODEL.PRE_TRAINED_WEIGHT:
+        model, _ = load_last_weight(model, cfg.MODEL.PRE_TRAINED_WEIGHT)
     if rank in [-1, 0]:
         # Model構造を出力
         save_model_info(
@@ -147,13 +152,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
             input_size=(1, 3, cfg.MODEL.INPUT_SIZE, cfg.MODEL.INPUT_SIZE),
         )
         # save initial model
-        save_model(
-            model,
-            os.path.join(
-                save_model_path,
-                f"model_init_{last_epoch}.pth",
-            ),
-        )
+        save_model(model, save_model_path / f"model_init_{last_epoch}.pth")
         # Tensorboardのセットアップ
         writer = TensorboardLogger(output_dir)
         if cfg.MODEL.GRAPH and rank == -1:
@@ -161,8 +160,7 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
     else:
         writer = None
 
-    # ####### Build Dataset #######
-    # Build Train Dataset and Dataloader
+    # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
     common_kwargs = {
         "pin_memory": True,
@@ -170,21 +168,17 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
         "batch_size": cfg.BATCH,
         "sampler": None,
         "worker_init_fn": worker_init_fn,
+        "drop_last": True,
     }
-    dataset_train = build_dataset(cfg, phase="train")
-    if rank != -1:
-        common_kwargs["sampler"] = DistributedSampler(
-            dataset_train, rank=rank, num_replicas=num_gpus, shuffle=True
-        )
-    dataloader_train = DataLoader(dataset_train, **common_kwargs)
-    # Build Val Dataset and Dataloader
-    if rank in [-1, 0]:
-        dataset_val = build_dataset(cfg, phase="val")
+    datasets = {}
+    dataloaders = {}
+    for phase in ["train", "val"]:
+        datasets[phase] = build_dataset(cfg, phase=phase)
         if rank != -1:
             common_kwargs["sampler"] = DistributedSampler(
-                dataset_val, rank=rank, num_replicas=num_gpus, shuffle=True
+                datasets["phase"], rank=rank, num_replicas=num_gpus, shuffle=True
             )
-        dataloader_val = DataLoader(dataset_val, **common_kwargs)
+        dataloaders[phase] = DataLoader(datasets[phase], **common_kwargs)
     logger.info("Complete Loading Dataset")
 
     optimizer = build_optimizer(cfg, model)
@@ -194,113 +188,112 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
     best_loss = 1e5
     best_epoch = 0
 
+    histories = {}
+    for phase in ["train", "val"]:
+        histories[phase] = {"Loss": [], "Learning Rate": []}
+
     if rank in [-1, 0]:
-        hist_loss = []
-        hist_val_loss = []
-        hist_lr = []
         logger.info("Start Training")
 
     initial_seed = fix_seed(100 + rank)
-
     try:
         # Train Loop
         for epoch in range(last_epoch, max_epoch, 1):
-            model.train()
+            for phase in ["train", "val"]:
+                hist_epoch_loss = 0
+                np.random.seed(initial_seed + epoch + rank)
+                progress_bar = enumerate(dataloaders[phase])
 
-            hist_epoch_loss = 0
-            np.random.seed(initial_seed + epoch + rank)
-            progress_bar = enumerate(dataloader_train)
-
-            if rank in [-1, 0]:
-                logger.info(f"Start Epoch {epoch+1}")
-                progress_bar = tqdm(progress_bar, total=len(dataloader_train))
-            if rank != -1:
-                dataloader_train.sampler.set_epoch(epoch)
-
-            for i, data in progress_bar:
-                data = data.to(device, non_blocking=True).float()
-
-                optimizer.zero_grad()
-
-                # Calculate Loss
-                y = model(data)
-                loss = loss_fn(y)
-                if loss == 0 or not torch.isfinite(loss):
+                if phase == "train":
+                    model.train()
+                    if rank in [-1, 0]:
+                        logger.info(f"Start Epoch {epoch+1}")
+                        progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]))
+                elif (phase == "val") and (rank in [-1, 0]) and ((epoch + 1) % cfg.VAL_INTERVAL == 0):
+                    model.eval()
+                else:
                     continue
-                hist_epoch_loss += loss * data.size(0)
+
+                if rank != -1:
+                    dataloaders[phase].sampler.set_epoch(epoch)
+
+                for _, data in progress_bar:
+                    with torch.set_grad_enabled(phase == "train"):
+                        data = data.to(device, non_blocking=True).float()
+
+                        optimizer.zero_grad()
+
+                        # Calculate Loss
+                        y = model(data)
+                        loss = loss_fn(y)
+                        if loss == 0 or not torch.isfinite(loss):
+                            continue
+                        if phase == "train":
+                            loss.backward()
+                            optimizer.step()
+
+                    hist_epoch_loss += loss * data.size(0)
+                    if rank in [-1, 0]:
+                        progress_bar.set_description(
+                            f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():.5f}"
+                        )
+
+                # Finish Epoch Process below
+                if rank != -1:
+                    dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
+                    dist.barrier()
+                epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
+
                 if rank in [-1, 0]:
-                    progress_bar.set_description(f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():.5f}")
-
-                loss.backward()
-                optimizer.step()
-
-                del loss
-
-            # Finish Epoch Process below
-            if rank != -1:
-                dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
-                dist.barrier()
-            epoch_loss = hist_epoch_loss.item() / len(dataset_train)
-            scheduler.step(epoch_loss)
-
-            if rank in [-1, 0]:
-                logger.info(
-                    f"Epoch: {epoch + 1}/{max_epoch}. "
-                    f"Loss: {epoch_loss:.5f}"
-                    f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
-                )
-                lr = optimizer.param_groups[0]["lr"]
-                writer.write_scalars("Epoch_Loss", {"train": epoch_loss}, epoch + 1)
-                writer.write_scalar("Learning_Rate", lr, epoch + 1)
-                hist_loss.append(epoch_loss)
-                hist_lr.append(lr)
-
-                # Save Model Weight
-                if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
-                    save_model(
-                        model,
-                        os.path.join(
-                            save_model_path,
-                            f"model_epoch_{epoch+1}.pth",
-                        ),
+                    logger.info(
+                        f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
+                        f"Loss: {epoch_loss:.5f} "
+                        f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
                     )
 
-                # Validate
-                if (epoch + 1) % int(cfg.VAL_INTERVAL) == 0:
-                    val_loss = do_validate(model, dataloader_val, loss_fn)
-                    hist_val_loss.append(val_loss)
-                    logger.info(f"Val. Epoch: {epoch+1} Loss: {val_loss:4f}")
-                    writer.write_scalars("Epoch_Loss", {"val": val_loss}, epoch + 1)
+                    if phase == "train":
+                        scheduler.step(epoch_loss)
+                        lr = optimizer.param_groups[0]["lr"]
+                        writer.write_scalar("Learning_Rate", lr, epoch + 1)
+                        histories[phase]["Learning Rate"].append(lr)
+                    writer.write_scalars("Epoch_Loss", {phase: epoch_loss}, epoch + 1)
+                    histories[phase]["Loss"].append(epoch_loss)
 
-                    # Save best val Loss Model
-                    if val_loss < best_loss:
-                        best_loss = val_loss
-                        best_epoch = epoch
-                        save_model(
-                            model,
-                            os.path.join(
-                                save_model_path,
-                                f"model_best_{epoch+1}.pth",
-                            ),
-                        )
-                        logger.info(f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch+1}")
+                    # Save Model Weight
+                    if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
+                        save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
 
-                    # early stopping (check val_loss)
-                    if epoch - best_epoch > int(cfg.EARLY_STOP_PATIENCE) > 0:
-                        logger.info(
-                            f"Stop training at epoch {epoch + 1}. The lowest loss achieved is {best_loss}"
-                        )
-                        break
+                    # Validate
+                    if phase == "val":
+                        # Save best val Loss Model
+                        if loss < best_loss:
+                            best_loss = loss
+                            best_epoch = epoch
+                            save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
+                            logger.info(
+                                f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch+1}"
+                            )
+
+                        # early stopping (check val_loss)
+                        if epoch - best_epoch > int(cfg.EARLY_STOP_PATIENCE) > 0:
+                            logger.info(
+                                f"Stop training at epoch {epoch + 1}. The lowest loss achieved is {best_loss}"
+                            )
+                            break
     except Exception as e:
         logger.error(e)
         logger.error(traceback.format_exc())
-        post_slack(message="Error\n{}\n{}".format(e, traceback.format_exc()))
+        post_slack(message=f"Error\n{e}\n{traceback.format_exc()}")
         # Train中のエラーはディレクトリごと削除
         # Non fileやCUDA out of memoryなどのエラー発生時の時
         shutil.rmtree(output_dir)
-        if rank == 0:
+        if rank != 0:
             dist.destroy_process_group()
         sys.exit(1)
+
+    # Clean Up multi gpu process
+    if rank != 0:
+        dist.destroy_process_group()
 
     # Finish Training Process below
     if rank in [-1, 0]:
@@ -309,43 +302,25 @@ def do_train(rank, cfg, output_dir, device, num_gpus=1):
             # サンプル不足でのグラフ描画エラーの処理
             # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
             # なので、x軸を補間することで、グラフを合わせる
-            x = np.arange(len(hist_loss))
-            val_x = np.linspace(0, len(hist_loss), len(hist_val_loss))
-            hist_val_loss = np.interp(x, val_x, hist_val_loss)
-            data = {
-                "Loss": [
-                    {"data": hist_loss, "label": "Train"},
-                    {"data": hist_val_loss, "label": "Val"},
-                ],
-                "Learning Rate": [{"data": hist_lr, "label": "Train"}],
-            }
+            x = np.arange(len(histories["train"]["loss"]))
+            val_x = np.linspace(0, len(histories["train"]["loss"]), len(histories["val"]["loss"]))
+            histories["val"]["loss"] = np.interp(x, val_x, histories["val"]["loss"])
+
+            plot_data = {}
+            for title in ["Loss", "Learning Rate"]:
+                plot_data[title] = []
+                for phase in ["train", "val"]:
+                    if histories[phase][title]:
+                        plot_data[title].append(
+                            {"data": histories[phase][title], "label": phase.capitalize()}
+                        )
             plot_multi_graph(os.path.join(output_dir, "figs", "train_graph.png"), data.keys(), data)
         except Exception:
             logger.error("Cannot draw graph")
 
         save_model(model, os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
 
-    # Clean Up multi gpu process
-    if rank == 0:
-        dist.destroy_process_group()
-
     return best_loss
-
-
-def do_validate(model, dataloader, loss_fn):
-    hist_loss = []
-    model.eval()
-    device = next(model.parameters()).device
-    for i, data in enumerate(tqdm(dataloader)):
-        with torch.no_grad():
-            data = data.to(device, non_blocking=True).float()
-            y = model(data)
-            loss = loss_fn(y)
-            if loss == 0 or not torch.isfinite(loss):
-                continue
-            hist_loss.append(loss.item())
-    loss = np.mean(hist_loss)
-    return loss
 
 
 @hydra.main(config_path="./config", config_name="config")

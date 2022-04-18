@@ -83,28 +83,6 @@ def post_slack(channel="#通知", username="通知", message=""):
     return response.status_code
 
 
-def make_output_dirs(output_base_path, prefix="", child_dirs=["models"]):
-    """[summary]
-
-    Args:
-        output_base_path (str): base output path
-        prefix (str, optional): dirname prefix(ex.20210505_{prefix}).
-                                Defaults to "".
-
-    Returns:
-        str: result output path
-    """
-    today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    if prefix:
-        prefix = "_" + prefix
-    dir_name = f"{today}{prefix}"
-    output_path = os.path.join(output_base_path, dir_name)
-    os.makedirs(output_path)
-    for d in child_dirs:
-        os.makedirs(os.path.join(output_path, d))
-    return output_path
-
-
 def make_result_dirs(weight_path, prefix=""):
     weight_name, _ = os.path.splitext(os.path.basename(weight_path))
     today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

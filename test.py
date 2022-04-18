@@ -10,6 +10,8 @@ import hydra
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
 from sklearn import metrics
+from torch.utils.data import DataLoader
+
 
 from kunai.torch_utils import (
     set_device,
@@ -32,6 +34,7 @@ logger = logging.getLogger()
 def do_test(cfg, output_dir, device):
     logger.info("Loading Dataset...")
     dataset = build_dataset(cfg, phase="test")
+    dataloader = DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
 
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     model = build_model(cfg).to(device)
@@ -43,10 +46,10 @@ def do_test(cfg, output_dir, device):
     results = []
     model.requires_grad_(False)
     model.eval()
-    progress_bar = tqdm(enumerate(dataset), total=len(dataset))
+    progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
     for i, data in progress_bar:
         with torch.no_grad():
-            input_data = data.to(device).unsqueeze(dim=0)
+            input_data = data.to(device)
             t = time_synchronized()
             y = model(input_data)
             inference_speed += time_synchronized() - t
