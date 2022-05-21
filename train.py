@@ -231,10 +231,10 @@ def do_train(rank, cfg, output_dir):
                     # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/8
                     dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
                     dist.barrier()
-                    hist_epoch_loss = hist_epoch_loss.item() / dist.get_world_size()
+                    hist_epoch_loss = hist_epoch_loss / dist.get_world_size()
 
                 if rank in [-1, 0]:
-                    epoch_loss = hist_epoch_loss / len(datasets[phase])
+                    epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
                     logger.info(
                         f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
                         f"Loss: {epoch_loss:.5f} "
