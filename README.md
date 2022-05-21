@@ -5,7 +5,7 @@ My PyTorch Project Template.
 ## Environments
 
 Python >= 3.7
-PyTorch >= 1.8
+PyTorch >= 1.10.1
 [kunai](https://github.com/mjun0812/kunai) (My Python Package)
 
 ## Features
