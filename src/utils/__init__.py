@@ -1,6 +1,5 @@
 from .utils import (
     post_slack,
-    make_output_dirs,
     make_result_dirs,
     plot_graph,
     plot_multi_graph,
