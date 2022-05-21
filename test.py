@@ -33,7 +33,7 @@ logger = logging.getLogger()
 
 def do_test(cfg, output_dir, device):
     logger.info("Loading Dataset...")
-    dataset = build_dataset(cfg, phase="test")
+    dataset, _ = build_dataset(cfg, phase="test")
     dataloader = DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
 
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
@@ -59,7 +59,9 @@ def do_test(cfg, output_dir, device):
             results.append(result)
 
     inference_speed /= len(dataset)
-    logger.info(f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps")
+    logger.info(
+        f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
+    )
 
     # 評価結果の保存
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
@@ -88,7 +90,9 @@ def main(cfg: DictConfig):
     logger.info(f"Command: {get_cmd()}")
     logger.info(f"Make output_dir at {output_dir}")
     logger.info(f"Git Hash: {get_git_hash()}")
-    with open(os.path.join(os.path.dirname(os.path.dirname(output_dir)), "cmd_histry.log"), "a") as f:
+    with open(
+        os.path.join(os.path.dirname(os.path.dirname(output_dir)), "cmd_histry.log"), "a"
+    ) as f:
         print(get_cmd(), file=f)
 
     # set Device
