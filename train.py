@@ -224,7 +224,6 @@ def do_train(rank, cfg, output_dir):
                         )
 
                 # Finish Train or Val Epoch Process below
-                scheduler.step()
                 if rank != -1:
                     # ここで，各プロセスのLossを全て足し合わせる
                     # 正確なLossは全プロセスの勾配の平均を元にして計算するべき
@@ -232,9 +231,10 @@ def do_train(rank, cfg, output_dir):
                     dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
                     dist.barrier()
                     hist_epoch_loss = hist_epoch_loss / dist.get_world_size()
+                epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
+                scheduler.step(epoch_loss)
 
                 if rank in [-1, 0]:
-                    epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
                     logger.info(
                         f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
                         f"Loss: {epoch_loss:.5f} "
