@@ -267,7 +267,7 @@ def do_train(rank, cfg, output_dir):
     except Exception as e:
         logger.error(e)
         logger.error(traceback.format_exc())
-        post_slack(message=f"Error\n{e}\n{traceback.format_exc()}")
+        post_slack(channel="#error", message=f"Error\n{e}\n{traceback.format_exc()}")
         # Train中のエラーはディレクトリごと削除
         # Non fileやCUDA out of memoryなどのエラー発生時の時
         shutil.rmtree(output_dir)
