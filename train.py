@@ -164,7 +164,6 @@ def do_train(rank, cfg, output_dir):
         )
         # save initial model
         save_model(model, save_model_path / f"model_init_{last_epoch}.pth")
-
         # Set Tensorboard
         writer = TensorboardLogger(output_dir)
         if cfg.MODEL.GRAPH and rank == -1:
@@ -188,9 +187,8 @@ def do_train(rank, cfg, output_dir):
                 hist_epoch_loss = 0
 
                 # Skip Validation
-                if phase == "val":
-                    if rank not in [-1, 0] or ((epoch + 1) % cfg.VAL_INTERVAL != 0):
-                        continue
+                if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
+                    continue
 
                 # model.train(False) == model.eval()
                 model.train(phase == "train")
@@ -217,7 +215,7 @@ def do_train(rank, cfg, output_dir):
                             loss.backward()
                             optimizer.step()
 
-                    hist_epoch_loss += loss * data.size(0)
+                        hist_epoch_loss += loss * data.size(0)
                     if rank in [-1, 0]:
                         progress_bar.set_description(
                             f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():.5f}"
@@ -294,7 +292,7 @@ def do_train(rank, cfg, output_dir):
             for title in metrics:
                 plot_data[title] = []
                 for phase in ["train", "val"]:
-                    if histories[phase][title]:
+                    if len(histories[phase][title]) > 0:
                         plot_data[title].append(
                             {"data": histories[phase][title], "label": phase.capitalize()}
                         )
