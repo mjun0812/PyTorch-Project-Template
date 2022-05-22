@@ -312,11 +312,14 @@ def main(cfg: DictConfig):
 
     # Hydra Setting
     set_hydra(cfg)
-    output_dir = make_output_dirs(
-        cfg.OUTPUT_PATH,
-        prefix=f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}",
-        child_dirs=["logs", "tensorboard", "figs", "models"],
-    )
+    if local_rank in [0, -1]:
+        output_dir = make_output_dirs(
+            cfg.OUTPUT_PATH,
+            prefix=f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}",
+            child_dirs=["logs", "tensorboard", "figs", "models"],
+        )
+    else:
+        output_dir = ""
 
     # Logging
     setup_logger(local_rank, os.path.join(output_dir, "train.log"))
