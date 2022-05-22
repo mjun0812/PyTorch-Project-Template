@@ -129,7 +129,7 @@ def do_train(rank, cfg, output_dir):
     # Set Device
     device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
     if rank != -1:
-        device = torch.cuda(rank)
+        device = torch.device(rank)
 
     # ###### Build Model #######
     model = build_model(cfg).to(device)
