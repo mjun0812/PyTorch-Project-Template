@@ -146,7 +146,7 @@ def do_train(rank, cfg, output_dir):
     datasets = {}
     dataloaders = {}
     for phase in ["train", "val"]:
-        datasets[phase], dataloaders[phase] = build_dataset(cfg, phase=phase)
+        datasets[phase], dataloaders[phase] = build_dataset(cfg, phase=phase, rank=rank)
     logger.info("Complete Loading Dataset")
 
     # ###### Logging ######
@@ -267,10 +267,11 @@ def do_train(rank, cfg, output_dir):
     except Exception as e:
         logger.error(e)
         logger.error(traceback.format_exc())
-        post_slack(channel="#error", message=f"Error\n{e}\n{traceback.format_exc()}")
-        # Train中のエラーはディレクトリごと削除
-        # Non fileやCUDA out of memoryなどのエラー発生時の時
-        shutil.rmtree(output_dir)
+        if rank in [0, -1]:
+            post_slack(channel="#error", message=f"Error\n{e}\n{traceback.format_exc()}")
+            # Train中のエラーはディレクトリごと削除
+            # Non fileやCUDA out of memoryなどのエラー発生時の時
+            shutil.rmtree(output_dir)
         if rank != 0:
             dist.destroy_process_group()
         sys.exit(1)
