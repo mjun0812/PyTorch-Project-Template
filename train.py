@@ -308,9 +308,7 @@ def do_train(rank, cfg, output_dir):
 @hydra.main(config_path="./config", config_name="config")
 def main(cfg: DictConfig):
     # Set Local Rank for Multi GPU Training
-    local_rank = int(os.environ["LOCAL_RANK"])
-    if not local_rank:
-        local_rank = -1
+    local_rank = int(os.environ.get("LOCAL_RANK", -1))
 
     # Hydra Setting
     set_hydra(cfg)
