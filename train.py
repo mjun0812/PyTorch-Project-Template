@@ -335,11 +335,11 @@ def main(cfg: DictConfig):
         assert (
             torch.cuda.device_count() > 1
         ), f"plz check gpu num. current gpu num: {torch.cuda.device_count()}"
+        dist.init_process_group(backend="nccl", init_method="env://")
         logging.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
         )
-        dist.init_process_group(backend="nccl", init_method="env://")
 
     result = do_train(local_rank, cfg, output_dir)
 
