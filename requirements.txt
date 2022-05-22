@@ -1,6 +1,6 @@
 black
 flake8
-hydra-core
+hydra-core >= 1.2.0
 hydra-optuna-sweeper
 kunai @ git+https://github.com/mjun0812/kunai
 matplotlib

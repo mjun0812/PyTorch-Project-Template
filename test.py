@@ -70,7 +70,7 @@ def do_test(cfg, output_dir, device):
     return metric
 
 
-@hydra.main(config_path="./config", config_name="config")
+@hydra.main(version_base=None, config_path="./config", config_name="config")
 def main(cfg: DictConfig):
     set_hydra(cfg)
     cfg = validate_config(cfg)
