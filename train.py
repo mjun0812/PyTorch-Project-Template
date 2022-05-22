@@ -299,7 +299,7 @@ def do_train(rank, cfg, output_dir):
                             {"data": histories[phase][title], "label": phase.capitalize()}
                         )
             plot_multi_graph(
-                os.path.join(output_dir, "figs", "train_graph.png"), data.keys(), data
+                os.path.join(output_dir, "figs", "train_graph.png"), plot_data.keys(), plot_data
             )
         except Exception:
             logger.error("Cannot draw graph")
