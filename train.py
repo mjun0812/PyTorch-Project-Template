@@ -226,9 +226,9 @@ def do_train(rank, cfg, output_dir):
                     # ここで，各プロセスのLossを全て足し合わせる
                     # 正確なLossは全プロセスの勾配の平均を元にして計算するべき
                     # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/8
+                    # reduceした時点で平均化されている
                     dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
                     dist.barrier()
-                    hist_epoch_loss = hist_epoch_loss / dist.get_world_size()
                 epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
                 scheduler.step(epoch_loss)
 
