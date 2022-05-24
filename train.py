@@ -345,7 +345,7 @@ def main(cfg: DictConfig):
 
     result = do_train(local_rank, cfg, output_dir)
 
-    if local_rank == [0, -1]:
+    if local_rank in [0, -1]:
         message = {
             "host": os.uname()[1],
             "tag": cfg.TAG,
