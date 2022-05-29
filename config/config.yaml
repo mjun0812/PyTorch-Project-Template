@@ -19,6 +19,11 @@ GPU:
   USE: 0
   MULTI: False
 CPU: False
+# Dataloader worker
+NUM_WORKER: 4
+
+# Mixed Precision
+AMP: False
 
 # Output
 OUTPUT_PATH: ./result/

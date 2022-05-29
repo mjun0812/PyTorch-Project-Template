@@ -53,7 +53,7 @@ def build_dataset(cfg, phase="train", rank=-1):
 
     common_kwargs = {
         "pin_memory": True,
-        "num_workers": 4,
+        "num_workers": cfg.NUM_WORKER,
         "batch_size": cfg.BATCH,
         "sampler": None,
         "worker_init_fn": worker_init_fn,
@@ -201,7 +201,9 @@ def do_train(rank, cfg, output_dir):
                     progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]))
 
                 for _, data in progress_bar:
-                    with torch.set_grad_enabled(phase == "train"):
+                    with torch.set_grad_enabled(phase == "train"), torch.cuda.amp.autocast(
+                        enabled=cfg.AMP
+                    ):
                         data = data.to(device, non_blocking=True).float()
 
                         optimizer.zero_grad()
