@@ -1,6 +1,6 @@
 from torchvision import transforms
 
-from .utils.registry import Registry
+from kunai import Registry
 
 TRANSFORM_REGISTRY = Registry("TRANSFORM")
 
