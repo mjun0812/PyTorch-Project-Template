@@ -1,3 +1,3 @@
-from .build import MODEL_REGISTRY, build_model
+# flake8: noqa
 
-__all__ = list(globals().keys())
+from .build import MODEL_REGISTRY, build_model

@@ -1,3 +1,3 @@
-from .build import LOSS_REGISTRY, build_loss
+# flake8: noqa
 
-__all__ = list(globals().keys())
+from .build import LOSS_REGISTRY, build_loss

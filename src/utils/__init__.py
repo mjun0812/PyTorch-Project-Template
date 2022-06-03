@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from .utils import (
     post_slack,
     make_result_dirs,
