@@ -4,13 +4,14 @@ My PyTorch Project Template.
 
 ## Environments
 
-Python >= 3.7
-PyTorch >= 1.10.1
-[kunai](https://github.com/mjun0812/kunai) (My Python Package)
+- Python >= 3.7
+- PyTorch >= 1.10.1
+- [kunai](https://github.com/mjun0812/kunai) (My Python Package)
 
 ## Features
 
-- Multi GPU Training
+- Distributed Multi GPU Training
+- Mix Precision(`torch.amp`) Training
 - Use [Hydra](https://github.com/facebookresearch/hydra) Config file management (YAML)
 - Continue Training from your own weight
 - Early Stopping
@@ -19,6 +20,7 @@ PyTorch >= 1.10.1
 
 ## Multi GPU
 
+Multi GPU Training is implemented in this repository using `torchrun`.  
 Change Setting in `config/config.yaml`(below).
 
 ```yaml
@@ -29,12 +31,12 @@ GPU:
 CPU: False
 ```
 
-If you use multi GPU, set `GPU.MULTI: True` and `GPU.USE: "0,1,2,3"`.
-
+If you use multi GPU, set `GPU.MULTI: True` and `GPU.USE: "0,1,2,3"`.  
 This setting can change from CLI using Hydra.
 
 ```bash
-python train.py GPU.MULTI=True GPU.USE="'1,2'"
+# Single node, 2 GPUs
+torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py GPU.MULTI=True GPU.USE="'1,2'"
 ```
 
 ## Required Editing
@@ -64,8 +66,8 @@ pytorch-project-template
 
 ### config
 
-This Template uses [Hydra](https://github.com/facebookresearch/hydra).  
-Hydra supports multi config file loading.
+This template uses [Hydra](https://github.com/facebookresearch/hydra).  
+Hydra supports loading multi config file.
 
 Example:
 
@@ -122,7 +124,7 @@ python train.py DATASET=coco
 Change your implemantion Dataset class.
 
 ```python
-def build_dataset(cfg, phase="train"):
+def build_dataset(cfg, phase="train", rank=-1):
     if phase == "train":
         filelist = cfg.DATASET.TRAIN_LIST
     elif phase == "val":
@@ -134,57 +136,51 @@ def build_dataset(cfg, phase="train"):
     dataset = Dataset(cfg, filelist)
     logger.info(f"{phase.capitalize()} Dataset sample num: {len(dataset)}")
     logger.info(f"{phase.capitalize()} transform: {transform}")
-    return dataset
+
+    common_kwargs = {
+        "pin_memory": True,
+        "num_workers": cfg.NUM_WORKER,
+        "batch_size": cfg.BATCH,
+        "sampler": None,
+        "worker_init_fn": worker_init_fn,
+        "drop_last": True,
+        "shuffle": True,
+    }
+    if rank != -1 and phase == "train":
+        common_kwargs["shuffle"] = False
+        common_kwargs["sampler"] = DistributedSampler(dataset, shuffle=True)
+    dataloader = DataLoader(dataset, **common_kwargs)
+
+    return dataset, dataloader
 ```
 
 Change your model input format and calc loss.
 
 ```python
-for i, data in progress_bar:
-    # Edit below
-    data = data.to(device, non_blocking=True).float()
+for epoch in range(last_epoch, max_epoch, 1):
+    for phase in ["train", "val"]:
+        for _, data in progress_bar:
+            with torch.set_grad_enabled(phase == "train"), torch.cuda.amp.autocast(enabled=cfg.AMP):
+                data = data.to(device, non_blocking=True).float()
 
-    optimizer.zero_grad()
+                optimizer.zero_grad()
 
-    # Calculate Loss
-    y = model(data)
+                # Calculate Loss
+                y = model(data)
+                loss = criterion(y)
+                if loss == 0 or not torch.isfinite(loss):
+                    continue
+                if phase == "train":
+                    loss.backward()
+                    optimizer.step()
 
-    # Edit below
-    loss = loss_fn(y)
-
-    if loss == 0 or not torch.isfinite(loss):
-        continue
-    hist_epoch_loss += loss * data.size(0)
-    if rank in [-1, 0]:
-        progress_bar.set_description(f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():.5f}")
-
-    loss.backward()
-    optimizer.step()
-
-    del loss
+                hist_epoch_loss += loss * data.size(0)
+            if rank in [-1, 0]:
+                progress_bar.set_description(
+                    f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():.5f}"
+                )
 ```
 
-```python
-def do_validate(model, dataloader, loss_fn):
-    hist_loss = []
-    model.eval()
-    device = next(model.parameters()).device
-    for i, data in enumerate(tqdm(dataloader)):
-        with torch.no_grad():
-            # Edit below
-            data = data.to(device, non_blocking=True).float()
-
-            y = model(data)
-
-            # Edit below
-            loss = loss_fn(y)
-
-            if loss == 0 or not torch.isfinite(loss):
-                continue
-            hist_loss.append(loss.item())
-    loss = np.mean(hist_loss)
-    return loss
-```
 
 ### test.py
 
@@ -193,7 +189,8 @@ Add metrics and change input format.
 ```python
 def do_test(cfg, output_dir, device):
     logger.info("Loading Dataset...")
-    dataset = build_dataset(cfg, phase="test")
+    dataset, _ = build_dataset(cfg, phase="test")
+    dataloader = DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
 
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     model = build_model(cfg).to(device)
@@ -205,23 +202,22 @@ def do_test(cfg, output_dir, device):
     results = []
     model.requires_grad_(False)
     model.eval()
-    progress_bar = tqdm(enumerate(dataset), total=len(dataset))
+    progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
     for i, data in progress_bar:
         with torch.no_grad():
-            # Edit below
-            input_data = data.to(device).unsqueeze(dim=0)
-
+            input_data = data.to(device)
             t = time_synchronized()
             y = model(input_data)
             inference_speed += time_synchronized() - t
 
             # calc metrics below
-            # Edit below
             result = y
             results.append(result)
 
     inference_speed /= len(dataset)
-    logger.info(f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps")
+    logger.info(
+        f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
+    )
 
     # 評価結果の保存
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
@@ -240,9 +236,6 @@ from .build import MODEL_REGISTRY, build_model
 
 # Add import
 from .model import Model
-
-__all__ = list(globals().keys())
-
 ```
 
 ```python
@@ -250,6 +243,7 @@ __all__ = list(globals().keys())
 import torch.nn as nn
 
 from .build import MODEL_REGISTRY
+
 
 # Below line add top of model class.
 @MODEL_REGISTRY.register()
@@ -271,8 +265,6 @@ from .build import LOSS_REGISTRY, build_loss
 
 # Add import
 from .loss import loss
-
-__all__ = list(globals().keys())
 ```
 
 ```python
