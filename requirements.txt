@@ -15,6 +15,6 @@ scikit-learn
 tabulate
 tensorboard
 torch
-torchinfo
+torchinfo >= 1.7.0
 torchvision
 tqdm
