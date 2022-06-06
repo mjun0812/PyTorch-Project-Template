@@ -127,9 +127,12 @@ def do_train(rank, cfg, output_dir):
     save_model_path = pathlib.Path(output_dir, "models")
 
     # Set Device
-    device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
-    if rank != -1:
+    if cfg.CPU:
+        device = torch.device("cpu")
+    elif rank != -1:
         device = torch.device(rank)
+    else:
+        device = torch.device(0)
 
     # ###### Build Model #######
     model = build_model(cfg).to(device)
@@ -333,6 +336,12 @@ def main(cfg: DictConfig):
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
         with open(os.path.join(output_dir, "cmd_histry.log"), "a") as f:
             print(get_cmd(), file=f)
+
+    # set Device
+    # PyTorch A6000 Bug Fix
+    # GPU間通信をP2PからPCI or NVLINKに変更する
+    os.environ["NCCL_P2P_DISABLE"] = "1"
+    set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
