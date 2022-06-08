@@ -160,11 +160,7 @@ def do_train(rank, cfg, output_dir):
         histories[phase] = metrics_dict
     if rank in [-1, 0]:
         # Model構造を出力
-        save_model_info(
-            output_dir,
-            model,
-            input_size=(1, 3, cfg.MODEL.INPUT_SIZE, cfg.MODEL.INPUT_SIZE),
-        )
+        save_model_info(output_dir, model)
         # save initial model
         save_model(model, save_model_path / f"model_init_{last_epoch}.pth")
         # Set Tensorboard
