@@ -7,45 +7,56 @@ SEARCH_TEXT = ["Accuracy", "Speed"]
 
 
 def parse_log(base_dir, format="simple"):
-    test_dirs = pathlib.Path(base_dir).glob("**/runs/?*/")
     table_data = []
     parse_error = []
+    no_test_runs = []
 
-    for d in test_dirs:
-        if not d.is_dir():
+    for train_dir in pathlib.Path(base_dir).iterdir():
+        test_dirs = list(train_dir.glob("runs/?*/"))
+
+        if len(test_dirs) == 0:
+            no_test_runs.append(train_dir.name)
             continue
 
-        data = {}
-        data["name"] = d.parents[1].name
-        data["runs"] = d.name
+        for test_dir in test_dirs:
+            test_dir = pathlib.Path(test_dir)
+            data = {}
+            data["name"] = test_dir.parents[1].name
+            data["runs"] = test_dir.name
 
-        try:
-            with open(d / "test.log", "r") as f:
-                log_txt = f.readlines()
-            for keyword in SEARCH_TEXT:
-                for row in reversed(log_txt):
-                    if keyword in row:
-                        # [2021-11-26 07:51:17,843][INFO] AP@IoU=0.75: 0.99500 -> AP@IoU=0.75: 0.99500
-                        metrics = row.strip().split("]")[-1]
-                        # AP@IoU=0.75: 0.99500 -> 0.99500
-                        metrics = metrics.split(":")[-1].strip()
+            try:
+                with open(test_dir / "test.log", "r") as f:
+                    log_txt = f.readlines()
+                for keyword in SEARCH_TEXT:
+                    for row in reversed(log_txt):
+                        if keyword in row:
+                            # [2021-11-26 07:51:17,843][INFO] AP@IoU=0.75: 0.99500 -> AP@IoU=0.75: 0.99500
+                            metrics = row.strip().split("]")[-1]
+                            # AP@IoU=0.75: 0.99500 -> 0.99500
+                            metrics = metrics.split(":")[-1].strip()
 
-                        ####### If you use specific log, edit code below. #######
-                        # if keyword == "Speed":
-                        #     # Average Inferance Speed: 0.02623s, 38.12fps
+                            # ###### If you use specific log, edit code below. #######
+                            # if keyword == "Speed":
+                            #     # Average Inferance Speed: 0.02623s, 38.12fps
 
-                        data[keyword] = metrics
-                        break
-            if len(data.keys()) > 2:
-                table_data.append(data)
-            else:
-                raise KeyError
-        except Exception:
-            parse_error.append(data["name"])
-            continue
+                            data[keyword] = metrics
+                            break
+                if len(data.keys()) > 2:
+                    table_data.append(data)
+                else:
+                    raise KeyError
+            except Exception:
+                parse_error.append(data["name"])
+                continue
 
-    print(tabulate(table_data, headers="keys", tablefmt=format))
+    table = tabulate(table_data, headers="keys", tablefmt=format)
+    if format == "latex":
+        table = "\\begin{table}[htbp]\n\\centering\n\\caption{}\n" + table
+        table += "\\end{table}"
+    print(table)
 
+    if len(no_test_runs) > 0:
+        print("no test runs:", no_test_runs)
     if len(parse_error) > 0:
         print("parse_error:", parse_error)
 
