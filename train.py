@@ -250,8 +250,8 @@ def do_train(rank, cfg, output_dir):
                             save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
                     elif phase == "val":
                         # Save best val Loss Model
-                        if loss < best_loss:
-                            best_loss = loss
+                        if epoch_loss < best_loss:
+                            best_loss = epoch_loss
                             best_epoch = epoch
                             save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
                             logger.info(
@@ -271,7 +271,7 @@ def do_train(rank, cfg, output_dir):
             # Train中のエラーはディレクトリごと削除
             # Non fileやCUDA out of memoryなどのエラー発生時の時
             shutil.rmtree(output_dir)
-        if rank != 0:
+        if rank != -1:
             dist.destroy_process_group()
         sys.exit(1)
 
