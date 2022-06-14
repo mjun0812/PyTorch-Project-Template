@@ -26,7 +26,7 @@ def build_lr_scheduler(cfg, optimizer):
         # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
         # 局所最適を脱出してもっと良いパラメータを探索します
         scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            optimizer, T_0=20, T_mult=2, eta_min=1e-5
+            optimizer, T_0=20, T_mult=2, eta_min=1e-5, verbose=True
         )
     logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
     return scheduler
