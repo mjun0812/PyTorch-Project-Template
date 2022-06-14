@@ -28,4 +28,5 @@ def build_lr_scheduler(cfg, optimizer):
         scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer, T_0=20, T_mult=2, eta_min=1e-5
         )
+    logger.info(f"Using Optimizer is {cfg.LR_SCHEDULER}")
     return scheduler
