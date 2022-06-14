@@ -231,7 +231,11 @@ def do_train(rank, cfg, output_dir):
                     dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
                     dist.barrier()
                 epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
-                scheduler.step(epoch_loss)
+                if phase == "train":
+                    if cfg.LR_SCHEDULER == "reduce":
+                        scheduler.step(epoch_loss)
+                    else:
+                        scheduler.step()
 
                 if rank in [-1, 0]:
                     logger.info(
