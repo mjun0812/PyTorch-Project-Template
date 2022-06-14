@@ -14,6 +14,9 @@ SAVE_INTERVAL: 5
 EARLY_STOP_PATIENCE: 0
 CONTINUE_TRAIN: False
 
+OPTIMIZER: "AdamW"
+LR_SCHEDULER: "sgdr"
+
 # Device Params
 GPU:
   USE: 0
@@ -38,7 +41,6 @@ MODEL:
   LOSS: FocalLoss_EfficientDet
   GRAPH: False
   INPUT_SIZE: 512
-  OPTIMIZER: "AdamW"
   # Load Weight Path
   WEIGHT: "./"
 

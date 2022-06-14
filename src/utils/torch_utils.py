@@ -7,7 +7,7 @@ logger = logging.getLogger()
 
 
 def build_optimizer(cfg, model):
-    optimizer_name = cfg.MODEL.OPTIMIZER
+    optimizer_name = cfg.OPTIMIZER
     if optimizer_name == "AdamW":
         optimizer = optim.AdamW(model.parameters(), lr=1e-4)
     elif optimizer_name == "Adam":
@@ -19,5 +19,13 @@ def build_optimizer(cfg, model):
 
 
 def build_lr_scheduler(cfg, optimizer):
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
+    if cfg.LR_SCHEDULER == "reduce":
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
+    elif cfg.LR_SCHEDULER == "sgdr":
+        # T_0を周期とするコサインカーブで減衰して、
+        # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
+        # 局所最適を脱出してもっと良いパラメータを探索します
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+            optimizer, T_0=20, T_mult=2, eta_min=1e-5
+        )
     return scheduler

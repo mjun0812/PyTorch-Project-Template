@@ -219,7 +219,7 @@ def do_train(rank, cfg, output_dir):
                         hist_epoch_loss += loss * data.size(0)
                     if rank in [-1, 0]:
                         progress_bar.set_description(
-                            f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():.5f}"
+                            f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():7.5f}"
                         )
 
                 # Finish Train or Val Epoch Process below
@@ -236,7 +236,7 @@ def do_train(rank, cfg, output_dir):
                 if rank in [-1, 0]:
                     logger.info(
                         f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
-                        f"Loss: {epoch_loss:.5f} "
+                        f"Loss: {epoch_loss:8.5f} "
                         f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
                     )
                     metric_values = [epoch_loss, optimizer.param_groups[0]["lr"]]
