@@ -9,11 +9,11 @@ logger = logging.getLogger()
 def build_optimizer(cfg, model):
     optimizer_name = cfg.OPTIMIZER
     if optimizer_name == "AdamW":
-        optimizer = optim.AdamW(model.parameters(), lr=1e-4)
+        optimizer = optim.AdamW(model.parameters(), lr=cfg.LR)
     elif optimizer_name == "Adam":
-        optimizer = optim.Adam(model.parameters(), lr=1e-5)
+        optimizer = optim.Adam(model.parameters(), lr=cfg.LR)
     elif optimizer_name == "SGD":
-        optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.937, nesterov=True)
+        optimizer = optim.SGD(model.parameters(), lr=cfg.LR, momentum=0.937, nesterov=True)
     logger.info(f"Using Optimizer is {optimizer_name}")
     return optimizer
 

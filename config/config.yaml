@@ -16,6 +16,7 @@ CONTINUE_TRAIN: False
 
 OPTIMIZER: "AdamW"
 LR_SCHEDULER: "sgdr"
+LR: 1e-3
 
 # Device Params
 GPU:
