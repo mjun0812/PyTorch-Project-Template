@@ -131,6 +131,7 @@ def do_train(rank, cfg, output_dir):
         device = torch.device("cpu")
     elif rank != -1:
         device = torch.device(rank)
+        torch.cuda.set_device(rank)
     else:
         device = torch.device(0)
 
