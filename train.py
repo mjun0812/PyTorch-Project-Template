@@ -269,7 +269,7 @@ def do_train(rank, cfg, output_dir):
                                 f"Stop training at epoch {epoch + 1}. The lowest loss achieved is {best_loss}"
                             )
                             break
-    except Exception as e:
+    except (Exception, KeyboardInterrupt) as e:
         logger.error(e)
         logger.error(traceback.format_exc())
         if rank in [0, -1]:
@@ -279,7 +279,8 @@ def do_train(rank, cfg, output_dir):
             shutil.rmtree(output_dir)
         if rank != -1:
             dist.destroy_process_group()
-        sys.exit(1)
+        else:
+            sys.exit(1)
 
     # Finish Training Process below
     if rank in [-1, 0]:
