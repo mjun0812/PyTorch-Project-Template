@@ -274,12 +274,12 @@ def do_train(rank, cfg, output_dir):
         logger.error(traceback.format_exc())
         if rank in [0, -1]:
             post_slack(channel="#error", message=f"Error\n{e}\n{traceback.format_exc()}")
-            # Train中のエラーはディレクトリごと削除
-            # Non fileやCUDA out of memoryなどのエラー発生時の時
-            shutil.rmtree(output_dir)
         if rank != -1:
             dist.destroy_process_group()
         else:
+            # Train中のエラーはディレクトリごと削除
+            # Non fileやCUDA out of memoryなどのエラー発生時の時
+            shutil.rmtree(output_dir)
             sys.exit(1)
 
     # Finish Training Process below
