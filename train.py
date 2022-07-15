@@ -16,6 +16,7 @@ from tqdm import tqdm
 import numpy as np
 import hydra
 from omegaconf import DictConfig, OmegaConf
+from natsort import natsorted
 
 from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import fix_seed, save_model, save_model_info, set_device, worker_init_fn
@@ -371,7 +372,9 @@ def main(cfg: DictConfig):
         post_slack(message=f"Finish Training\n{message}")
         logger.info(f"Finish Training {message}")
 
-        cfg.MODEL.WEIGHT = glob.glob(os.path.join(output_dir, "models", "model_final_*.pth"))[0]
+        cfg.MODEL.WEIGHT = natsorted(
+            glob.glob(os.path.join(output_dir, "models", "model_best_*.pth"))
+        )[-1]
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
 
     # Clean Up multi gpu process
