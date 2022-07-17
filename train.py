@@ -320,9 +320,12 @@ def main(cfg: DictConfig):
     # Hydra Setting
     set_hydra(cfg, verbose=local_rank in [0, -1])
     if local_rank in [0, -1]:
+        prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
+        if cfg.TAG:
+            prefix += f"_{cfg.TAG}"
         output_dir = make_output_dirs(
             cfg.OUTPUT_PATH,
-            prefix=f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}",
+            prefix=prefix,
             child_dirs=["logs", "tensorboard", "figs", "models"],
         )
     else:
