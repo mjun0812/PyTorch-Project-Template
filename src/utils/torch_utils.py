@@ -42,7 +42,7 @@ def build_lr_scheduler(cfg, optimizer):
         )
     elif lr_scheduler_name == "sgdr_warmup":
         scheduler = CosineAnnealingWarmupRestarts(
-            optimizer, first_cycle_steps=10, cycle_mult=2, max_lr=0.1, min_lr=1e-6, warmup_steps=5
+            optimizer, first_cycle_steps=10, cycle_mult=2, max_lr=0.1, min_lr=1e-6, gamma=0.5, warmup_steps=5
         )
     logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
     return scheduler
