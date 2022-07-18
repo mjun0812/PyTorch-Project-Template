@@ -1,7 +1,8 @@
 defaults:
   # 分ける場合は以下のように
   # - _self_
-  # - MODEL: efficientdet-d0
+  - MODEL: model
+  - DATASET: dataset
   - override hydra/job_logging: disabled
   - override hydra/sweeper: optuna
   - override hydra/sweeper/sampler: tpe
@@ -32,43 +33,6 @@ AMP: False
 # Output
 OUTPUT_PATH: ./result/
 TAG: ""
-
-# MODEL Param
-MODEL:
-  NAME: Model_Name
-  MODEL: Model # Class名
-  PRE_TRAINED: True
-  PRE_TRAINED_WEIGHT: result/PreTrain/efficientdet-d0.pth
-  LOSS: FocalLoss_EfficientDet
-  GRAPH: False
-  INPUT_SIZE: 512
-  # Load Weight Path
-  WEIGHT: "./"
-
-# Dataset Info
-DATASET:
-  NAME: dataset_name
-  TRAIN_LIST: ../dataset/coco128/annotations/annotations.csv
-  VAL_LIST: ../dataset/coco128/annotations/annotations.csv
-  TEST_LIST: ../dataset/coco128/annotations/annotations.csv
-  CLASS_LIST: ../dataset/coco128/annotations/classes.csv
-  NUM_CLASSES: 80
-  TRANSFORMS:
-    TRAIN:
-      - name: RandomLRFlip
-        args:
-          width: 1.0
-          num_point_feature: ${DATASET.NUM_POINT_FEATURE}
-    VAL:
-      - name: RandomLRFlip
-        args:
-          width: 1.0
-          num_point_feature: ${DATASET.NUM_POINT_FEATURE}
-    TEST:
-      - name: TransformStGCN
-        args:
-          frame: ${DATASET.FRAME}
-          point_num: 33
 
 hydra:
   run:

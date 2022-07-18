@@ -1,0 +1,24 @@
+# Dataset Info
+# DATASET:
+# NAME: dataset_name
+# TRAIN_LIST: ../dataset/coco128/annotations/annotations.csv
+# VAL_LIST: ../dataset/coco128/annotations/annotations.csv
+# TEST_LIST: ../dataset/coco128/annotations/annotations.csv
+# CLASS_LIST: ../dataset/coco128/annotations/classes.csv
+# NUM_CLASSES: 80
+# TRANSFORMS:
+#   TRAIN:
+#     - name: RandomLRFlip
+#       args:
+#         width: 1.0
+#         num_point_feature: ${DATASET.NUM_POINT_FEATURE}
+#   VAL:
+#     - name: RandomLRFlip
+#       args:
+#         width: 1.0
+#         num_point_feature: ${DATASET.NUM_POINT_FEATURE}
+#   TEST:
+#     - name: TransformStGCN
+#       args:
+#         frame: ${DATASET.FRAME}
+#         point_num: 33
