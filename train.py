@@ -1,10 +1,10 @@
 import glob
 import logging
 import os
-import shutil
 import sys
 import traceback
 import pathlib
+import pprint
 
 import torch
 import torch.distributed as dist
@@ -360,21 +360,25 @@ def main(cfg: DictConfig):
     result = do_train(local_rank, cfg, output_dir)
 
     if local_rank in [0, -1]:
-        message = {
+        message = pprint.pformat({
             "host": os.uname()[1],
             "tag": cfg.TAG,
             "model": cfg.MODEL.NAME,
             "dataset": cfg.DATASET.NAME,
             "save": output_dir,
             "test_cmd": f"python test.py -cp {output_dir}",
-        }
+        })
         # Send Message to Slack
         post_slack(message=f"Finish Training\n{message}")
         logger.info(f"Finish Training {message}")
 
+        # Prepare config for Test
         cfg.MODEL.WEIGHT = natsorted(
             glob.glob(os.path.join(output_dir, "models", "model_best_*.pth"))
         )[-1]
+        if local_rank==0:
+            cfg.GPU.MULTI=True
+            cfg.GPU.USE=0
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
 
     # Clean Up multi gpu process
