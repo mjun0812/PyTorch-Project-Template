@@ -367,7 +367,7 @@ def main(cfg: DictConfig):
             "dataset": cfg.DATASET.NAME,
             "save": output_dir,
             "test_cmd": f"python test.py -cp {output_dir}",
-        })
+        }, width=1000)
         # Send Message to Slack
         post_slack(message=f"Finish Training\n{message}")
         logger.info(f"Finish Training {message}")

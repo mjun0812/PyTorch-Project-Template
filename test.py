@@ -1,6 +1,7 @@
 import os
 import logging
 import csv
+import pprint
 
 import torch
 
@@ -100,14 +101,17 @@ def main(cfg: DictConfig):
 
     result = do_test(cfg, output_dir, device)
 
-    message = {
-        "host": os.uname()[1],
-        "tag": cfg.TAG,
-        "model": cfg.MODEL.NAME,
-        "dataset": cfg.DATASET.NAME,
-        "save": output_dir,
-        "result": result,
-    }
+    message = pprint.pformat(
+        {
+            "host": os.uname()[1],
+            "tag": cfg.TAG,
+            "model": cfg.MODEL.NAME,
+            "dataset": cfg.DATASET.NAME,
+            "save": output_dir,
+            "result": result,
+        },
+        width=1000,
+    )
     # Send Message to Slack
     post_slack(message=f"Finish Test\n{message}")
     logger.info(f"Finish Test {message}")
