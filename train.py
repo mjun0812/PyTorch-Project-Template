@@ -135,6 +135,7 @@ def do_train(rank, cfg, output_dir):
         torch.cuda.set_device(rank)
     else:
         device = torch.device(0)
+        torch.cuda.set_device(0)
 
     # ###### Build Model #######
     model = build_model(cfg).to(device)
@@ -166,9 +167,7 @@ def do_train(rank, cfg, output_dir):
         # save initial model
         save_model(model, save_model_path / f"model_init_{last_epoch}.pth")
         # Set Tensorboard
-        writer = TensorboardLogger(output_dir)
-        if cfg.MODEL.GRAPH and rank == -1:
-            writer.write_model_graph(cfg, model, device)
+        writer = TensorboardLogger(os.path.dirname(output_dir))
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model)
@@ -191,7 +190,6 @@ def do_train(rank, cfg, output_dir):
                 if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
                     continue
 
-                # model.train(False) == model.eval()
                 model.train(phase == "train")
                 if phase == "train" and rank != -1:
                     dataloaders[phase].sampler.set_epoch(epoch)
@@ -202,18 +200,15 @@ def do_train(rank, cfg, output_dir):
                     progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]))
 
                 for _, data in progress_bar:
-                    with torch.set_grad_enabled(phase == "train"), torch.cuda.amp.autocast(
-                        enabled=cfg.AMP
-                    ):
+                    with torch.set_grad_enabled(phase == "train"):
                         data = data.to(device, non_blocking=True).float()
 
                         optimizer.zero_grad()
 
-                        # Calculate Loss
-                        y = model(data)
-                        loss = criterion(y)
-                        if loss == 0 or not torch.isfinite(loss):
-                            continue
+                        with torch.cuda.amp.autocast(enabled=cfg.AMP):
+                            y = model(data)
+                            loss = criterion(y)
+
                         if phase == "train":
                             loss.backward()
                             optimizer.step()
@@ -274,7 +269,10 @@ def do_train(rank, cfg, output_dir):
         logger.error(e)
         logger.error(traceback.format_exc())
         if rank in [0, -1]:
-            post_slack(channel="#error", message=f"Error\n{e}\n{traceback.format_exc()}")
+            post_slack(
+                channel="#error",
+                message=f"Error\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
+            )
         if rank != -1:
             dist.destroy_process_group()
         sys.exit(1)
@@ -321,7 +319,7 @@ def main(cfg: DictConfig):
         if cfg.TAG:
             prefix += f"_{cfg.TAG}"
         output_dir = make_output_dirs(
-            cfg.OUTPUT_PATH,
+            cfg.OUTPUT,
             prefix=prefix,
             child_dirs=["logs", "tensorboard", "figs", "models"],
         )
@@ -343,7 +341,7 @@ def main(cfg: DictConfig):
     # set Device
     # PyTorch A6000 Bug Fix
     # GPU間通信をP2PからPCI or NVLINKに変更する
-    os.environ["NCCL_P2P_DISABLE"] = "1"
+    # os.environ["NCCL_P2P_DISABLE"] = "1"
     set_device(cfg.GPU.USE, is_cpu=cfg.CPU, verbose=local_rank in [0, -1])
 
     # DDP Mode
@@ -360,14 +358,17 @@ def main(cfg: DictConfig):
     result = do_train(local_rank, cfg, output_dir)
 
     if local_rank in [0, -1]:
-        message = pprint.pformat({
-            "host": os.uname()[1],
-            "tag": cfg.TAG,
-            "model": cfg.MODEL.NAME,
-            "dataset": cfg.DATASET.NAME,
-            "save": output_dir,
-            "test_cmd": f"python test.py -cp {output_dir}",
-        }, width=1000)
+        message = pprint.pformat(
+            {
+                "host": os.uname()[1],
+                "tag": cfg.TAG,
+                "model": cfg.MODEL.NAME,
+                "dataset": cfg.DATASET.NAME,
+                "save": output_dir,
+                "test_cmd": f"python test.py -cp {output_dir}",
+            },
+            width=1000,
+        )
         # Send Message to Slack
         post_slack(message=f"Finish Training\n{message}")
         logger.info(f"Finish Training {message}")
@@ -376,13 +377,13 @@ def main(cfg: DictConfig):
         cfg.MODEL.WEIGHT = natsorted(
             glob.glob(os.path.join(output_dir, "models", "model_best_*.pth"))
         )[-1]
-        if local_rank==0:
-            cfg.GPU.MULTI=True
-            cfg.GPU.USE=0
+        if local_rank == 0:
+            cfg.GPU.MULTI = False
+            cfg.GPU.USE = 0
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
 
     # Clean Up multi gpu process
-    if local_rank == 0:
+    if local_rank != -1:
         dist.destroy_process_group()
 
     return result

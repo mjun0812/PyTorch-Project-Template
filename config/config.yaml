@@ -31,7 +31,7 @@ NUM_WORKER: 4
 AMP: False
 
 # Output
-OUTPUT_PATH: ./result/
+OUTPUT: ./result/
 TAG: ""
 
 hydra:

@@ -66,6 +66,7 @@ def plot_multi_graph(filename, titles, data, dpi=300):
 
 def post_slack(channel="#通知", username="通知", message=""):
     try:
+        load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
         load_dotenv()
         SLACK_TOKEN = os.getenv("SLACK_TOKEN")
         response = requests.post(
