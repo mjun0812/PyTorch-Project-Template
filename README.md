@@ -5,7 +5,7 @@ My PyTorch Project Template.
 ## Environments
 
 - Python >= 3.7
-- PyTorch >= 1.10.1
+- PyTorch >= 1.10.1, != 1.12.0
 - [kunai](https://github.com/mjun0812/kunai) (My Python Package)
 
 ## Features
@@ -16,11 +16,28 @@ My PyTorch Project Template.
 - Continue Training from your own weight
 - Early Stopping
 - Tensorboard Logging
-- Easy additional Model, Loss, Transform(Augmentation) implementation
+- [ClearML](https://clear.ml) manage experiments
 
-## Multi GPU
+## Install
 
-Multi GPU Training is implemented in this repository using `torchrun`.  
+`pip install -r requirements.txt`
+
+### Optional: ClearML
+
+SignUp ClearML or self-host ClearML Server.
+
+- [SignUp ClearML](https://clear.ml)
+- [self-host documentation](https://clear.ml/docs/latest/docs/deploying_clearml/clearml_server)
+
+After setup ClearML server, do below command.
+
+```bash
+> clearml-init
+```
+
+## Distributed Multi GPU Training
+
+Distributed Multi GPU Training is implemented in this repository using `torchrun`.  
 Change Setting in `config/config.yaml`(below).
 
 ```yaml
@@ -42,11 +59,15 @@ torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py GPU.MULTI=True GPU.
 ## Required Editing
 
 ```bash
-pytorch-project-template
+.
 ├── config
+│   ├── DATASET
+│   │   └── dataset.yaml
+│   ├── MODEL
+│   │   └── model.yaml
 │   └── config.yaml
-├── log_parse.py
-├── requirements.txt
+├── doc
+├── etc
 ├── src
 │   ├── dataloaders
 │   │   ├── __init__.py
@@ -59,8 +80,19 @@ pytorch-project-template
 │   │   ├── __init__.py
 │   │   ├── build.py
 │   │   └── model.py
-│   ├── transform.py
+│   ├── utils
+│   │   ├── __init__.py
+│   │   ├── logger.py
+│   │   ├── torch_utils.py
+│   │   └── utils.py
+│   ├── sampler.py
+│   └── transform.py
+├── README.md
+├── config_list.sh
+├── log_parse.py
+├── requirements.txt
 ├── test.py
+├── torchrun.sh
 └── train.py
 ```
 

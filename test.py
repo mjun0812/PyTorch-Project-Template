@@ -2,6 +2,7 @@ import os
 import logging
 import csv
 import pprint
+import pathlib
 
 import torch
 
@@ -11,8 +12,7 @@ import hydra
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
 from sklearn import metrics
-from torch.utils.data import DataLoader
-
+from clearml import Task
 
 from kunai.torch_utils import (
     set_device,
@@ -35,7 +35,7 @@ logger = logging.getLogger()
 def do_test(cfg, output_dir, device):
     logger.info("Loading Dataset...")
     dataset, _ = build_dataset(cfg, phase="test")
-    dataloader = DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
+    dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
 
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     model = build_model(cfg).to(device)
@@ -96,6 +96,15 @@ def main(cfg: DictConfig):
     ) as f:
         print(get_cmd(), file=f)
 
+    # ClearML
+    try:
+        prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
+        if cfg.TAG:
+            prefix += f"_{cfg.TAG}"
+        Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
+    except Exception:
+        logger.info("Not Installed ClearML")
+
     # set Device
     device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
 
@@ -108,9 +117,9 @@ def main(cfg: DictConfig):
             "model": cfg.MODEL.NAME,
             "dataset": cfg.DATASET.NAME,
             "save": output_dir,
-            "result": result,
+            "result": f"{result:7.3f}",
         },
-        width=1000,
+        width=150,
     )
     # Send Message to Slack
     post_slack(message=f"Finish Test\n{message}")

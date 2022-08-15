@@ -3,6 +3,8 @@ import os
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
+from omegaconf import OmegaConf
+
 
 class TensorboardLogger:
     def __init__(self, output_dir):
@@ -25,3 +27,6 @@ class TensorboardLogger:
 
     def writer_close(self):
         self.writer.close()
+
+    def writer_hparams(self, cfg):
+        self.writer.add_hparams(OmegaConf.to_container(cfg, resolve=True), {})

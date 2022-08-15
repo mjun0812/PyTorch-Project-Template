@@ -110,7 +110,7 @@ def load_last_weight(cfg, model):
     return last_epoch
 
 
-def do_train(rank, cfg, output_dir):
+def do_train(rank, cfg, output_dir, writer):
     """Training Script
        このFunctionでSingle GPUとMulti GPUの両方に対応しています．
 
@@ -139,14 +139,8 @@ def do_train(rank, cfg, output_dir):
         torch.cuda.set_device(0)
 
     # ###### Build Model #######
-    model = build_model(cfg).to(device)
-    if rank != -1:
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-        model = DistributedDataParallel(
-            model, device_ids=[rank], output_device=rank, find_unused_parameters=False
-        )
-    # Train from exist weight
-    last_epoch = load_last_weight(cfg, model)
+    model = build_model(cfg, rank=rank).to(device)
+    last_epoch = load_last_weight(cfg, model)  # Train from exist weight
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
@@ -167,8 +161,6 @@ def do_train(rank, cfg, output_dir):
         save_model_info(output_dir, model)
         # save initial model
         save_model(model, save_model_path / f"model_init_{last_epoch}.pth")
-        # Set Tensorboard
-        writer = TensorboardLogger(os.path.dirname(output_dir))
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model)
@@ -229,6 +221,7 @@ def do_train(rank, cfg, output_dir):
                     dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
                     dist.barrier()
                 epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
+
                 if phase == "train":
                     if cfg.LR_SCHEDULER == "reduce":
                         scheduler.step(epoch_loss)
@@ -267,8 +260,7 @@ def do_train(rank, cfg, output_dir):
                             )
                             break
     except (Exception, KeyboardInterrupt) as e:
-        logger.error(e)
-        logger.error(traceback.format_exc())
+        logger.error(f"{e}\n{traceback.format_exc()}")
         if rank in [0, -1]:
             post_slack(
                 channel="#error",
@@ -349,6 +341,12 @@ def main(cfg: DictConfig):
         except Exception:
             logger.info("Not Installed ClearML")
 
+        # Set Tensorboard
+        writer = TensorboardLogger(os.path.dirname(output_dir))
+        writer.writer_hparams(cfg)
+    else:
+        writer = None
+
     # PyTorch A6000 Bug Fix: GPU間通信をP2PからPCI or NVLINKに変更する
     # os.environ["NCCL_P2P_DISABLE"] = "1"
 
@@ -363,7 +361,7 @@ def main(cfg: DictConfig):
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
         )
 
-    result = do_train(local_rank, cfg, output_dir)
+    result = do_train(local_rank, cfg, output_dir, writer)
 
     if local_rank in [0, -1]:
         message = pprint.pformat(
@@ -373,9 +371,10 @@ def main(cfg: DictConfig):
                 "model": cfg.MODEL.NAME,
                 "dataset": cfg.DATASET.NAME,
                 "save": output_dir,
+                "result": f"{result:7.3f}",
                 "test_cmd": f"python test.py -cp {output_dir}",
             },
-            width=1000,
+            width=150,
         )
         # Send Message to Slack
         post_slack(message=f"Finish Training\n{message}")
