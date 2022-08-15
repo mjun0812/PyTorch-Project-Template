@@ -17,6 +17,7 @@ import numpy as np
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from natsort import natsorted
+from clearml import Task
 
 from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import fix_seed, save_model, save_model_info, set_device, worker_init_fn
@@ -314,6 +315,9 @@ def main(cfg: DictConfig):
 
     # Hydra Setting
     set_hydra(cfg, verbose=local_rank in [0, -1])
+
+    # make Output dir
+    output_dir = ""
     if local_rank in [0, -1]:
         prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
         if cfg.TAG:
@@ -323,32 +327,36 @@ def main(cfg: DictConfig):
             prefix=prefix,
             child_dirs=["logs", "tensorboard", "figs", "models"],
         )
-    else:
-        output_dir = ""
 
     # Logging
     setup_logger(local_rank, os.path.join(output_dir, "train.log"))
     logger.info(f"Command: {get_cmd()}")
-    logger.info(f"Make output_dir at {output_dir}")
+    logger.info(f"Output dir: {output_dir}")
     logger.info(f"Git Hash: {get_git_hash()}")
 
     # Save Info
     if local_rank in [0, -1]:
+        # Hydra config
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
+
+        # Execute CLI command
         with open(os.path.join(output_dir, "cmd_histry.log"), "a") as f:
             print(get_cmd(), file=f)
 
-    # set Device
-    # PyTorch A6000 Bug Fix
-    # GPU間通信をP2PからPCI or NVLINKに変更する
+        # ClearML
+        try:
+            Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)  # noqa: F841
+        except Exception:
+            logger.info("Not Installed ClearML")
+
+    # PyTorch A6000 Bug Fix: GPU間通信をP2PからPCI or NVLINKに変更する
     # os.environ["NCCL_P2P_DISABLE"] = "1"
+
+    # set Device
     set_device(cfg.GPU.USE, is_cpu=cfg.CPU, verbose=local_rank in [0, -1])
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
-        assert (
-            torch.cuda.device_count() > 1
-        ), f"plz check gpu num. current gpu num: {torch.cuda.device_count()}"
         dist.init_process_group(backend="nccl", init_method="env://")
         logging.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "

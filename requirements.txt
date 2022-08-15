@@ -19,3 +19,4 @@ torch
 torchinfo >= 1.7.0
 torchvision
 tqdm
+clearml
