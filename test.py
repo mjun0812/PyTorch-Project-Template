@@ -32,7 +32,7 @@ from train import build_dataset
 logger = logging.getLogger()
 
 
-def do_test(cfg, output_dir, device, task):
+def do_test(cfg, output_dir, device):
     logger.info("Loading Dataset...")
     dataset, _ = build_dataset(cfg, phase="test")
     dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
@@ -101,19 +101,19 @@ def main(cfg: DictConfig):
 
     # ClearML
     if cfg.USE_CLEARML:
-        try:
-            prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
-            if cfg.TAG:
-                prefix += f"_{cfg.TAG}"
-            task = Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
-        except Exception:
-            logger.info("Not Installed ClearML")
-            task = None
+        prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
+        if cfg.TAG:
+            prefix += f"_{cfg.TAG}"
+        Task.init(
+            project_name=pathlib.Path.cwd().name,
+            task_name=prefix,
+            task_type=Task.TaskTypes.testing,
+        )
 
     # set Device
     device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
 
-    result = do_test(cfg, output_dir, device, task)
+    result = do_test(cfg, output_dir, device)
 
     message = pprint.pformat(
         {
