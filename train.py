@@ -343,7 +343,6 @@ def main(cfg: DictConfig):
 
         # Set Tensorboard
         writer = TensorboardLogger(os.path.dirname(output_dir))
-        writer.writer_hparams(cfg)
     else:
         writer = None
 

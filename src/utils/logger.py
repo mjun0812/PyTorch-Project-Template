@@ -27,6 +27,3 @@ class TensorboardLogger:
 
     def writer_close(self):
         self.writer.close()
-
-    def writer_hparams(self, cfg):
-        self.writer.add_hparams(OmegaConf.to_container(cfg, resolve=True), {})
