@@ -34,6 +34,8 @@ AMP: False
 OUTPUT: ./result/
 TAG: ""
 
+USE_CLEARML: True
+
 hydra:
   run:
     dir: ./result/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}

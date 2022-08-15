@@ -32,7 +32,7 @@ from train import build_dataset
 logger = logging.getLogger()
 
 
-def do_test(cfg, output_dir, device):
+def do_test(cfg, output_dir, device, task):
     logger.info("Loading Dataset...")
     dataset, _ = build_dataset(cfg, phase="test")
     dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
@@ -68,6 +68,9 @@ def do_test(cfg, output_dir, device):
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
         writer = csv.writer(f)
         writer.writerows(results)
+
+    if cfg.USE_CLEARML:
+        Task.current_task().get_logger().report_single_value("metrics", metric)
     return metric
 
 
@@ -97,18 +100,20 @@ def main(cfg: DictConfig):
         print(get_cmd(), file=f)
 
     # ClearML
-    try:
-        prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
-        if cfg.TAG:
-            prefix += f"_{cfg.TAG}"
-        Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
-    except Exception:
-        logger.info("Not Installed ClearML")
+    if cfg.USE_CLEARML:
+        try:
+            prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
+            if cfg.TAG:
+                prefix += f"_{cfg.TAG}"
+            task = Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
+        except Exception:
+            logger.info("Not Installed ClearML")
+            task = None
 
     # set Device
     device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
 
-    result = do_test(cfg, output_dir, device)
+    result = do_test(cfg, output_dir, device, task)
 
     message = pprint.pformat(
         {

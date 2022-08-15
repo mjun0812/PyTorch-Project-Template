@@ -336,10 +336,11 @@ def main(cfg: DictConfig):
             print(get_cmd(), file=f)
 
         # ClearML
-        try:
-            Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)  # noqa: F841
-        except Exception:
-            logger.info("Not Installed ClearML")
+        if cfg.USE_CLEARML:
+            try:
+                Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)  # noqa: F841
+            except Exception:
+                logger.info("Not Installed ClearML")
 
         # Set Tensorboard
         writer = TensorboardLogger(os.path.dirname(output_dir))

@@ -68,7 +68,7 @@ def post_slack(channel="#通知", username="通知", message=""):
     try:
         load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
         load_dotenv()
-        SLACK_TOKEN = os.getenv("SLACK_TOKEN")
+        SLACK_TOKEN = os.getenv("SLACK_TOKEN", None)
         response = requests.post(
             "https://slack.com/api/chat.postMessage",
             headers={"Content-Type": "application/json"},
