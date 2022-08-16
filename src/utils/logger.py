@@ -3,8 +3,6 @@ import os
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from omegaconf import OmegaConf
-
 
 class TensorboardLogger:
     def __init__(self, output_dir):

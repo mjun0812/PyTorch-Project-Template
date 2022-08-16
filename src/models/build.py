@@ -6,7 +6,7 @@ from kunai import Registry
 MODEL_REGISTRY = Registry("MODEL")
 
 
-def build_model(cfg, rank=-1):
+def build_model(cfg, device, rank=-1):
     """build model
 
     Args:
@@ -17,6 +17,7 @@ def build_model(cfg, rank=-1):
     """
     model_name = cfg.MODEL.MODEL
     model = MODEL_REGISTRY.get(model_name)(cfg)
+    model = model.to(device)
 
     if rank != -1:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
