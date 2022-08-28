@@ -161,19 +161,23 @@ class MlflowLogger:
             experiment_id=self.experiment_id, run_name=run_name, description=description
         )
 
+        logger.info(
+            f"Start MLflow Tracking: experiment_name={experiment_name} run_name={run_name} experiment_id: {self.experiment_id} run_id: {self.run.info.run_id}"
+        )
+
         self.log_hydra_config()
 
     def log_hydra_config(self):
         parameters = {
             "Optimizer": self.cfg.OPTIMIZER,
             "LR scheduler": self.cfg.LR_SCHEDULER,
-            "Learning Rate": self.LR,
-            "Epoch": self.EPOCH,
-            "Model": self.MODEL.NAME,
-            "Dataset": self.DATASET.MODEL,
-            "Loss": self.MODEL.LOSS,
-            "Input size": self.MODEL.INPUT_SIZE,
-            "PRE_TRAINED_WEIGHT": self.MODEL.PRE_TRAINED_WEIGHT,
+            "Learning Rate": self.cfg.LR,
+            "Epoch": self.cfg.EPOCH,
+            "Model": self.cfg.MODEL.NAME,
+            "Dataset": self.cfg.DATASET.MODEL,
+            "Loss": self.cfg.MODEL.LOSS,
+            "Input size": self.cfg.MODEL.INPUT_SIZE,
+            "PRE_TRAINED_WEIGHT": self.cfg.MODEL.PRE_TRAINED_WEIGHT,
             "Weight": self.cfg.MODEL.WEIGHT,
         }
         mlflow.log_params(parameters)

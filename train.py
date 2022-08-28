@@ -274,7 +274,7 @@ def do_train(rank, cfg, output_dir, writer):
         try:
             writer.log_history_figure()
         except Exception:
-            logger.error("Cannot draw graph")
+            logger.error(f"Cannot draw graph. {traceback.format_exc()}")
         save_model(model, os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
     return best_loss
 
