@@ -108,7 +108,7 @@ class TrainLogger:
         ax.legend()
         return fig
 
-    def close(self, status="SUCCESS"):
+    def close(self, status="FINISHED"):
         self.tb_logger.writer_close()
         if self.mlflow_logger:
             self.mlflow_logger.close(status=status)
