@@ -5,7 +5,7 @@ import logging
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
 from dotenv import load_dotenv
-import requests
+import kunai
 
 logger = logging.getLogger()
 
@@ -65,23 +65,11 @@ def plot_multi_graph(filename, titles, data, dpi=300):
 
 
 def post_slack(channel="#通知", username="通知", message=""):
-    try:
-        load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
-        load_dotenv()
-        SLACK_TOKEN = os.getenv("SLACK_TOKEN", None)
-        response = requests.post(
-            "https://slack.com/api/chat.postMessage",
-            headers={"Content-Type": "application/json"},
-            params={
-                "token": SLACK_TOKEN,
-                "channel": channel,
-                "text": message,
-                "username": username,
-            },
-        )
-    except Exception:
-        pass
-    return response.status_code
+    load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
+    load_dotenv()
+    token = os.getenv("SLACK_TOKEN")
+    if token:
+        kunai.utils.post_slack(token, channel, username, message)
 
 
 def make_result_dirs(weight_path, prefix=""):

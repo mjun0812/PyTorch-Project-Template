@@ -8,7 +8,6 @@ import pprint
 
 import torch
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
@@ -20,7 +19,14 @@ from natsort import natsorted
 from clearml import Task
 
 from kunai.hydra_utils import set_hydra
-from kunai.torch_utils import fix_seed, save_model, save_model_info, set_device, worker_init_fn
+from kunai.torch_utils import (
+    fix_seed,
+    save_model,
+    save_model_info,
+    set_device,
+    worker_init_fn,
+    check_model_parallel,
+)
 from kunai.utils import get_cmd, get_git_hash, setup_logger, make_output_dirs
 
 from src.dataloaders import Dataset
@@ -28,10 +34,9 @@ from src.losses import build_loss
 from src.models import build_model
 from src.transform import build_transforms
 from src.utils import (
-    TensorboardLogger,
+    TrainLogger,
     build_lr_scheduler,
     build_optimizer,
-    plot_multi_graph,
     post_slack,
 )
 
@@ -99,7 +104,7 @@ def load_last_weight(cfg, model):
 
     device = next(model.parameters()).device
     try:
-        if isinstance(model, torch.nn.DataParallel) or isinstance(model, DistributedDataParallel):
+        if check_model_parallel(model):
             model = model.module
         model.load_state_dict(torch.load(weight_path, map_location=device))
     except RuntimeError:
@@ -151,11 +156,7 @@ def do_train(rank, cfg, output_dir, writer):
     logger.info("Complete Loading Dataset")
 
     # ###### Logging ######
-    histories = {}
     metrics = ["Loss", "Learning Rate"]
-    metrics_dict = {metric: [] for metric in metrics}
-    for phase in ["train", "val"]:
-        histories[phase] = metrics_dict
     if rank in [-1, 0]:
         # Model構造を出力
         save_model_info(output_dir, model)
@@ -236,9 +237,7 @@ def do_train(rank, cfg, output_dir, writer):
                         f"Learning Rate: {optimizer.param_groups[0]['lr']:.4e}"
                     )
                     metric_values = [epoch_loss, optimizer.param_groups[0]["lr"]]
-                    for metric, value in zip(metrics, metric_values):
-                        writer.write_scalars(metric, {phase: value}, epoch + 1)
-                        histories[phase][metric].append(value)
+                    writer.log_metrics(phase, metrics, metric_values, epoch + 1)
 
                     if phase == "train":
                         # Save Model Weight
@@ -272,31 +271,11 @@ def do_train(rank, cfg, output_dir, writer):
 
     # Finish Training Process below
     if rank in [-1, 0]:
-        writer.writer_close()
-        save_model(model, os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
-
         try:
-            # サンプル不足でのグラフ描画エラーの処理
-            # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
-            # なので、x軸を補間することで、グラフを合わせる
-            x = np.arange(len(histories["train"]["Loss"]))
-            val_x = np.linspace(0, len(histories["train"]["Loss"]), len(histories["val"]["Loss"]))
-            for metric in metrics:
-                histories["val"][metric] = np.interp(x, val_x, histories["val"][metric])
-
-            plot_data = {}
-            for title in metrics:
-                plot_data[title] = []
-                for phase in ["train", "val"]:
-                    if len(histories[phase][title]) > 0:
-                        plot_data[title].append(
-                            {"data": histories[phase][title], "label": phase.capitalize()}
-                        )
-            plot_multi_graph(
-                os.path.join(output_dir, "figs", "train_graph.png"), plot_data.keys(), plot_data
-            )
+            writer.log_history_figure()
         except Exception:
             logger.error("Cannot draw graph")
+        save_model(model, os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
     return best_loss
 
 
@@ -308,9 +287,8 @@ def main(cfg: DictConfig):
     # Hydra Setting
     set_hydra(cfg, verbose=local_rank in [0, -1])
 
-    # make Output dir
-    output_dir = ""
     if local_rank in [0, -1]:
+        # make Output dir
         prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
         if cfg.TAG:
             prefix += f"_{cfg.TAG}"
@@ -320,14 +298,12 @@ def main(cfg: DictConfig):
             child_dirs=["logs", "tensorboard", "figs", "models"],
         )
 
-    # Logging
-    setup_logger(local_rank, os.path.join(output_dir, "train.log"))
-    logger.info(f"Command: {get_cmd()}")
-    logger.info(f"Output dir: {output_dir}")
-    logger.info(f"Git Hash: {get_git_hash()}")
+        # Logging
+        setup_logger(os.path.join(output_dir, "train.log"))
+        logger.info(f"Command: {get_cmd()}")
+        logger.info(f"Output dir: {output_dir}")
+        logger.info(f"Git Hash: {get_git_hash()}")
 
-    # Save Info
-    if local_rank in [0, -1]:
         # Hydra config
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
 
@@ -338,13 +314,16 @@ def main(cfg: DictConfig):
         # ClearML
         if cfg.USE_CLEARML:
             try:
-                Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)  # noqa: F841
+                Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
             except Exception:
                 logger.info("Not Installed ClearML")
 
-        # Set Tensorboard
-        writer = TensorboardLogger(os.path.dirname(output_dir))
+        # Set Tensorboard, MLflow
+        writer = TrainLogger(cfg, output_dir, os.path.dirname(output_dir))
+        writer.log_artifact(os.path.join(output_dir, "config.yaml"))
     else:
+        output_dir = ""
+        setup_logger()
         writer = None
 
     # PyTorch A6000 Bug Fix: GPU間通信をP2PからPCI or NVLINKに変更する
@@ -388,6 +367,9 @@ def main(cfg: DictConfig):
             cfg.GPU.MULTI = False
             cfg.GPU.USE = 0
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
+        writer.log_artifact(os.path.join(output_dir, "config.yaml"))
+        writer.log_artifacts(output_dir)
+        writer.writer_close()
 
     # Clean Up multi gpu process
     if local_rank != -1:

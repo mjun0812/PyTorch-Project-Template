@@ -16,7 +16,7 @@ EARLY_STOP_PATIENCE: 0
 CONTINUE_TRAIN: False
 
 OPTIMIZER: "AdamW"
-LR_SCHEDULER: "sgdr"
+LR_SCHEDULER: "ReduceLROnPlateau"
 LR: 1e-3
 
 # Device Params
@@ -35,6 +35,7 @@ OUTPUT: ./result/
 TAG: ""
 
 USE_CLEARML: True
+USE_MLFLOW: True
 
 hydra:
   run:

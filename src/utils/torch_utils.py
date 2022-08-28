@@ -21,7 +21,7 @@ def build_optimizer(cfg, model):
 
 def build_lr_scheduler(cfg, optimizer):
     lr_scheduler_name = cfg.LR_SCHEDULER
-    if lr_scheduler_name == "reduce":
+    if lr_scheduler_name == "ReduceLROnPlateau":
         # factor : 学習率の減衰率
         # patience : 何ステップ向上しなければlrを変更するか
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -33,22 +33,22 @@ def build_lr_scheduler(cfg, optimizer):
             min_lr=1e-6,
             cooldown=cfg.EPOCH // 10,
         )
-    elif lr_scheduler_name == "sgdr":
+    elif lr_scheduler_name == "CosineAnnealingWarmRestarts":
         # T_0を周期とするコサインカーブで減衰して、
         # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
         # 局所最適を脱出してもっと良いパラメータを探索します
         scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer, T_0=20, T_mult=2, eta_min=1e-6, verbose=False
         )
-    elif lr_scheduler_name == "sgdr_warmup":
-        scheduler = CosineAnnealingWarmupRestarts(
+    elif lr_scheduler_name == "CosineAnnealingWarmupReduceRestarts":
+        scheduler = CosineAnnealingWarmupReduceRestarts(
             optimizer, first_cycle_steps=10, cycle_mult=2, max_lr=0.1, min_lr=1e-6, gamma=0.5, warmup_steps=5
         )
     logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
     return scheduler
 
 
-class CosineAnnealingWarmupRestarts(optim.lr_scheduler._LRScheduler):
+class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
     """https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup"""
 
     def __init__(
@@ -87,7 +87,7 @@ class CosineAnnealingWarmupRestarts(optim.lr_scheduler._LRScheduler):
         self.cycle = 0  # cycle count
         self.step_in_cycle = last_epoch  # step size of the current cycle
 
-        super(CosineAnnealingWarmupRestarts, self).__init__(optimizer, last_epoch)
+        super(CosineAnnealingWarmupReduceRestarts, self).__init__(optimizer, last_epoch)
 
         # set learning rate min_lr
         self.base_lrs = []
