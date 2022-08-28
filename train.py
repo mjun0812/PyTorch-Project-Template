@@ -222,7 +222,7 @@ def do_train(rank, cfg, output_dir, writer):
             epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
 
             if phase == "train":
-                if cfg.LR_SCHEDULER == "reduce":
+                if cfg.LR_SCHEDULER == "ReduceLROnPlateau":
                     scheduler.step(epoch_loss)
                 else:
                     scheduler.step()
@@ -369,7 +369,7 @@ def main(cfg: DictConfig):
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
         writer.log_artifact(os.path.join(output_dir, "config.yaml"))
         writer.log_artifacts(output_dir)
-        writer.writer_close()
+        writer.close()
 
     # Clean Up multi gpu process
     if local_rank != -1:
