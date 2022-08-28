@@ -175,7 +175,7 @@ class MlflowLogger:
             "Learning Rate": self.cfg.LR,
             "Epoch": self.cfg.EPOCH,
             "Model": self.cfg.MODEL.NAME,
-            "Dataset": self.cfg.DATASET.MODEL,
+            "Dataset": self.cfg.DATASET.NAME,
             "Loss": self.cfg.MODEL.LOSS,
             "Input size": self.cfg.MODEL.INPUT_SIZE,
             "PRE_TRAINED_WEIGHT": self.cfg.MODEL.PRE_TRAINED_WEIGHT,
