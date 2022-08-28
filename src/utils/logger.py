@@ -134,7 +134,7 @@ class TensorboardLogger:
         self.writer.add_scalar(tag, value, step)
 
     def write_figure(self, tag, fig):
-        self.write_figure(tag, fig)
+        self.writer.add_figure(tag, fig)
 
     def writer_close(self):
         self.writer.close()
