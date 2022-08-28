@@ -171,103 +171,91 @@ def do_train(rank, cfg, output_dir, writer):
     best_loss = 1e8
     best_epoch = 0
 
-    try:
-        logger.info("Start Training")
-        # Train Loop
-        for epoch in range(last_epoch, max_epoch, 1):
-            logger.info(f"Start Epoch {epoch+1}")
-            np.random.seed(initial_seed + epoch + rank)
-            for phase in ["train", "val"]:
-                hist_epoch_loss = 0
+    logger.info("Start Training")
+    for epoch in range(last_epoch, max_epoch, 1):
+        logger.info(f"Start Epoch {epoch+1}")
+        np.random.seed(initial_seed + epoch + rank)
+        for phase in ["train", "val"]:
+            hist_epoch_loss = 0
 
-                # Skip Validation
-                if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
-                    continue
+            # Skip Validation
+            if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
+                continue
 
-                model.train(phase == "train")
-                if phase == "train" and rank != -1:
-                    dataloaders[phase].sampler.set_epoch(epoch)
+            model.train(phase == "train")
+            if phase == "train" and rank != -1:
+                dataloaders[phase].sampler.set_epoch(epoch)
 
-                # Set progress bar
-                progress_bar = enumerate(dataloaders[phase])
-                if rank in [-1, 0]:
-                    progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]))
+            # Set progress bar
+            progress_bar = enumerate(dataloaders[phase])
+            if rank in [-1, 0]:
+                progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]))
 
-                for _, data in progress_bar:
-                    with torch.set_grad_enabled(phase == "train"):
-                        data = data.to(device, non_blocking=True).float()
+            for _, data in progress_bar:
+                with torch.set_grad_enabled(phase == "train"):
+                    data = data.to(device, non_blocking=True).float()
 
-                        optimizer.zero_grad()
+                    optimizer.zero_grad()
 
-                        with torch.cuda.amp.autocast(enabled=cfg.AMP):
-                            y = model(data)
-                            loss = criterion(y)
-
-                        if phase == "train":
-                            loss.backward()
-                            optimizer.step()
-
-                        hist_epoch_loss += loss * data.size(0)
-                    if rank in [-1, 0]:
-                        progress_bar.set_description(
-                            f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():7.5f}"
-                        )
-
-                # Finish Train or Val Epoch Process below
-                if rank != -1:
-                    # ここで，各プロセスのLossを全て足し合わせる
-                    # 正確なLossは全プロセスの勾配の平均を元にして計算するべき
-                    # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/8
-                    # reduceした時点で平均化されている
-                    dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
-                    dist.barrier()
-                epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
-
-                if phase == "train":
-                    if cfg.LR_SCHEDULER == "reduce":
-                        scheduler.step(epoch_loss)
-                    else:
-                        scheduler.step()
-
-                if rank in [-1, 0]:
-                    logger.info(
-                        f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
-                        f"Loss: {epoch_loss:8.5f} "
-                        f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
-                        f"Learning Rate: {optimizer.param_groups[0]['lr']:.4e}"
-                    )
-                    metric_values = [epoch_loss, optimizer.param_groups[0]["lr"]]
-                    writer.log_metrics(phase, metrics, metric_values, epoch + 1)
+                    with torch.cuda.amp.autocast(enabled=cfg.AMP):
+                        y = model(data)
+                        loss = criterion(y)
 
                     if phase == "train":
-                        # Save Model Weight
-                        if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
-                            save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
-                    elif phase == "val":
-                        # Save best val Loss Model
-                        if epoch_loss < best_loss:
-                            best_loss = epoch_loss
-                            best_epoch = epoch
-                            save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
-                            logger.info(
-                                f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch+1}"
-                            )
-                        # early stopping (check val_loss)
-                        if epoch - best_epoch > int(cfg.EARLY_STOP_PATIENCE) > 0:
-                            logger.info(
-                                f"Stop training at epoch {epoch + 1}. The lowest loss achieved is {best_loss}"
-                            )
-                            break
-    except (Exception, KeyboardInterrupt) as e:
-        logger.error(f"{e}\n{traceback.format_exc()}")
-        if rank in [0, -1]:
-            post_slack(
-                channel="#error",
-                message=f"Error\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
-            )
-        if rank != -1:
-            dist.destroy_process_group()
-        sys.exit(1)
+                        loss.backward()
+                        optimizer.step()
+
+                    hist_epoch_loss += loss * data.size(0)
+                if rank in [-1, 0]:
+                    progress_bar.set_description(
+                        f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():7.5f}"
+                    )
+
+            # Finish Train or Val Epoch Process below
+            if rank != -1:
+                # ここで，各プロセスのLossを全て足し合わせる
+                # 正確なLossは全プロセスの勾配の平均を元にして計算するべき
+                # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/8
+                # reduceした時点で平均化されている
+                dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
+                dist.barrier()
+            epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
+
+            if phase == "train":
+                if cfg.LR_SCHEDULER == "reduce":
+                    scheduler.step(epoch_loss)
+                else:
+                    scheduler.step()
+
+            if rank in [-1, 0]:
+                logger.info(
+                    f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
+                    f"Loss: {epoch_loss:8.5f} "
+                    f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
+                    f"Learning Rate: {optimizer.param_groups[0]['lr']:.4e}"
+                )
+                metric_values = [epoch_loss, optimizer.param_groups[0]["lr"]]
+                writer.log_metrics(phase, metrics, metric_values, epoch + 1)
+
+                if phase == "train":
+                    # Save Model Weight
+                    if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
+                        save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
+                elif phase == "val":
+                    # Save best val Loss Model
+                    if epoch_loss < best_loss:
+                        best_loss = epoch_loss
+                        best_epoch = epoch
+                        save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
+                        logger.info(
+                            f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch+1}"
+                        )
+                    # early stopping (check val_loss)
+                    if epoch - best_epoch > int(cfg.EARLY_STOP_PATIENCE) > 0:
+                        logger.info(
+                            f"Stop training at epoch {epoch + 1}. The lowest loss achieved is {best_loss}"
+                        )
+                        break
 
     # Finish Training Process below
     if rank in [-1, 0]:
@@ -340,7 +328,19 @@ def main(cfg: DictConfig):
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
         )
 
-    result = do_train(local_rank, cfg, output_dir, writer)
+    try:
+        result = do_train(local_rank, cfg, output_dir, writer)
+    except (Exception, KeyboardInterrupt) as e:
+        logger.error(f"{e}\n{traceback.format_exc()}")
+        if local_rank in [0, -1]:
+            post_slack(
+                channel="#error",
+                message=f"Error\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
+            )
+            writer.close("FAILED")
+        if local_rank != -1:
+            dist.destroy_process_group()
+        sys.exit(1)
 
     if local_rank in [0, -1]:
         message = pprint.pformat(

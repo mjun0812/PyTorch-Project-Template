@@ -25,7 +25,8 @@ class TrainLogger:
         self.mlflow_logger = None
         if self.cfg.USE_MLFLOW:
             experiment_name = os.path.basename(os.getcwd())
-            run_name = self.output.split("_")[0]
+            run_name = os.path.basename(self.output).split("_")
+            run_name = "-".join(run_name[0:2])
             description = f"{self.cfg.MODEL.NAME} {self.cfg.DATASET.NAME} {self.cfg.TAG}"
             self.mlflow_logger = MlflowLogger(self.cfg, experiment_name, run_name, description)
 
@@ -107,10 +108,10 @@ class TrainLogger:
         ax.legend()
         return fig
 
-    def close(self):
+    def close(self, status="SUCCESS"):
         self.tb_logger.writer_close()
         if self.mlflow_logger:
-            self.mlflow_logger.close()
+            self.mlflow_logger.close(status=status)
 
 
 class TensorboardLogger:
@@ -206,5 +207,5 @@ class MlflowLogger:
     def log_figure(self, fig):
         mlflow.log_figure(fig)
 
-    def close(self):
-        mlflow.end_run()
+    def close(self, status):
+        mlflow.end_run(status=status)
