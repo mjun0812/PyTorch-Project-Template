@@ -71,7 +71,7 @@ class TrainLogger:
         # サンプル不足でのグラフ描画エラーの処理
         # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
         # なので、x軸を補間することで、グラフを合わせる
-        x = np.arrange(self.last_epoch)
+        x = np.arange(self.last_epoch)
         val_x = np.linspace(0, self.last_epoch, len(self.histories[metrics_names[0]]["val"]))
         for name in metrics_names:
             self.histories[name]["val"] = np.interp(x, val_x, self.histories[name]["val"])
