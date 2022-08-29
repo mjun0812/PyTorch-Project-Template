@@ -30,6 +30,7 @@ class TrainLogger:
             run_name = "-".join(run_name[0:2])
             description = f"{self.cfg.MODEL.NAME} {self.cfg.DATASET.NAME} {self.cfg.TAG}"
             self.mlflow_logger = MlflowLogger(self.cfg, experiment_name, run_name, description)
+            self.mlflow_logger.log_tag("phase", "Train")
 
         self.histories = {}
         self.last_epoch = 0
@@ -83,7 +84,6 @@ class TrainLogger:
             fig = self.plot_graph(metric, labels, data)
             fig_path = os.path.join(self.output, f"{metric}.png".replace(" ", "_"))
             fig.savefig(fig_path)
-            self.log_artifact(fig_path)
             plt.close()
 
     def plot_graph(self, title, labels, data):
@@ -182,6 +182,9 @@ class MlflowLogger:
             "Weight": self.cfg.MODEL.WEIGHT,
         }
         mlflow.log_params(parameters)
+
+    def log_tag(self, key, value):
+        mlflow.set_tag(key, value)
 
     def log_metric(self, name, value, step=None):
         mlflow.log_metric(name, value, step)

@@ -303,6 +303,7 @@ def main(cfg: DictConfig):
         if cfg.USE_CLEARML:
             try:
                 Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
+                setup_logger(os.path.join(output_dir, "train.log"))  # Ovverride ClearML logging
             except Exception:
                 logger.info("Not Installed ClearML")
 
