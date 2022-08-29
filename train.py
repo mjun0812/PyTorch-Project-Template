@@ -283,7 +283,7 @@ def main(cfg: DictConfig):
         output_dir = make_output_dirs(
             cfg.OUTPUT,
             prefix=prefix,
-            child_dirs=["logs", "tensorboard", "figs", "models"],
+            child_dirs=["figs", "models"],
         )
 
         # Logging

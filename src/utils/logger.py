@@ -19,6 +19,7 @@ class TrainLogger:
         self.cfg = cfg
         self.output = output
         self.tb_output = tb_output
+        os.makedirs(self.tb_output, exist_ok=True)
 
         self.tb_logger = TensorboardLogger(self.tb_output)
 
@@ -81,7 +82,6 @@ class TrainLogger:
             data = [self.histories[metric]["train"], self.histories[metric]["val"]]
             fig = self.plot_graph(metric, labels, data)
             fig_path = os.path.join(self.output, f"{metric}.png".replace(" ", "_"))
-            self.log_figure(metric, fig, fig_path)
             fig.savefig(fig_path)
             self.log_artifact(fig_path)
             plt.close()
