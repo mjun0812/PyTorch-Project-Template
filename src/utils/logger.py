@@ -53,10 +53,10 @@ class TrainLogger:
                 self.histories[name][phase] = []
             self.histories[name][phase].append(value)
 
-    def log_figure(self, tag, fig):
+    def log_figure(self, tag, fig, path):
         self.tb_logger.write_figure(tag, fig)
         if self.mlflow_logger:
-            self.mlflow_logger.log_figure(fig)
+            self.mlflow_logger.log_figure(fig, path)
 
     def log_artifact(self, path):
         if self.mlflow_logger:
@@ -80,8 +80,8 @@ class TrainLogger:
             labels = [f"{metric}_train", f"{metric}_val"]
             data = [self.histories[metric]["train"], self.histories[metric]["val"]]
             fig = self.plot_graph(metric, labels, data)
-            self.log_figure(metric, fig)
             fig_path = os.path.join(self.output, f"{metric}.png".replace(" ", "_"))
+            self.log_figure(metric, fig, fig_path)
             fig.savefig(fig_path)
             self.log_artifact(fig_path)
             plt.close()
@@ -204,8 +204,8 @@ class MlflowLogger:
     def log_dict(self, data, path):
         mlflow.log_dict(data, path)
 
-    def log_figure(self, fig):
-        mlflow.log_figure(fig)
+    def log_figure(self, fig, artifact_path):
+        mlflow.log_figure(fig, artifact_path)
 
     def close(self, status):
         mlflow.end_run(status=status)
