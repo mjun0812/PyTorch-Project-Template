@@ -302,11 +302,7 @@ def main(cfg: DictConfig):
         # ClearML
         if cfg.USE_CLEARML:
             try:
-                Task.init(
-                    project_name=pathlib.Path.cwd().name,
-                    task_name=prefix,
-                    auto_connect_streams={"stdout": True, "stderr": True, "logging": False},
-                )
+                Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
             except Exception:
                 logger.info("Not Installed ClearML")
 
