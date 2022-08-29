@@ -286,6 +286,13 @@ def main(cfg: DictConfig):
             child_dirs=["figs", "models"],
         )
 
+        # ClearML
+        if cfg.USE_CLEARML:
+            try:
+                Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
+            except Exception:
+                logger.info("Not Installed ClearML")
+
         # Logging
         setup_logger(os.path.join(output_dir, "train.log"))
         logger.info(f"Command: {get_cmd()}")
@@ -298,13 +305,6 @@ def main(cfg: DictConfig):
         # Execute CLI command
         with open(os.path.join(output_dir, "cmd_histry.log"), "a") as f:
             print(get_cmd(), file=f)
-
-        # ClearML
-        if cfg.USE_CLEARML:
-            try:
-                Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
-            except Exception:
-                logger.info("Not Installed ClearML")
 
         # Set Tensorboard, MLflow
         writer = TrainLogger(cfg, output_dir, os.path.dirname(output_dir))

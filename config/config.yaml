@@ -34,7 +34,7 @@ AMP: False
 OUTPUT: ./result/
 TAG: ""
 
-USE_CLEARML: True
+USE_CLEARML: False
 USE_MLFLOW: True
 
 hydra:
