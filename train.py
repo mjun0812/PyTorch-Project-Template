@@ -372,8 +372,9 @@ def main(cfg: DictConfig):
         writer.close()
 
     # Clean Up multi gpu process
-    if local_rank != -1:
+    if local_rank not in [0, -1]:
         dist.destroy_process_group()
+    torch.cuda.empty_cache()
 
     return result
 
