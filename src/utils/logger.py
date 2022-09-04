@@ -37,7 +37,7 @@ class TrainLogger:
 
     def log_tag(self, key, value):
         if self.mlflow_logger:
-            self.mlflow_logger.set_tag(key, value)
+            self.mlflow_logger.log_tag(key, value)
 
     def log_metric(self, name, metric, phase, step):
         self.tb_logger.write_scalars(name, {phase: metric}, step)
