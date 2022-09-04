@@ -35,6 +35,10 @@ class TrainLogger:
         self.histories = {}
         self.last_epoch = 0
 
+    def log_tag(self, key, value):
+        if self.mlflow_logger:
+            self.mlflow_logger.set_tag(key, value)
+
     def log_metric(self, name, metric, phase, step):
         self.tb_logger.write_scalars(name, {phase: metric}, step)
         if self.mlflow_logger:
@@ -112,6 +116,32 @@ class TrainLogger:
         self.tb_logger.writer_close()
         if self.mlflow_logger:
             self.mlflow_logger.close(status=status)
+
+
+class TestLogger(TrainLogger):
+    def __init__(self, cfg, output: str, tb_output: str) -> None:
+        self.cfg = cfg
+        self.output = output
+        self.tb_output = tb_output
+        os.makedirs(self.tb_output, exist_ok=True)
+
+        self.tb_logger = TensorboardLogger(self.tb_output)
+
+        self.mlflow_logger = None
+        if self.cfg.USE_MLFLOW:
+            experiment_name = os.path.basename(os.getcwd())
+            run_name = os.path.basename(self.output).split("_")
+            run_name = "-".join(run_name[0:2])
+            description = f"{self.cfg.MODEL.NAME} {self.cfg.DATASET.NAME} {self.cfg.TAG} / {self.cfg.MODEL.WEIGHT}"
+            self.mlflow_logger = MlflowLogger(self.cfg, experiment_name, run_name, description)
+            self.mlflow_logger.log_tag("phase", "Test")
+            self.mlflow_logger.log_tag("test weight path", self.cfg.MODEL.WEIGHT)
+
+    def log_metrics(self, phase, metric_names, metric_values, step: int):
+        for name, value in zip(metric_names, metric_values):
+            self.tb_logger.write_scalars(name, {phase: value}, step)
+            if self.mlflow_logger:
+                self.mlflow_logger.log_metric(f"{name}_{phase}", value, step)
 
 
 class TensorboardLogger:

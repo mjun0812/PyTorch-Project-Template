@@ -338,7 +338,7 @@ def main(cfg: DictConfig):
                 message=f"Error\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
             )
             writer.close("FAILED")
-        if local_rank != -1:
+        if local_rank not in [0, -1]:
             dist.destroy_process_group()
         sys.exit(1)
 

@@ -2,7 +2,7 @@ import os
 import logging
 import csv
 import pprint
-import pathlib
+from pathlib import Path
 
 import torch
 
@@ -11,28 +11,21 @@ from tqdm import tqdm
 import hydra
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
-from sklearn import metrics
 from clearml import Task
 
-from kunai.torch_utils import (
-    set_device,
-    time_synchronized,
-)
+from kunai.torch_utils import set_device, time_synchronized
 from kunai.hydra_utils import set_hydra, validate_config
 from kunai.utils import get_cmd, get_git_hash, setup_logger
 
 from src.models import build_model
-from src.utils import (
-    post_slack,
-    make_result_dirs,
-)
+from src.utils import post_slack, make_result_dirs, TestLogger
 from train import build_dataset
 
 # Get root logger
 logger = logging.getLogger()
 
 
-def do_test(cfg, output_dir, device):
+def do_test(cfg, output_dir, device, writer):
     logger.info("Loading Dataset...")
     dataset, _ = build_dataset(cfg, phase="test")
     dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
@@ -41,6 +34,8 @@ def do_test(cfg, output_dir, device):
     model = build_model(cfg).to(device)
     model.load_state_dict(torch.load(cfg.MODEL.WEIGHT, map_location=device))
     logger.info("Complete load model")
+
+    metric_names = ["result", "Speed/s", "fps"]
 
     inference_speed = 0
     metric = 0
@@ -64,6 +59,9 @@ def do_test(cfg, output_dir, device):
         f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
     )
 
+    # self, phase, metric_names, metric_values, step: int
+    writer.log_metrics("test", metric_names, [metric, inference_speed, 1.0 / inference_speed])
+
     # 評価結果の保存
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
         writer = csv.writer(f)
@@ -85,19 +83,6 @@ def main(cfg: DictConfig):
         weight_dir_list = cfg.MODEL.WEIGHT.split("/")
         weight_dir_list[-3] = config_path
         cfg.MODEL.WEIGHT = os.path.join(*weight_dir_list)
-        logger.info(f"Weight Path Changed {cfg.MODEL.WEIGHT}")
-
-    output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
-    setup_logger(-1, os.path.join(output_dir, "test.log"))
-    OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
-
-    logger.info(f"Command: {get_cmd()}")
-    logger.info(f"Make output_dir at {output_dir}")
-    logger.info(f"Git Hash: {get_git_hash()}")
-    with open(
-        os.path.join(os.path.dirname(os.path.dirname(output_dir)), "cmd_histry.log"), "a"
-    ) as f:
-        print(get_cmd(), file=f)
 
     # ClearML
     if cfg.USE_CLEARML:
@@ -105,15 +90,33 @@ def main(cfg: DictConfig):
         if cfg.TAG:
             prefix += f"_{cfg.TAG}"
         Task.init(
-            project_name=pathlib.Path.cwd().name,
+            project_name=Path.cwd().name,
             task_name=prefix,
             task_type=Task.TaskTypes.testing,
         )
 
+    output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
+
+    setup_logger(-1, os.path.join(output_dir, "test.log"))
+    logger.info(f"Command: {get_cmd()}")
+    logger.info(f"Make output_dir at {output_dir}")
+    logger.info(f"Git Hash: {get_git_hash()}")
+    with open(Path(output_dir).parents[1] / "cmd_histry.log", "a") as f:
+        print(get_cmd(), file=f)
+    OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
+
+    # Set Tensorboard, MLflow
+    writer = TestLogger(cfg, output_dir, str(Path(output_dir).parents[2]))
+    writer.log_artifact(os.path.join(output_dir, "config.yaml"))
+    writer.log_tag("model_weight", cfg.MODEL.WEIGHT)
+
     # set Device
     device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
 
-    result = do_test(cfg, output_dir, device)
+    result = do_test(cfg, output_dir, device, writer)
+
+    writer.log_artifacts(output_dir)
+    writer.close()
 
     message = pprint.pformat(
         {

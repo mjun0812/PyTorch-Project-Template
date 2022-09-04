@@ -6,7 +6,7 @@ from .utils import (
     plot_graph,
     plot_multi_graph,
 )
-from .logger import TensorboardLogger, MlflowLogger, TrainLogger
+from .logger import TensorboardLogger, MlflowLogger, TrainLogger, TestLogger
 from .torch_utils import (
     build_optimizer,
     build_lr_scheduler,
