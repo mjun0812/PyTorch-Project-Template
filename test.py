@@ -67,7 +67,7 @@ def do_test(cfg, output_dir, device, writer):
     metric_names = ["result", "Speed/s", "fps"]
     metric_values = [metric, inference_speed, 1.0 / inference_speed]
     for name, value in zip(metric_names, metric_values):
-        writer.log_metric(name, value, "test")
+        writer.log_metric(name, value, "test", None)
         if cfg.USE_CLEARML:
             Task.current_task().get_logger().report_single_value(name, value)
     return metric
