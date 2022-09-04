@@ -19,7 +19,7 @@ from kunai.utils import get_cmd, get_git_hash, setup_logger
 
 from src.models import build_model
 from src.utils import post_slack, make_result_dirs, TestLogger
-from train import build_dataset
+from src.dataloaders import build_dataset
 
 # Get root logger
 logger = logging.getLogger()

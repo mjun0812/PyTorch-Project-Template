@@ -8,8 +8,6 @@ import pprint
 
 import torch
 import torch.distributed as dist
-from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
 
 from tqdm import tqdm
 import numpy as np
@@ -24,15 +22,13 @@ from kunai.torch_utils import (
     save_model,
     save_model_info,
     set_device,
-    worker_init_fn,
     check_model_parallel,
 )
 from kunai.utils import get_cmd, get_git_hash, setup_logger, make_output_dirs
 
-from src.dataloaders import Dataset
+from src.dataloaders import build_dataset
 from src.losses import build_loss
 from src.models import build_model
-from src.transform import build_transforms
 from src.utils import (
     TrainLogger,
     build_lr_scheduler,
@@ -45,36 +41,6 @@ from test import do_test
 
 # Get root logger
 logger = logging.getLogger()
-
-
-def build_dataset(cfg, phase="train", rank=-1):
-    if phase == "train":
-        filelist = cfg.DATASET.TRAIN_LIST
-    elif phase == "val":
-        filelist = cfg.DATASET.VAL_LIST
-    elif phase == "test":
-        filelist = cfg.DATASET.TEST_LIST
-
-    transform = build_transforms(cfg, phase=phase)
-    dataset = Dataset(cfg, filelist)
-    logger.info(f"{phase.capitalize()} Dataset sample num: {len(dataset)}")
-    logger.info(f"{phase.capitalize()} transform: {transform}")
-
-    common_kwargs = {
-        "pin_memory": True,
-        "num_workers": cfg.NUM_WORKER,
-        "batch_size": cfg.BATCH,
-        "sampler": None,
-        "worker_init_fn": worker_init_fn,
-        "drop_last": True,
-        "shuffle": True,
-    }
-    if rank != -1 and phase == "train":
-        common_kwargs["shuffle"] = False
-        common_kwargs["sampler"] = DistributedSampler(dataset, shuffle=True)
-    dataloader = DataLoader(dataset, **common_kwargs)
-
-    return dataset, dataloader
 
 
 def load_last_weight(cfg, model):
