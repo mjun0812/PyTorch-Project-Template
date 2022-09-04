@@ -38,7 +38,9 @@ from src.utils import (
     build_lr_scheduler,
     build_optimizer,
     post_slack,
+    make_result_dirs,
 )
+from test import do_test
 
 
 # Get root logger
@@ -369,13 +371,38 @@ def main(cfg: DictConfig):
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
         writer.log_artifact(os.path.join(output_dir, "config.yaml"))
         writer.log_artifacts(output_dir)
-        writer.close()
 
     # Clean Up multi gpu process
     if local_rank not in [0, -1]:
         dist.destroy_process_group()
     torch.cuda.empty_cache()
 
+    # Test
+    if local_rank in [0, -1]:
+        logger.info("Start Test")
+        writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
+        output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
+        if cfg.CPU:
+            device = torch.device("cpu")
+        else:
+            device = torch.device("cuda:0")
+        result = do_test(cfg, output_dir, device, writer)
+        writer.log_artifacts(output_dir)
+        writer.close()
+        message = pprint.pformat(
+            {
+                "host": os.uname()[1],
+                "tag": cfg.TAG,
+                "model": cfg.MODEL.NAME,
+                "dataset": cfg.DATASET.NAME,
+                "save": output_dir,
+                "result": f"{result:7.3f}",
+            },
+            width=150,
+        )
+        # Send Message to Slack
+        post_slack(message=f"Finish Test\n{message}")
+        logger.info(f"Finish Test {message}")
     return result
 
 
