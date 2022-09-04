@@ -4,11 +4,15 @@ import logging
 from dotenv import load_dotenv
 import mlflow
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as font_manager
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa
+import matplotlib.font_manager as font_manager  # noqa
 
 # Get root logger
 logger = logging.getLogger()

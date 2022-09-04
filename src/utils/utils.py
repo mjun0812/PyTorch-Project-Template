@@ -2,10 +2,15 @@ import os
 import datetime
 import logging
 
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as font_manager
 from dotenv import load_dotenv
 import kunai
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa
+import matplotlib.font_manager as font_manager  # noqa
+
 
 logger = logging.getLogger()
 
