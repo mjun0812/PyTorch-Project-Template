@@ -137,6 +137,11 @@ class TestLogger(TrainLogger):
             self.mlflow_logger.log_tag("phase", "Test")
             self.mlflow_logger.log_tag("test weight path", self.cfg.MODEL.WEIGHT)
 
+    def log_metric(self, name, metric, phase):
+        self.tb_logger.write_scalars(name, {phase: metric}, None)
+        if self.mlflow_logger:
+            self.mlflow_logger.log_metric(f"{name}_{phase}", metric)
+
     def log_metrics(self, phase, metric_names, metric_values, step: int):
         for name, value in zip(metric_names, metric_values):
             self.tb_logger.write_scalars(name, {phase: value}, step)

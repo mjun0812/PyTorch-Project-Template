@@ -35,8 +35,6 @@ def do_test(cfg, output_dir, device, writer):
     model.load_state_dict(torch.load(cfg.MODEL.WEIGHT, map_location=device))
     logger.info("Complete load model")
 
-    metric_names = ["result", "Speed/s", "fps"]
-
     inference_speed = 0
     metric = 0
     results = []
@@ -60,15 +58,18 @@ def do_test(cfg, output_dir, device, writer):
     )
 
     # self, phase, metric_names, metric_values, step: int
-    writer.log_metrics("test", metric_names, [metric, inference_speed, 1.0 / inference_speed])
 
     # 評価結果の保存
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
         writer = csv.writer(f)
         writer.writerows(results)
 
-    if cfg.USE_CLEARML:
-        Task.current_task().get_logger().report_single_value("metrics", metric)
+    metric_names = ["result", "Speed/s", "fps"]
+    metric_values = [metric, inference_speed, 1.0 / inference_speed]
+    for name, value in zip(metric_names, metric_values):
+        writer.log_metric(name, value, "test")
+        if cfg.USE_CLEARML:
+            Task.current_task().get_logger().report_single_value(name, value)
     return metric
 
 
@@ -97,7 +98,7 @@ def main(cfg: DictConfig):
 
     output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
 
-    setup_logger(-1, os.path.join(output_dir, "test.log"))
+    setup_logger(os.path.join(output_dir, "test.log"))
     logger.info(f"Command: {get_cmd()}")
     logger.info(f"Make output_dir at {output_dir}")
     logger.info(f"Git Hash: {get_git_hash()}")
