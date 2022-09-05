@@ -30,8 +30,9 @@ class TrainLogger:
         self.mlflow_logger = None
         if self.cfg.USE_MLFLOW:
             experiment_name = os.path.basename(os.getcwd())
-            run_name = os.path.basename(self.output).split("_")
-            run_name = "-".join(run_name[0:2])
+            run_name = os.path.basename(self.output)
+            # run_name = os.path.basename(self.output).split("_")
+            # run_name = "-".join(run_name[0:2])
             description = f"{self.cfg.MODEL.NAME} {self.cfg.DATASET.NAME} {self.cfg.TAG}"
             self.mlflow_logger = MlflowLogger(self.cfg, experiment_name, run_name, description)
             self.mlflow_logger.log_tag("phase", "Train")
