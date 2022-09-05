@@ -311,18 +311,16 @@ def main(cfg: DictConfig):
         sys.exit(1)
 
     if local_rank in [0, -1]:
-        message = pprint.pformat(
-            {
-                "host": os.uname()[1],
-                "tag": cfg.TAG,
-                "model": cfg.MODEL.NAME,
-                "dataset": cfg.DATASET.NAME,
-                "save": output_dir,
-                "result": f"{result:7.3f}",
-                "test_cmd": f"python test.py -cp {output_dir}",
-            },
-            width=150,
-        )
+        message_dict = {
+            "host": os.uname()[1],
+            "tag": cfg.TAG,
+            "model": cfg.MODEL.NAME,
+            "dataset": cfg.DATASET.NAME,
+            "Train save": output_dir,
+            "Val Loss": f"{result:7.3f}",
+            "Test Cmd": f"python test.py -cp {output_dir}",
+        }
+        message = pprint.pformat(message_dict, width=150)
         # Send Message to Slack
         post_slack(message=f"Finish Training\n{message}")
         logger.info(f"Finish Training {message}")
@@ -355,17 +353,9 @@ def main(cfg: DictConfig):
         result = do_test(cfg, output_dir, device, writer)
         writer.log_artifacts(output_dir)
         writer.close()
-        message = pprint.pformat(
-            {
-                "host": os.uname()[1],
-                "tag": cfg.TAG,
-                "model": cfg.MODEL.NAME,
-                "dataset": cfg.DATASET.NAME,
-                "save": output_dir,
-                "result": f"{result:7.3f}",
-            },
-            width=150,
-        )
+        message_dict["Test save"] = output_dir
+        message_dict["result"] = result
+        message = pprint.pformat(message_dict, width=150)
         # Send Message to Slack
         post_slack(message=f"Finish Test\n{message}")
         logger.info(f"Finish Test {message}")
