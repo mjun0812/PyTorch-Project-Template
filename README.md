@@ -4,9 +4,10 @@ My PyTorch Project Template.
 
 ## Environments
 
-- Python >= 3.7
-- PyTorch >= 1.10.1, != 1.12.0
+- Python >= 3.9
+- PyTorch >= 1.11.0, != 1.12.0
 - [kunai](https://github.com/mjun0812/kunai) (My Python Package)
+- CUDA >= 11.0
 
 ## Features
 
@@ -15,8 +16,8 @@ My PyTorch Project Template.
 - Use [Hydra](https://github.com/facebookresearch/hydra) Config file management (YAML)
 - Continue Training from your own weight
 - Early Stopping
+- [ClearML](https://clear.ml), MLflow manage experiments
 - Tensorboard Logging
-- [ClearML](https://clear.ml) manage experiments
 
 ## Install
 
