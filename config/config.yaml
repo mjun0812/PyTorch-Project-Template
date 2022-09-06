@@ -4,6 +4,7 @@ defaults:
   - MODEL: model
   - DATASET: dataset
   - override hydra/job_logging: disabled
+  - override hydra/hydra_logging: disabled
   - override hydra/sweeper: optuna
   - override hydra/sweeper/sampler: tpe
 
@@ -38,8 +39,9 @@ USE_CLEARML: False
 USE_MLFLOW: True
 
 hydra:
+  output_subdir: null
   run:
-    dir: ./result/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: .
   sweeper:
     sampler:
       seed: 123
