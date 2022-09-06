@@ -9,6 +9,7 @@ docker run \
     -it \
     --gpus all \
     --rm \
+    --net host \
     --shm-size=128g \
     --env DISPLAY=$DISPLAY \
     --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
