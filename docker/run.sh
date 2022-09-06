@@ -7,7 +7,6 @@ pwd
 
 docker run \
     -it \
-    -d \
     --gpus all \
     --rm \
     --shm-size=128g \

@@ -130,7 +130,8 @@ RUN touch /home/${USER_NAME}/.zshrc
 RUN pip install --no-cache-dir -U pip wheel
 
 # 存在が不確定なものをCOPYするときには，1つは存在するものを入れなければならない
-COPY ./ .
+COPY ./ workspace
+WORKDIR /home/${USER_NAME}/workspace
 
 # pip install from requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt

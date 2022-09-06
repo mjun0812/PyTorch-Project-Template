@@ -6,6 +6,7 @@ defaults:
   - override hydra/job_logging: disabled
   - override hydra/sweeper: optuna
   - override hydra/sweeper/sampler: tpe
+  - override hydra/run/dir: ./result/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 # Training Params
 EPOCH: 150
