@@ -15,9 +15,11 @@ requests
 scikit-learn
 tabulate
 tensorboard
-torch
-torchinfo >= 1.7.0
-torchvision
 tqdm
 clearml
 mlflow
+torchinfo >= 1.7.0
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.12.1+cu113
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torchvision==0.13.1+cu113
