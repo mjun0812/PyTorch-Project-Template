@@ -257,7 +257,7 @@ def main(cfg: DictConfig):
         # ClearML
         if cfg.USE_CLEARML:
             try:
-                Task.init(project_name=pathlib.Path.cwd().name, task_name=prefix)
+                Task.init(project_name=cfg.EXPERIMENT_NAME, task_name=prefix)
             except Exception:
                 logger.info("Not Installed ClearML")
 

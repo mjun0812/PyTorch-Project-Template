@@ -7,6 +7,7 @@ defaults:
   - override hydra/hydra_logging: disabled
   - override hydra/sweeper: optuna
   - override hydra/sweeper/sampler: tpe
+  - override hydra/run/dir: ./result/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 # Training Params
 EPOCH: 150
@@ -37,6 +38,7 @@ TAG: ""
 
 USE_CLEARML: False
 USE_MLFLOW: True
+EXPERIMENT_NAME: "pytorch-project-template"
 
 hydra:
   output_subdir: null

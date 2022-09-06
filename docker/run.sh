@@ -7,12 +7,15 @@ pwd
 
 docker run \
     -it \
-    -d \
     --gpus all \
     --rm \
     --shm-size=128g \
+    --env DISPLAY=$DISPLAY \
+    --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
+    --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
     --volume "$(dirname $(pwd))/dataset:/home/${USER}/dataset" \
     --volume "$(pwd)/result:/home/${USER}/workspace/result" \
-    --name "${IMAGE_NAME}" \
+    --name "${IMAGE_NAME}-$(date '+%s')" \
     "${USER}/${IMAGE_NAME}-server:latest" \
     $@
+
