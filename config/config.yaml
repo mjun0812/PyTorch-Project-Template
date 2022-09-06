@@ -36,6 +36,7 @@ TAG: ""
 
 USE_CLEARML: False
 USE_MLFLOW: True
+EXPERIMENT_NAME: "pytorch-project-template"
 
 hydra:
   run:
