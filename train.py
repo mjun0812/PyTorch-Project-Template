@@ -345,20 +345,21 @@ def main(cfg: DictConfig):
     if local_rank in [0, -1]:
         logger.info("Start Test")
         writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
-        output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
+        output_result_dir = make_result_dirs(cfg.MODEL.WEIGHT)
         if cfg.CPU:
             device = torch.device("cpu")
         else:
             device = torch.device("cuda:0")
-        result = do_test(cfg, output_dir, device, writer)
-        writer.log_artifacts(output_dir)
-        writer.close()
-        message_dict["Test save"] = output_dir
+        result = do_test(cfg, output_result_dir, device, writer)
+        message_dict["Test save"] = output_result_dir
         message_dict["result"] = result
         message = pprint.pformat(message_dict, width=150)
         # Send Message to Slack
         post_slack(message=f"Finish Test\n{message}")
         logger.info(f"Finish Test {message}")
+        writer.log_artifacts(output_dir)
+        writer.log_artifacts(output_result_dir)
+        writer.close()
     return result
 
 
