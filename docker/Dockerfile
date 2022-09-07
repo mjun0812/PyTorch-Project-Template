@@ -129,12 +129,13 @@ RUN touch /home/${USER_NAME}/.zshrc
 # install python package
 RUN pip install --no-cache-dir -U pip wheel
 
-# 存在が不確定なものをCOPYするときには，1つは存在するものを入れなければならない
-COPY --chown=${USER_NAME}:${GROUP_NAME} ./ workspace
 WORKDIR /home/${USER_NAME}/workspace
 
 # pip install from requirements.txt
+COPY --chown=${USER_NAME}:${GROUP_NAME} ./requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY --chown=${USER_NAME}:${GROUP_NAME} ./ ./
 
 CMD ["/usr/bin/zsh"]
 
