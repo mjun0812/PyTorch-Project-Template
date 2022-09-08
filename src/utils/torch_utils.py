@@ -13,8 +13,10 @@ def build_optimizer(cfg, model):
         optimizer = optim.AdamW(model.parameters(), lr=cfg.LR)
     elif optimizer_name == "Adam":
         optimizer = optim.Adam(model.parameters(), lr=cfg.LR)
-    elif optimizer_name == "SGD":
+    elif optimizer_name == "Momentum":
         optimizer = optim.SGD(model.parameters(), lr=cfg.LR, momentum=0.937, nesterov=True)
+    elif optimizer_name == "SGD":
+        optimizer = optim.SGD(model.parameters(), lr=cfg.LR)
     logger.info(f"Using Optimizer is {optimizer_name}")
     return optimizer
 
@@ -42,7 +44,13 @@ def build_lr_scheduler(cfg, optimizer):
         )
     elif lr_scheduler_name == "CosineAnnealingWarmupReduceRestarts":
         scheduler = CosineAnnealingWarmupReduceRestarts(
-            optimizer, first_cycle_steps=10, cycle_mult=2, max_lr=0.1, min_lr=1e-6, gamma=0.5, warmup_steps=5
+            optimizer,
+            first_cycle_steps=10,
+            cycle_mult=2,
+            max_lr=0.1,
+            min_lr=1e-6,
+            gamma=0.5,
+            warmup_steps=5,
         )
     logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
     return scheduler
@@ -146,14 +154,14 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
                     )
                     self.cycle = n
                     self.step_in_cycle = epoch - int(
-                        self.first_cycle_steps * (self.cycle_mult ** n - 1) / (self.cycle_mult - 1)
+                        self.first_cycle_steps * (self.cycle_mult**n - 1) / (self.cycle_mult - 1)
                     )
                     self.cur_cycle_steps = self.first_cycle_steps * self.cycle_mult ** (n)
             else:
                 self.cur_cycle_steps = self.first_cycle_steps
                 self.step_in_cycle = epoch
 
-        self.max_lr = self.base_max_lr * (self.gamma ** self.cycle)
+        self.max_lr = self.base_max_lr * (self.gamma**self.cycle)
         self.last_epoch = math.floor(epoch)
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
             param_group["lr"] = lr

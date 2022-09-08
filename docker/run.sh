@@ -16,6 +16,7 @@ docker run \
     --volume $HOME/.cache:$HOME/.cache \
     --volume "$(dirname $(pwd))/dataset:/home/${USER}/dataset" \
     --volume "$(pwd)/result:/home/${USER}/workspace/result" \
+    --volume "$(pwd)/config:/home/${USER}/workspace/config" \
     --name "${IMAGE_NAME}-$(date '+%s')" \
     "${USER}/${IMAGE_NAME}-server:latest" \
     $@
