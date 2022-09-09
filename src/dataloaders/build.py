@@ -36,7 +36,7 @@ def build_dataset(cfg, phase="train", rank=-1):
     }
     if rank != -1:
         common_kwargs["shuffle"] = False
-        common_kwargs["sampler"] = DistributedSampler(dataset, shuffle=phase == "train")
+        common_kwargs["sampler"] = DistributedSampler(dataset, shuffle=(phase == "train"))
     dataloader = DataLoader(dataset, **common_kwargs)
 
     return dataset, dataloader

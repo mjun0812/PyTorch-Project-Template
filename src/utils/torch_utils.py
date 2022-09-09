@@ -11,6 +11,7 @@ def build_optimizer(cfg, model, world_size=1):
     optimizer_name = cfg.OPTIMIZER
     lr = cfg.LR
     if world_size > 1:
+        # https://github.com/Lightning-AI/lightning/discussions/3706
         lr = lr * math.sqrt(world_size)
     if optimizer_name == "AdamW":
         optimizer = optim.AdamW(model.parameters(), lr=lr)
