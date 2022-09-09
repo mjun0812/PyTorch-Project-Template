@@ -9,14 +9,20 @@ import torch.optim as optim
 logger = logging.getLogger()
 
 
-def build_optimizer(cfg, model):
+def build_optimizer(cfg, model, world_size=1):
     optimizer_name = cfg.OPTIMIZER
+    lr = cfg.LR
+    if world_size > 1:
+        # https://github.com/Lightning-AI/lightning/discussions/3706
+        lr = lr * math.sqrt(world_size)
     if optimizer_name == "AdamW":
-        optimizer = optim.AdamW(model.parameters(), lr=cfg.LR)
+        optimizer = optim.AdamW(model.parameters(), lr=lr)
     elif optimizer_name == "Adam":
-        optimizer = optim.Adam(model.parameters(), lr=cfg.LR)
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+    elif optimizer_name == "Momentum":
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.937, nesterov=True)
     elif optimizer_name == "SGD":
-        optimizer = optim.SGD(model.parameters(), lr=cfg.LR, momentum=0.937, nesterov=True)
+        optimizer = optim.SGD(model.parameters(), lr=lr)
     logger.info(f"Using Optimizer is {optimizer_name}")
     return optimizer
 
