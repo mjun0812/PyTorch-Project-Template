@@ -132,7 +132,7 @@ def do_train(rank, cfg, output_dir, writer):
         save_model(model, save_model_path / f"model_init_{last_epoch}.pth")
 
     criterion = build_loss(cfg)
-    optimizer = build_optimizer(cfg, model)
+    optimizer = build_optimizer(cfg, model, torch.cuda.device_count())
     scheduler = build_lr_scheduler(cfg, optimizer)
 
     max_epoch = cfg.EPOCH + last_epoch
