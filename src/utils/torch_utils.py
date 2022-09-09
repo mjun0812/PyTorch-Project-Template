@@ -1,6 +1,8 @@
 import logging
 import math
 
+from timm.scheduler import CosineLRScheduler
+
 import torch.optim as optim
 
 
@@ -42,7 +44,22 @@ def build_lr_scheduler(cfg, optimizer):
         )
     elif lr_scheduler_name == "CosineAnnealingWarmupReduceRestarts":
         scheduler = CosineAnnealingWarmupReduceRestarts(
-            optimizer, first_cycle_steps=10, cycle_mult=2, max_lr=0.1, min_lr=1e-6, gamma=0.5, warmup_steps=5
+            optimizer,
+            first_cycle_steps=10,
+            cycle_mult=2,
+            max_lr=0.1,
+            min_lr=1e-6,
+            gamma=0.5,
+            warmup_steps=5,
+        )
+    elif lr_scheduler_name == "CosineLRScheduler":
+        scheduler = CosineLRScheduler(
+            optimizer,
+            t_initial=cfg.EPOCH,
+            lr_min=1e-6,
+            warmup_t=cfg.EPOCH // 10,
+            warmup_lr_init=5e-5,
+            warmup_prefix=True,
         )
     logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
     return scheduler
@@ -146,14 +163,14 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
                     )
                     self.cycle = n
                     self.step_in_cycle = epoch - int(
-                        self.first_cycle_steps * (self.cycle_mult ** n - 1) / (self.cycle_mult - 1)
+                        self.first_cycle_steps * (self.cycle_mult**n - 1) / (self.cycle_mult - 1)
                     )
                     self.cur_cycle_steps = self.first_cycle_steps * self.cycle_mult ** (n)
             else:
                 self.cur_cycle_steps = self.first_cycle_steps
                 self.step_in_cycle = epoch
 
-        self.max_lr = self.base_max_lr * (self.gamma ** self.cycle)
+        self.max_lr = self.base_max_lr * (self.gamma**self.cycle)
         self.last_epoch = math.floor(epoch)
         for param_group, lr in zip(self.optimizer.param_groups, self.get_lr()):
             param_group["lr"] = lr

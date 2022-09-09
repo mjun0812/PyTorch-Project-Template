@@ -10,15 +10,15 @@ defaults:
   - override hydra/run/dir: ./result/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 # Training Params
-EPOCH: 150
-BATCH: 2
+EPOCH: 200
+BATCH: 16
 VAL_INTERVAL: 5
 SAVE_INTERVAL: 5
 EARLY_STOP_PATIENCE: 0
 CONTINUE_TRAIN: False
 
 OPTIMIZER: "AdamW"
-LR_SCHEDULER: "ReduceLROnPlateau"
+LR_SCHEDULER: "CosineLRScheduler"
 LR: 1e-3
 
 # Device Params

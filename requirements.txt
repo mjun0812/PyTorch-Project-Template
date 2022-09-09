@@ -15,6 +15,7 @@ requests
 scikit-learn
 tabulate
 tensorboard
+timm
 tqdm
 clearml
 mlflow
