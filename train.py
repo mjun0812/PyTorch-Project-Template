@@ -192,6 +192,8 @@ def do_train(rank, cfg, output_dir, writer):
             if phase == "train":
                 if cfg.LR_SCHEDULER == "ReduceLROnPlateau":
                     scheduler.step(epoch_loss)
+                elif cfg.LR_SCHEDULER == "CosineLRScheduler":
+                    scheduler.step(epoch + 1)
                 else:
                     scheduler.step()
 
