@@ -1,6 +1,8 @@
 import logging
 import math
 
+from timm.scheduler import CosineLRScheduler
+
 import torch.optim as optim
 
 
@@ -55,6 +57,15 @@ def build_lr_scheduler(cfg, optimizer):
             min_lr=1e-6,
             gamma=0.5,
             warmup_steps=5,
+        )
+    elif lr_scheduler_name == "CosineLRScheduler":
+        scheduler = CosineLRScheduler(
+            optimizer,
+            t_initial=cfg.EPOCH,
+            lr_min=1e-6,
+            warmup_t=cfg.EPOCH // 10,
+            warmup_lr_init=5e-5,
+            warmup_prefix=True,
         )
     logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
     return scheduler
