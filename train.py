@@ -293,8 +293,6 @@ def main(cfg: DictConfig):
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
-        os.environ["MASTER_ADDR"] = "localhost"
-        os.environ["MASTER_PORT"] = str(random.randint(20000, 50000))
         dist.init_process_group(backend="nccl", init_method="env://")
         logging.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
