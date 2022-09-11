@@ -4,7 +4,7 @@ cd $(dirname $0)
 cd ../
 IMAGE_NAME=$(basename $(pwd))
 
-PYTHON="3.10.6"
+PYTHON="3.10.7"
 CUDA_VERSION="11.3.1"
 UBUNTU="20.04"
 CUDNN="8"

@@ -74,19 +74,19 @@ RUN apt-get update \
 # ctrl + dでコンテナが終了しないようにする
 # exit or 10回打てば終了する
 RUN echo 'set -o ignoreeof' >> /etc/zsh/zshrc
- 
+
 RUN echo 'export PATH="~/.local/bin:$PATH"' >> /etc/zsh/zshrc
 
 RUN { \
-echo "export HISTSIZE=10000"; \
-echo "export SAVEHIST=10000"; \
-echo "export LS_OPTIONS='--color=auto'"; \
-echo "alias ls='ls \$LS_OPTIONS'"; \
-echo "autoload -Uz compinit"; \ 
-echo "compinit"; \
-echo "zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'"; \
-echo "zstyle ':completion:*' menu select=2"; \
-} >> /etc/zsh/zshrc
+    echo "export HISTSIZE=10000"; \
+    echo "export SAVEHIST=10000"; \
+    echo "export LS_OPTIONS='--color=auto'"; \
+    echo "alias ls='ls \$LS_OPTIONS'"; \
+    echo "autoload -Uz compinit"; \ 
+    echo "compinit"; \
+    echo "zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'"; \
+    echo "zstyle ':completion:*' menu select=2"; \
+    } >> /etc/zsh/zshrc
 
 RUN wget -q "https://www.python.org/ftp/python/${PYTHON}/Python-${PYTHON}.tar.xz" &&\
     tar xvf Python-${PYTHON}.tar.xz && \
@@ -135,7 +135,7 @@ WORKDIR /home/${USER_NAME}/workspace
 COPY --chown=${USER_NAME}:${GROUP_NAME} ./requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=${USER_NAME}:${GROUP_NAME} ./ ./
+# COPY --chown=${USER_NAME}:${GROUP_NAME} ./ ./
 
 CMD ["/usr/bin/zsh"]
 

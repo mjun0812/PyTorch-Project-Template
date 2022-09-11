@@ -4,24 +4,49 @@ My PyTorch Project Template.
 
 ## Environments
 
+This repository provided Dockerfile. But you can execute in local environment.
+
+- CUDA >= 11.0
 - Python >= 3.9
 - PyTorch >= 1.11.0, != 1.12.0
 - [kunai](https://github.com/mjun0812/kunai) (My Python Package)
-- CUDA >= 11.0
 
 ## Features
 
+- Provided Docker environment
 - Distributed Multi GPU Training
 - Mix Precision(`torch.amp`) Training
 - Use [Hydra](https://github.com/facebookresearch/hydra) Config file management (YAML)
 - Continue Training from your own weight
 - Early Stopping
-- [ClearML](https://clear.ml), MLflow manage experiments
+- MLflow, [ClearML](https://clear.ml) manage experiments
 - Tensorboard Logging
 
 ## Install
 
 `pip install -r requirements.txt`
+
+### Optional: MLflow
+
+Set up MLflow Tracking at local storage or remote server.
+
+```bash
+$ cp template.env .env
+$ vim .env
+
+SLACK_TOKEN="HOGE"
+MLFLOW_TRACKING_URI=""
+# MLFLOW_TRACKING_USERNAME=""
+# MLFLOW_TRACKING_PASSWORD=""
+```
+
+If `MLFLOW_TRACKING_URI` is blank(""), MLflow files is saved local directry.  
+`MLFLOW_TRACKING_USERNAME`, `MLFLOW_TRACKING_PASSWORD` is Basic Authentication parameters for remote MLflow Tracing server.  
+`USE_MLFLOW` is default `True`.
+
+```bash
+python train.py USE_MLFLOW=True EXPERIMENT_NAME="pytorch-experiment"
+```
 
 ### Optional: ClearML
 
@@ -36,7 +61,29 @@ After setup ClearML server, do below command.
 > clearml-init
 ```
 
-## Distributed Multi GPU Training
+`USE_CLEARML` is default `False`.
+
+```bash
+python test.py USE_CLEARML=True
+```
+
+## Usage
+
+```bash
+./config_list.sh # Show config list
+python train.py GPU.USE=1 # result outputs is ./result/20220911
+python test.py -cp result/20220911 GPU.USE=3
+```
+
+### Docker usage
+
+```bash
+./docker/build.sh # Build Docker Image from ./docker/Dockerfile
+./docker/run.sh python train.py GPU.USE=1
+./docker/run.sh python test.py -cp result/20220911 GPU.USE=3
+```
+
+### Distributed Multi GPU Training
 
 Distributed Multi GPU Training is implemented in this repository using `torchrun`.  
 Change Setting in `config/config.yaml`(below).
@@ -54,7 +101,8 @@ This setting can change from CLI using Hydra.
 
 ```bash
 # Single node, 2 GPUs
-torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py GPU.MULTI=True GPU.USE="'1,2'"
+./torchrun.sh 2 train.py GPU.MULTI=True GPU.USE="'1,2'"
+./docker/run.sh ./torchrun.sh 2 train.py GPU.MULTI=True GPU.USE="'1,2'"
 ```
 
 ## Required Editing
