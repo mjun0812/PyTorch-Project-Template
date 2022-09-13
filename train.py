@@ -205,9 +205,9 @@ def do_train(rank, cfg, output_dir, writer):
             epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
 
             if phase == "train":
-                if cfg.LR_SCHEDULER == "ReduceLROnPlateau":
+                if cfg.LR_SCHEDULER.NAME == "ReduceLROnPlateau":
                     scheduler.step(epoch_loss)
-                elif cfg.LR_SCHEDULER == "CosineLRScheduler":
+                elif cfg.LR_SCHEDULER.NAME == "CosineLRScheduler":
                     scheduler.step(epoch + 1)
                 else:
                     scheduler.step()
