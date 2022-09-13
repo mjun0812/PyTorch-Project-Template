@@ -40,6 +40,7 @@ def build_lr_scheduler(cfg, optimizer):
             optimizer,
             patience=cfg.OPTIMIZER.PATIENCE,
             verbose=True,
+            threshold=cfg.OPTIMIZER.THRESHOLD,
             mode="min",
             factor=cfg.OPTIMIZER.FACTOR,
             min_lr=cfg.OPTIMIZER.MIN_LR,
