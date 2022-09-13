@@ -32,7 +32,7 @@ def build_optimizer(cfg, model, world_size=1):
 
 
 def build_lr_scheduler(cfg, optimizer):
-    lr_scheduler_name = cfg.LR_SCHEDULER
+    lr_scheduler_name = cfg.LR_SCHEDULER.NAME
     if lr_scheduler_name == "ReduceLROnPlateau":
         # factor : 学習率の減衰率
         # patience : 何ステップ向上しなければlrを変更するか
