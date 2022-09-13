@@ -17,9 +17,13 @@ def build_optimizer(cfg, model):
     elif optimizer_name == "Adam":
         optimizer = optim.Adam(model.parameters(), lr=lr)
     elif optimizer_name == "NesterovMomentum":
-        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.937, nesterov=True)
+        optimizer = optim.SGD(
+            model.parameters(), lr=lr, momentum=cfg.OPTIMIZER.MOMENTUM, nesterov=True
+        )
     elif optimizer_name == "Momentum":
-        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.937, nesterov=False)
+        optimizer = optim.SGD(
+            model.parameters(), lr=lr, momentum=cfg.OPTIMIZER.MOMENTUM, nesterov=False
+        )
     elif optimizer_name == "SGD":
         optimizer = optim.SGD(model.parameters(), lr=lr)
     logger.info(f"Using Optimizer is {optimizer_name}")
