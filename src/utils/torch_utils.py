@@ -9,7 +9,7 @@ import torch.optim as optim
 logger = logging.getLogger()
 
 
-def build_optimizer(cfg, model):
+def build_optimizer(cfg, model, world_size=1):
     optimizer_name = cfg.OPTIMIZER.NAME
     lr = cfg.OPTIMIZER.LR
     if optimizer_name == "AdamW":
