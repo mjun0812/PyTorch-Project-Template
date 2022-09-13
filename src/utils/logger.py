@@ -205,9 +205,9 @@ class MlflowLogger:
 
     def log_hydra_config(self):
         parameters = {
-            "Optimizer": self.cfg.OPTIMIZER,
+            "Optimizer": self.cfg.OPTIMIZER.NAME,
             "LR scheduler": self.cfg.LR_SCHEDULER,
-            "Learning Rate": self.cfg.LR,
+            "Learning Rate": self.cfg.OPTIMIZER.LR,
             "Epoch": self.cfg.EPOCH,
             "Model": self.cfg.MODEL.NAME,
             "Dataset": self.cfg.DATASET.NAME,

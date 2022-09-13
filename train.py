@@ -15,6 +15,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from natsort import natsorted
 from clearml import Task
+from timm.utils import ModelEmaV2
 
 from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import (
@@ -114,6 +115,8 @@ def do_train(rank, cfg, output_dir, writer):
     # ###### Build Model #######
     model = build_model(cfg, device, rank=rank)
     last_epoch = load_last_weight(cfg, model)  # Train from exist weight
+    if cfg.MODEL_EMA:
+        model_ema = ModelEmaV2(model, decay=0.9998)
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
@@ -181,6 +184,9 @@ def do_train(rank, cfg, output_dir, writer):
                             loss.backward()
                             torch.nn.utils.clip_grad_norm_(model.parameters(), 10)
                             optimizer.step()
+                    torch.cuda.synchronize()
+                    if cfg.MODEL_EMA:
+                        model_ema.update(model)
 
                     hist_epoch_loss += loss * data.size(0)
                 if rank in [-1, 0]:

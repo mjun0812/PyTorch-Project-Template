@@ -9,21 +9,21 @@ import torch.optim as optim
 logger = logging.getLogger()
 
 
-def build_optimizer(cfg, model, world_size=1):
-    optimizer_name = cfg.OPTIMIZER
-    lr = cfg.LR
-    if world_size > 1:
-        # https://github.com/Lightning-AI/lightning/discussions/3706
-        lr = lr * math.sqrt(world_size)
+def build_optimizer(cfg, model):
+    optimizer_name = cfg.OPTIMIZER.NAME
+    lr = cfg.OPTIMIZER.LR
     if optimizer_name == "AdamW":
         optimizer = optim.AdamW(model.parameters(), lr=lr)
     elif optimizer_name == "Adam":
         optimizer = optim.Adam(model.parameters(), lr=lr)
-    elif optimizer_name == "Momentum":
+    elif optimizer_name == "NesterovMomentum":
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.937, nesterov=True)
+    elif optimizer_name == "Momentum":
+        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.937, nesterov=False)
     elif optimizer_name == "SGD":
         optimizer = optim.SGD(model.parameters(), lr=lr)
     logger.info(f"Using Optimizer is {optimizer_name}")
+    logger.info(f"Learning Rate: {lr}")
     return optimizer
 
 
@@ -34,37 +34,41 @@ def build_lr_scheduler(cfg, optimizer):
         # patience : 何ステップ向上しなければlrを変更するか
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
-            patience=cfg.EPOCH // 10,
+            patience=cfg.OPTIMIZER.PATIENCE,
             verbose=True,
             mode="min",
-            factor=0.5,
-            min_lr=1e-6,
-            cooldown=cfg.EPOCH // 10,
+            factor=cfg.OPTIMIZER.FACTOR,
+            min_lr=cfg.OPTIMIZER.MIN_LR,
+            cooldown=cfg.OPTIMIZER.COOLDOWN,
         )
     elif lr_scheduler_name == "CosineAnnealingWarmRestarts":
         # T_0を周期とするコサインカーブで減衰して、
         # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
         # 局所最適を脱出してもっと良いパラメータを探索します
         scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            optimizer, T_0=20, T_mult=2, eta_min=1e-6, verbose=False
+            optimizer,
+            T_0=cfg.LR_SCHEDULER.T_ZERO,
+            T_mult=cfg.LR_SCHEDULER.T_MULT,
+            eta_min=cfg.LR_SCHEDULER.ETA_MIN,
+            verbose=False,
         )
     elif lr_scheduler_name == "CosineAnnealingWarmupReduceRestarts":
         scheduler = CosineAnnealingWarmupReduceRestarts(
             optimizer,
-            first_cycle_steps=10,
-            cycle_mult=2,
-            max_lr=0.1,
-            min_lr=1e-6,
-            gamma=0.5,
-            warmup_steps=5,
+            first_cycle_steps=cfg.LR_SCHEDULER.FIRST_CYCLE_STEPS,
+            cycle_mult=cfg.LR_SCHEDULER.CYCLE_MULT,
+            max_lr=cfg.LR_SCHEDULER.MAX_LR,
+            min_lr=cfg.LR_SCHEDULER.MIN_LR,
+            gamma=cfg.LR_SCHEDULER.GAMMA,
+            warmup_steps=cfg.LR_SCHEDULER.WARMUP_STEPS,
         )
     elif lr_scheduler_name == "CosineLRScheduler":
         scheduler = CosineLRScheduler(
             optimizer,
-            t_initial=cfg.EPOCH,
-            lr_min=1e-6,
-            warmup_t=cfg.EPOCH // 10,
-            warmup_lr_init=5e-5,
+            t_initial=cfg.LR_SCHEDULER.T_INITIAL,
+            lr_min=cfg.LR_SCHEDULER.LR_MIN,
+            warmup_t=cfg.LR_SCHEDULER.WARMUP_T,
+            warmup_lr_init=cfg.LR_SCHEDULER.WARMUP_LR_INIT,
             warmup_prefix=True,
         )
     logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
