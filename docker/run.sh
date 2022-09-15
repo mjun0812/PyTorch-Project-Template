@@ -14,9 +14,10 @@ docker run \
     --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
     --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
     --volume $HOME/.cache:$HOME/.cache \
-    --volume "$(dirname $(pwd))/dataset:/home/${USER}/dataset" \
-    --volume "$(pwd):/home/${USER}/workspace/" \
-    --volume "$(pwd)/result:/home/${USER}/workspace/result" \
+    --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
+    --volume "$(pwd):$(pwd)" \
+    --volume "$(pwd)/result:$(pwd)/result" \
+    --workdir $(pwd) \
     --name "${IMAGE_NAME}-$(date '+%s')" \
     "${USER}/${IMAGE_NAME}-server:latest" \
     $@
