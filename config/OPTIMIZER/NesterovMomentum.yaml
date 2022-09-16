@@ -1,3 +1,4 @@
 NAME: NesterovMomentum
 LR: 1e-3
 MOMENTUM: 0.937
+WEIGHT_DECAY: 4e-5

@@ -18,11 +18,19 @@ def build_optimizer(cfg, model, world_size=1):
         optimizer = optim.Adam(model.parameters(), lr=lr)
     elif optimizer_name == "NesterovMomentum":
         optimizer = optim.SGD(
-            model.parameters(), lr=lr, momentum=cfg.OPTIMIZER.MOMENTUM, nesterov=True
+            model.parameters(),
+            lr=lr,
+            momentum=cfg.OPTIMIZER.MOMENTUM,
+            nesterov=True,
+            weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY,
         )
     elif optimizer_name == "Momentum":
         optimizer = optim.SGD(
-            model.parameters(), lr=lr, momentum=cfg.OPTIMIZER.MOMENTUM, nesterov=False
+            model.parameters(),
+            lr=lr,
+            momentum=cfg.OPTIMIZER.MOMENTUM,
+            nesterov=False,
+            weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY,
         )
     elif optimizer_name == "SGD":
         optimizer = optim.SGD(model.parameters(), lr=lr)
