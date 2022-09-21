@@ -3,6 +3,8 @@ defaults:
   # - _self_
   - MODEL: model
   - DATASET: dataset
+  - OPTIMIZER: AdamW
+  - LR_SCHEDULER: CosineLRScheduler
   - override hydra/job_logging: disabled
   - override hydra/hydra_logging: disabled
   - override hydra/sweeper: optuna
@@ -17,20 +19,17 @@ SAVE_INTERVAL: 5
 EARLY_STOP_PATIENCE: 0
 CONTINUE_TRAIN: False
 
-OPTIMIZER: "AdamW"
-LR_SCHEDULER: "CosineLRScheduler"
-LR: 1e-3
-
 # Device Params
 GPU:
   USE: 0
   MULTI: False
 CPU: False
 # Dataloader worker
-NUM_WORKER: 4
+NUM_WORKER: 8
 
 # Mixed Precision
 AMP: False
+MODEL_EMA: False
 
 # Output
 OUTPUT: ./result/

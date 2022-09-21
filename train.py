@@ -5,7 +5,6 @@ import sys
 import traceback
 import pathlib
 import pprint
-import random
 
 import torch
 import torch.distributed as dist
@@ -16,6 +15,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from natsort import natsorted
 from clearml import Task
+from timm.utils import ModelEmaV2
 
 from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import (
@@ -116,6 +116,8 @@ def do_train(rank, cfg, output_dir, writer):
     # ###### Build Model #######
     model = build_model(cfg, device, rank=rank)
     last_epoch = load_last_weight(cfg, model)  # Train from exist weight
+    if cfg.MODEL_EMA:
+        model_ema = ModelEmaV2(model, decay=0.9998)
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
@@ -136,6 +138,9 @@ def do_train(rank, cfg, output_dir, writer):
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model, torch.cuda.device_count())
     scheduler = build_lr_scheduler(cfg, optimizer)
+    if cfg.AMP:
+        logger.info("Using Mixed Precision with AMP")
+        scaler = torch.cuda.amp.GradScaler()
 
     max_epoch = cfg.EPOCH + last_epoch
     best_loss = 1e8
@@ -172,8 +177,17 @@ def do_train(rank, cfg, output_dir, writer):
                         loss = criterion(y)
 
                     if phase == "train":
-                        loss.backward()
-                        optimizer.step()
+                        if cfg.AMP:
+                            scaler.scale(loss).backward()
+                            scaler.step(optimizer)
+                            scaler.update()
+                        else:
+                            loss.backward()
+                            torch.nn.utils.clip_grad_norm_(model.parameters(), 10)
+                            optimizer.step()
+                    torch.cuda.synchronize()
+                    if cfg.MODEL_EMA:
+                        model_ema.update(model)
 
                     hist_epoch_loss += loss * data.size(0)
                 if rank in [-1, 0]:
@@ -192,9 +206,9 @@ def do_train(rank, cfg, output_dir, writer):
             epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
 
             if phase == "train":
-                if cfg.LR_SCHEDULER == "ReduceLROnPlateau":
+                if cfg.LR_SCHEDULER.NAME == "ReduceLROnPlateau":
                     scheduler.step(epoch_loss)
-                elif cfg.LR_SCHEDULER == "CosineLRScheduler":
+                elif cfg.LR_SCHEDULER.NAME == "CosineLRScheduler":
                     scheduler.step(epoch + 1)
                 else:
                     scheduler.step()
@@ -307,7 +321,7 @@ def main(cfg: DictConfig):
         if local_rank in [0, -1]:
             post_slack(
                 channel="#error",
-                message=f"Error\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
+                message=f"Error Train\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
             )
             writer.close("FAILED")
         if local_rank not in [0, -1]:
@@ -354,7 +368,16 @@ def main(cfg: DictConfig):
             device = torch.device("cpu")
         else:
             device = torch.device("cuda:0")
-        result = do_test(cfg, output_result_dir, device, writer)
+        try:
+            result = do_test(cfg, output_result_dir, device, writer)
+        except (Exception, KeyboardInterrupt) as e:
+            logger.error(f"{e}\n{traceback.format_exc()}")
+            post_slack(
+                channel="#error",
+                message=f"Error Test\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
+            )
+            writer.close("FAILED")
+            sys.exit(1)
         message_dict["Test save"] = output_result_dir
         message_dict["result"] = result
         message = pprint.pformat(message_dict, width=150)

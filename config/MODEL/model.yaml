@@ -8,3 +8,4 @@ LOSS: FocalLoss_EfficientDet
 INPUT_SIZE: 512
 # Load Weight Path
 WEIGHT: "./"
+SYNC_BN: False

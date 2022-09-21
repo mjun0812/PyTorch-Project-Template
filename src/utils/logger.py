@@ -136,7 +136,7 @@ class TestLogger(TrainLogger):
         if self.cfg.USE_MLFLOW:
             experiment_name = os.path.basename(os.getcwd())
             run_name = os.path.basename(self.output).split("_")
-            run_name = "-".join(run_name[0:2])
+            run_name = "-".join(run_name[0:2] + [self.cfg.MODEL.NAME, self.cfg.DATASET.NAME])
             description = f"{self.cfg.MODEL.NAME} {self.cfg.DATASET.NAME} {self.cfg.TAG} / {self.cfg.MODEL.WEIGHT}"
             self.mlflow_logger = MlflowLogger(self.cfg, experiment_name, run_name, description)
             self.mlflow_logger.log_tag("phase", "Test")
@@ -205,9 +205,9 @@ class MlflowLogger:
 
     def log_hydra_config(self):
         parameters = {
-            "Optimizer": self.cfg.OPTIMIZER,
+            "Optimizer": self.cfg.OPTIMIZER.NAME,
             "LR scheduler": self.cfg.LR_SCHEDULER,
-            "Learning Rate": self.cfg.LR,
+            "Learning Rate": self.cfg.OPTIMIZER.LR,
             "Epoch": self.cfg.EPOCH,
             "Model": self.cfg.MODEL.NAME,
             "Dataset": self.cfg.DATASET.NAME,

@@ -20,7 +20,8 @@ def build_model(cfg, device, rank=-1):
     model = model.to(device)
 
     if rank != -1:
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        if cfg.MODEL.SYNC_BN:
+            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
         model = DistributedDataParallel(
             model, device_ids=[rank], output_device=rank, find_unused_parameters=False
         )

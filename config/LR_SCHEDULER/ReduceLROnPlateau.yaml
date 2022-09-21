@@ -1,0 +1,8 @@
+NAME: ReduceLROnPlateau
+# factor : 学習率の減衰率
+# patience : 何ステップ向上しなければlrを変更するか
+PATIENCE: 5
+COOLDOWN: 5
+MIN_LR: 1e-6
+FACTOR: 0.5
+THRESHOLD: 0.1
