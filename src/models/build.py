@@ -25,5 +25,7 @@ def build_model(cfg, device, rank=-1):
         model = DistributedDataParallel(
             model, device_ids=[rank], output_device=rank, find_unused_parameters=False
         )
+        if cfg.MODEL_EMA:
+            model_ema.set(model)
 
     return model
