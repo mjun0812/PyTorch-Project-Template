@@ -323,6 +323,7 @@ def main(cfg: DictConfig):
                 channel="#error",
                 message=f"Error Train\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
             )
+            writer.log_artifacts(output_dir)
             writer.close("FAILED")
         if local_rank not in [0, -1]:
             dist.destroy_process_group()
