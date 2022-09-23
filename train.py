@@ -164,7 +164,7 @@ def do_train(rank, cfg, output_dir, writer):
             # Set progress bar
             progress_bar = enumerate(dataloaders[phase])
             if rank in [-1, 0]:
-                progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]))
+                progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]), dynamic_ncols=True)
 
             for _, data in progress_bar:
                 with torch.set_grad_enabled(phase == "train"):
