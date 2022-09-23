@@ -164,7 +164,9 @@ def do_train(rank, cfg, output_dir, writer):
             # Set progress bar
             progress_bar = enumerate(dataloaders[phase])
             if rank in [-1, 0]:
-                progress_bar = tqdm(progress_bar, total=len(dataloaders[phase]), dynamic_ncols=True)
+                progress_bar = tqdm(
+                    progress_bar, total=len(dataloaders[phase]), dynamic_ncols=True
+                )
 
             for _, data in progress_bar:
                 with torch.set_grad_enabled(phase == "train"):
@@ -204,9 +206,11 @@ def do_train(rank, cfg, output_dir, writer):
 
             if phase == "train":
                 if cfg.LR_SCHEDULER.NAME == "ReduceLROnPlateau":
-                    scheduler.step(epoch_loss, epoch=epoch + 1)
+                    scheduler.step(epoch_loss)
+                elif cfg.LR_SCHEDULER.NAME == "CosineLRScheduler":
+                    scheduler.step(epoch + 1)
                 else:
-                    scheduler.step(epoch=epoch + 1)
+                    scheduler.step()
 
             if rank in [-1, 0]:
                 logger.info(
