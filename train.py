@@ -204,18 +204,16 @@ def do_train(rank, cfg, output_dir, writer):
 
             if phase == "train":
                 if cfg.LR_SCHEDULER.NAME == "ReduceLROnPlateau":
-                    scheduler.step(epoch_loss)
-                elif cfg.LR_SCHEDULER.NAME == "CosineLRScheduler":
-                    scheduler.step(epoch + 1)
+                    scheduler.step(epoch_loss, epoch=epoch + 1)
                 else:
-                    scheduler.step()
+                    scheduler.step(epoch=epoch + 1)
 
             if rank in [-1, 0]:
                 logger.info(
                     f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
                     f"Loss: {epoch_loss:8.5f} "
                     f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
-                    f"Learning Rate: {optimizer.param_groups[0]['lr']:.4e}"
+                    f"LR: {optimizer.param_groups[0]['lr']:.4e}"
                 )
                 metric_values = [epoch_loss, optimizer.param_groups[0]["lr"]]
                 writer.log_metrics(phase, metrics, metric_values, epoch + 1)
