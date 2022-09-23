@@ -40,7 +40,7 @@ def do_test(cfg, output_dir, device, writer):
     results = []
     model.requires_grad_(False)
     model.eval()
-    progress_bar = tqdm(enumerate(dataloader), total=len(dataloader))
+    progress_bar = tqdm(enumerate(dataloader), total=len(dataloader), dynamic_ncols=True)
     for i, data in progress_bar:
         with torch.no_grad():
             input_data = data.to(device)
