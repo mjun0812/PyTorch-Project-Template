@@ -31,9 +31,9 @@ def do_test(cfg, output_dir, device, writer):
     dataset, _ = build_dataset(cfg, phase="test")
     dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
 
-    logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     model = build_model(cfg).to(device)
     model.load_state_dict(torch.load(cfg.MODEL.WEIGHT, map_location=device))
+    logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     logger.info("Complete load model")
 
     inference_speed = 0
@@ -67,6 +67,7 @@ def do_test(cfg, output_dir, device, writer):
 
     metric_dict = {"result": metric, "Speed/s": inference_speed, "fps": 1.0 / inference_speed}
     for name, value in metric_dict.items():
+        logger.info(f"{name}: {value}")
         writer.log_metric(name, value, "test", None)
         if cfg.USE_CLEARML:
             Task.current_task().get_logger().report_single_value(name, value)
