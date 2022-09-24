@@ -2,6 +2,7 @@ import os
 import logging
 import csv
 import pprint
+import json
 from pathlib import Path
 
 import torch
@@ -64,12 +65,12 @@ def do_test(cfg, output_dir, device, writer):
         writer = csv.writer(f)
         writer.writerows(results)
 
-    metric_names = ["result", "Speed/s", "fps"]
-    metric_values = [metric, inference_speed, 1.0 / inference_speed]
-    for name, value in zip(metric_names, metric_values):
+    metric_dict = {"result": metric, "Speed/s": inference_speed, "fps": 1.0 / inference_speed}
+    for name, value in metric_dict.items():
         writer.log_metric(name, value, "test", None)
         if cfg.USE_CLEARML:
             Task.current_task().get_logger().report_single_value(name, value)
+    json.dump(metric_dict, open(os.path.join(output_dir, "result.json"), "w"), indent=2)
     return metric
 
 
