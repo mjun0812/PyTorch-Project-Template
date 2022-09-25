@@ -259,6 +259,8 @@ def main(cfg: DictConfig):
 
     # Hydra Setting
     set_hydra(cfg, verbose=local_rank in [0, -1])
+    # set Device
+    set_device(cfg.GPU.USE, is_cpu=cfg.CPU, verbose=local_rank in [0, -1])
 
     if local_rank in [0, -1]:
         # make Output dir
@@ -301,9 +303,6 @@ def main(cfg: DictConfig):
 
     # PyTorch A6000 Bug Fix: GPU間通信をP2PからPCI or NVLINKに変更する
     # os.environ["NCCL_P2P_DISABLE"] = "1"
-
-    # set Device
-    set_device(cfg.GPU.USE, is_cpu=cfg.CPU, verbose=local_rank in [0, -1])
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
