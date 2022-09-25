@@ -151,7 +151,7 @@ def do_train(rank, cfg, output_dir, writer):
         logger.info(f"Start Epoch {epoch+1}")
         np.random.seed(initial_seed + epoch + rank)
         for phase in ["train", "val"]:
-            hist_epoch_loss = 0
+            hist_epoch_loss = torch.tensor(0)
 
             # Skip Validation
             if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
@@ -188,10 +188,10 @@ def do_train(rank, cfg, output_dir, writer):
                     if cfg.MODEL_EMA:
                         model_ema.update(model)
 
-                    hist_epoch_loss += loss * data.size(0)
+                    hist_epoch_loss += loss
                 if rank in [-1, 0]:
                     progress_bar.set_description(
-                        f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item():7.5f}"
+                        f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item() / data.size(0):7.5f}"
                     )
 
             # Finish Train or Val Epoch Process below
