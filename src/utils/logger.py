@@ -4,6 +4,7 @@ import logging
 from dotenv import load_dotenv
 import mlflow
 import numpy as np
+from kunai.torch_utils import cuda_info
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -215,6 +216,9 @@ class MlflowLogger:
             "Input size": self.cfg.MODEL.INPUT_SIZE,
             "PRE_TRAINED_WEIGHT": self.cfg.MODEL.PRE_TRAINED_WEIGHT,
             "Weight": self.cfg.MODEL.WEIGHT,
+            "Batch": self.cfg.BATCH,
+            "GPU Ids": self.cfg.GPU.USE,
+            "GPU": cuda_info(0),
         }
         mlflow.log_params(parameters)
 
