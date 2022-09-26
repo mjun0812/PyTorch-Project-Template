@@ -1,9 +1,8 @@
 import pathlib
 import argparse
+import json
 
 from tabulate import tabulate
-
-SEARCH_TEXT = ["Accuracy", "Speed"]
 
 
 def arg_parse():
@@ -38,30 +37,12 @@ def parse_log(base_dir, format="simple"):
             data["runs"] = test_dir.name
 
             try:
-                with open(test_dir / "test.log", "r") as f:
-                    log_txt = f.readlines()
-                for keyword in SEARCH_TEXT:
-                    for row in reversed(log_txt):
-                        if keyword in row:
-                            # [2021-11-26 07:51:17,843][INFO] AP@IoU=0.75: 0.99500 -> AP@IoU=0.75: 0.99500
-                            metrics = row.strip().split("]")[-1]
-                            # AP@IoU=0.75: 0.99500 -> 0.99500
-                            metrics = metrics.split(":")[-1].strip()
-
-                            # ###### If you use specific log, edit code below. #######
-                            # if keyword == "Speed":
-                            #     # Average Inferance Speed: 0.02623s, 38.12fps
-
-                            data[keyword] = metrics
-                            break
-                if len(data.keys()) > 2:
-                    table_data.append(data)
-                else:
-                    raise KeyError
+                with open(test_dir / "result.json", "r") as f:
+                    result = json.load(f)
+                data.update(result)
             except Exception:
                 parse_error.append(data["name"])
                 continue
-
     table = tabulate(table_data, headers="keys", tablefmt=format)
     if format == "latex":
         table = "\\begin{table}[htbp]\n\\centering\n\\caption{}\n" + table
