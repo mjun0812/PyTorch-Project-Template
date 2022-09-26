@@ -1,10 +1,11 @@
 defaults:
   # 分ける場合は以下のように
-  # - _self_
+  - _self_
   - MODEL: model
   - DATASET: dataset
   - OPTIMIZER: Momentum
   - LR_SCHEDULER: CosineLRScheduler
+  - LOSS: loss
   - override hydra/job_logging: disabled
   - override hydra/hydra_logging: disabled
   - override hydra/sweeper: optuna
