@@ -4,7 +4,6 @@ NAME: Model_Name
 MODEL: Model # Class名
 PRE_TRAINED: True
 PRE_TRAINED_WEIGHT: result/PreTrain/efficientdet-d0.pth
-LOSS: FocalLoss_EfficientDet
 INPUT_SIZE: 512
 # Load Weight Path
 WEIGHT: "./"

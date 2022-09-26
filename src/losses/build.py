@@ -12,7 +12,7 @@ def build_loss(cfg):
     Returns:
         loss: Loss function
     """
-    loss_name = cfg.MODEL.LOSS
+    loss_name = cfg.LOSS.NAME
     loss = LOSS_REGISTRY.get(loss_name)(cfg)
 
     return loss
