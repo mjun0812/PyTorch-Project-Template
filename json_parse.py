@@ -39,11 +39,17 @@ def parse_log(base_dir, format="simple"):
             try:
                 with open(test_dir / "result.json", "r") as f:
                     result = json.load(f)
-                data.update(result)
-            except Exception:
+                # validation
+                for k, v in result.items():
+                    if isinstance(v, list):
+                        continue
+                    data.update({k: v})
+                table_data.append(data)
+            except Exception as e:
+                print(e)
                 parse_error.append(data["name"])
                 continue
-    table = tabulate(table_data, headers="keys", tablefmt=format)
+    table = tabulate(sorted(table_data, key=lambda x: x["name"]), headers="keys", tablefmt=format)
     if format == "latex":
         table = "\\begin{table}[htbp]\n\\centering\n\\caption{}\n" + table
         table += "\\end{table}"
