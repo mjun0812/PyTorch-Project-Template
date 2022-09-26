@@ -87,6 +87,9 @@ def main(cfg: DictConfig):
         weight_dir_list[-3] = config_path
         cfg.MODEL.WEIGHT = os.path.join(*weight_dir_list)
 
+    # set Device
+    device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
+
     # ClearML
     if cfg.USE_CLEARML:
         prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
@@ -112,9 +115,6 @@ def main(cfg: DictConfig):
     writer = TestLogger(cfg, output_dir, str(Path(output_dir).parents[2]))
     writer.log_artifact(os.path.join(output_dir, "config.yaml"))
     writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
-
-    # set Device
-    device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
 
     result = do_test(cfg, output_dir, device, writer)
 
