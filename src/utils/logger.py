@@ -212,7 +212,7 @@ class MlflowLogger:
             "Epoch": self.cfg.EPOCH,
             "Model": self.cfg.MODEL.NAME,
             "Dataset": self.cfg.DATASET.NAME,
-            "Loss": self.cfg.MODEL.LOSS,
+            "Loss": self.cfg.LOSS.NAME,
             "Input size": self.cfg.MODEL.INPUT_SIZE,
             "PRE_TRAINED_WEIGHT": self.cfg.MODEL.PRE_TRAINED_WEIGHT,
             "Weight": self.cfg.MODEL.WEIGHT,
