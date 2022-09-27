@@ -268,7 +268,7 @@ def main(cfg: DictConfig):
         if cfg.TAG:
             prefix += f"_{cfg.TAG}"
         output_dir = make_output_dirs(
-            cfg.OUTPUT,
+            os.path.join(cfg.OUTPUT, cfg.DATASET.NAME),
             prefix=prefix,
             child_dirs=["figs", "models"],
         )
