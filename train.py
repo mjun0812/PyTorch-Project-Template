@@ -5,6 +5,7 @@ import sys
 import traceback
 import pathlib
 import pprint
+import datetime
 
 import torch
 import torch.distributed as dist
@@ -306,7 +307,9 @@ def main(cfg: DictConfig):
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
-        dist.init_process_group(backend="nccl", init_method="env://")
+        dist.init_process_group(
+            backend="nccl", init_method="env://", timeout=datetime.timedelta(seconds=2700)
+        )
         logging.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
