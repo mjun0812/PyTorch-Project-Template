@@ -35,7 +35,7 @@ def main():
         name = run.data.tags["mlflow.runName"].replace("-", "_")
         mlflow_dirs.append(name)
 
-        test_weight = run.data.tags["model_weight_test"]
+        test_weight = run.data.tags.get("model_weight_test")
         if test_weight:
             test_weight = os.path.basename(os.path.dirname(os.path.dirname(test_weight)))
             mlflow_dirs.append(test_weight)
