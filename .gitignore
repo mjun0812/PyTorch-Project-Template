@@ -334,4 +334,5 @@ dataset
 !config/DATASET
 *.pth
 *.pt
-result
+result/*
+!result/.gitkeep
