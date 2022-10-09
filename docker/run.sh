@@ -3,6 +3,7 @@
 cd $(dirname $0)
 cd ../
 IMAGE_NAME=$(basename $(pwd))
+IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 pwd
 
 docker run \

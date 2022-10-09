@@ -3,6 +3,8 @@
 cd $(dirname $0)
 cd ../
 IMAGE_NAME=$(basename $(pwd))
+# to lowercase
+IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 
 PYTHON="3.10.7"
 CUDA_VERSION="11.3.1"
