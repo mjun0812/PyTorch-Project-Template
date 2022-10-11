@@ -41,7 +41,7 @@ def main():
     experiment_id = client.get_experiment_by_name(experiment_name).experiment_id
 
     runs = client.search_runs(
-        experiment_ids=experiment_id, filter_string=f"params.Dataset LIKE '{args.dataset}'"
+        experiment_ids=experiment_id, filter_string=f"params.Dataset LIKE '%{args.dataset}%'"
     )
     if len(runs) == 0:
         print("No data")
