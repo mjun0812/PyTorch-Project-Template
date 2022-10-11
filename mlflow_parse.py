@@ -18,6 +18,7 @@ def arg_parse():
         default="simple",
         choices=["simple", "plain", "html", "latex", "latex_row", "github"],
     )
+    parser.add_argument("--local", help="use localhost", action="store_true", default=False)
     return parser.parse_args()
 
 
@@ -26,6 +27,8 @@ def main():
     load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
     load_dotenv()
     mlflow_uri = os.getenv("MLFLOW_TRACKING_URI")
+    if args.local:
+        mlflow_uri = "http://localhost:25000"
     if not mlflow_uri:
         mlflow_uri = "./result/mlruns"
     mlflow.set_tracking_uri(mlflow_uri)
