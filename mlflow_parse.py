@@ -49,8 +49,13 @@ def main():
 
     table_data = []
     for run in runs:
-        name = run.data.tags["mlflow.runName"]
         model = run.data.params["Model"]
+        name = (
+            run.data.tags["mlflow.runName"]
+            .replace(f"_{model}", "")
+            .replace(f"-{model.replace('_', '-')}", "")
+            .replace(f"_{model.replace('_', '-')}", "")
+        )
         loss = run.data.params["Loss"]
         input_size = run.data.params["Input size"]
 
@@ -75,7 +80,9 @@ def main():
             }
         )
     table = tabulate(
-        sorted(table_data, key=lambda x: x["Model"]), headers="keys", tablefmt=args.format
+        sorted(table_data, key=lambda x: f"{x['Model']}_{x['Loss']}"),
+        headers="keys",
+        tablefmt=args.format,
     )
     if args.format == "latex":
         table = "\\begin{table}[htbp]\n\\centering\n\\caption{}\n" + table
