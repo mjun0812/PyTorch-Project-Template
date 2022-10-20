@@ -76,11 +76,14 @@ def load_last_weight(cfg, model):
 
     if check_model_parallel(model):
         model = model.module
-    missing, unexpexted = model.load_state_dict(
-        torch.load(weight_path, map_location=device), strict=True
-    )
-    logger.info(f"missing model key: {missing}")
-    logger.info(f"unexpected model key: {unexpexted}")
+    try:
+        missing, unexpexted = model.load_state_dict(
+            torch.load(weight_path, map_location=device), strict=True
+        )
+        logger.info(f"missing model key: {missing}")
+        logger.info(f"unexpected model key: {unexpexted}")
+    except Exception:
+        logger.info("Do Fine Tuninng?")
 
     logger.info(f"Load weight from {weight_path}")
     return last_epoch
