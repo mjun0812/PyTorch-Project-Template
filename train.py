@@ -164,6 +164,8 @@ def do_train(rank, cfg, output_dir, writer):
             model.train(phase == "train")
             if phase == "train" and rank != -1:
                 dataloaders[phase].sampler.set_epoch(epoch)
+            if phase == "train" and rank in [-1, 0]:
+                writer.log_metric("Epoch", epoch + 1, phase, epoch + 1)
 
             # Set progress bar
             progress_bar = enumerate(dataloaders[phase])
