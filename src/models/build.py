@@ -34,4 +34,4 @@ def build_model(cfg, device, rank=-1):
         if cfg.MODEL_EMA:
             model_ema.set(model)
 
-    return model
+    return model, model_ema

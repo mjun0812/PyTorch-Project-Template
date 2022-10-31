@@ -118,7 +118,7 @@ def do_train(rank, cfg, output_dir, writer):
         torch.cuda.set_device(0)
 
     # ###### Build Model #######
-    model = build_model(cfg, device, rank=rank)
+    model, _ = build_model(cfg, device, rank=rank)
     last_epoch = load_last_weight(cfg, model)  # Train from exist weight
     if cfg.MODEL_EMA:
         model_ema = ModelEmaV2(model, decay=0.9998)

@@ -46,13 +46,13 @@ def build_lr_scheduler(cfg, optimizer):
         # patience : 何ステップ向上しなければlrを変更するか
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
-            patience=cfg.OPTIMIZER.PATIENCE,
+            patience=cfg.LR_SCHEDULER.PATIENCE,
             verbose=True,
-            threshold=cfg.OPTIMIZER.THRESHOLD,
+            threshold=cfg.LR_SCHEDULER.THRESHOLD,
             mode="min",
-            factor=cfg.OPTIMIZER.FACTOR,
-            min_lr=cfg.OPTIMIZER.MIN_LR,
-            cooldown=cfg.OPTIMIZER.COOLDOWN,
+            factor=cfg.LR_SCHEDULER.FACTOR,
+            min_lr=cfg.LR_SCHEDULER.MIN_LR,
+            cooldown=cfg.LR_SCHEDULER.COOLDOWN,
         )
     elif lr_scheduler_name == "CosineAnnealingWarmRestarts":
         # T_0を周期とするコサインカーブで減衰して、

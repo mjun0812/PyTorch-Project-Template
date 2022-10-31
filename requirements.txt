@@ -21,6 +21,6 @@ clearml
 mlflow
 torchinfo >= 1.7.0
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch==1.12.1+cu113
+torch==1.13.0+cu117
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.13.1+cu113
+torchvision==0.14.0+cu117
