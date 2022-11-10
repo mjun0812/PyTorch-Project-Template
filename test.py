@@ -26,17 +26,32 @@ from src.dataloaders import build_dataset
 logger = logging.getLogger()
 
 
+def calc_inference_speed(model, dataset):
+    inference_speed = 0
+    num_iter = 50
+    dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
+    for i, data in enumerate(dataloader):
+        with torch.no_grad():
+            t = time_synchronized()
+            _ = model(data)
+            inference_speed += time_synchronized() - t
+            if i == num_iter:
+                break
+    return inference_speed / num_iter
+
+
 def do_test(cfg, output_dir, device, writer):
     logger.info("Loading Dataset...")
     dataset, _ = build_dataset(cfg, phase="test")
-    dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
+    dataloader = torch.utils.data.DataLoader(
+        dataset, pin_memory=True, num_workers=4, batch_size=cfg.BATCH
+    )
 
     model, _ = build_model(cfg, device)
     model.load_state_dict(torch.load(cfg.MODEL.WEIGHT, map_location=device))
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     logger.info("Complete load model")
 
-    inference_speed = 0
     metric = 0
     results = []
     model.requires_grad_(False)
@@ -45,20 +60,15 @@ def do_test(cfg, output_dir, device, writer):
     for i, data in progress_bar:
         with torch.no_grad():
             input_data = data.to(device)
-            t = time_synchronized()
             y = model(input_data)
-            inference_speed += time_synchronized() - t
-
             # calc metrics below
             result = y
             results.append(result)
 
-    inference_speed /= len(dataset)
+    inference_speed = calc_inference_speed(model, dataset)
     logger.info(
         f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
     )
-
-    # self, phase, metric_names, metric_values, step: int
 
     # 評価結果の保存
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
