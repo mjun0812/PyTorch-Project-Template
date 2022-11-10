@@ -57,6 +57,8 @@ def load_last_weight(cfg, model):
     elif cfg.MODEL.PRE_TRAINED and cfg.MODEL.PRE_TRAINED_WEIGHT:
         # Train from Pretrained weight
         weight_path = cfg.MODEL.PRE_TRAINED_WEIGHT
+    else:
+        return
 
     if check_model_parallel(model):
         model = model.module
