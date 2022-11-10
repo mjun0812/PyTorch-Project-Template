@@ -51,42 +51,26 @@ def load_last_weight(cfg, model):
     Args:
         model (torch.nn.Model): Load model
         weight (str): PreTrained weight path
-
-    Returns:
-        model: Loaded Model
-        last_epoch: number of last epoch from weight file name
-                    ex. 'weight/model_epoch_15.pth' return '15'
     """
     if cfg.CONTINUE_TRAIN:
         weight_path = cfg.MODEL.WEIGHT
     elif cfg.MODEL.PRE_TRAINED and cfg.MODEL.PRE_TRAINED_WEIGHT:
         # Train from Pretrained weight
         weight_path = cfg.MODEL.PRE_TRAINED_WEIGHT
-    else:
-        return 0
-
-    try:
-        # If continue train, get final Epoch number
-        last_epoch = os.path.basename(weight_path).split("_")[-1]
-        last_epoch = int(last_epoch)
-    except Exception:
-        last_epoch = 0
-
-    device = next(model.parameters()).device
 
     if check_model_parallel(model):
         model = model.module
+    device = next(model.parameters()).device
+
     try:
         missing, unexpexted = model.load_state_dict(
-            torch.load(weight_path, map_location=device), strict=True
+            torch.load(weight_path, map_location=device), strict=False
         )
         logger.info(f"missing model key: {missing}")
         logger.info(f"unexpected model key: {unexpexted}")
     except Exception:
         logger.info("Do Fine Tuninng?")
-
     logger.info(f"Load weight from {weight_path}")
-    return last_epoch
 
 
 def do_train(rank, cfg, output_dir, writer):
@@ -119,7 +103,7 @@ def do_train(rank, cfg, output_dir, writer):
 
     # ###### Build Model #######
     model, _ = build_model(cfg, device, rank=rank)
-    last_epoch = load_last_weight(cfg, model)  # Train from exist weight
+    load_last_weight(cfg, model)  # Train from exist weight
     if cfg.MODEL_EMA:
         model_ema = ModelEmaV2(model, decay=0.9998)
 
@@ -137,7 +121,7 @@ def do_train(rank, cfg, output_dir, writer):
         # Model構造を出力
         save_model_info(output_dir, model)
         # save initial model
-        save_model(model, save_model_path / f"model_init_{last_epoch}.pth")
+        save_model(model, save_model_path / "model_init_0.pth")
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model, torch.cuda.device_count())
@@ -146,12 +130,12 @@ def do_train(rank, cfg, output_dir, writer):
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
 
-    max_epoch = cfg.EPOCH + last_epoch
+    max_epoch = cfg.EPOCH
     best_loss = 1e8
     best_epoch = 0
 
     logger.info("Start Training")
-    for epoch in range(last_epoch, max_epoch, 1):
+    for epoch in range(max_epoch):
         logger.info(f"Start Epoch {epoch+1}")
         np.random.seed(initial_seed + epoch + rank)
         for phase in ["train", "val"]:
