@@ -162,9 +162,9 @@ def do_train(rank, cfg, output_dir, writer):
                 with torch.set_grad_enabled(phase == "train"):
                     data = data.to(device, non_blocking=True).float()
 
-                    optimizer.zero_grad()
-
-                    with torch.cuda.amp.autocast(enabled=cfg.AMP):
+                    with torch.autocast(
+                        device_type="cuda" if not cfg.CPU else "cpu", enabled=cfg.AMP
+                    ):
                         y = model(data)
                         loss = criterion(y)
 
@@ -174,7 +174,7 @@ def do_train(rank, cfg, output_dir, writer):
                         torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
                         scaler.step(optimizer)
                         scaler.update()
-                    torch.cuda.synchronize()
+                        optimizer.zero_grad()
                     if cfg.MODEL_EMA:
                         model_ema.update(model)
 
