@@ -86,13 +86,14 @@ class TrainLogger:
         if not self.mlflow_logger:
             return
         for p in os.listdir(path):
-            if os.path.isdir(p):
-                if "models" in p:
+            target = os.path.join(path, p)
+            if os.path.isdir(target):
+                if "models" in target:
                     continue
                 else:
-                    self.mlflow_logger.log_artifacts(p)
+                    self.mlflow_logger.log_artifacts(target)
             else:
-                self.mlflow_logger.log_artifact(p)
+                self.mlflow_logger.log_artifact(target)
 
     def log_history_figure(self):
         metrics_names = list(self.histories.keys())
