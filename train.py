@@ -6,6 +6,7 @@ import traceback
 import pathlib
 import pprint
 import datetime
+import shutil
 
 import torch
 import torch.distributed as dist
@@ -221,14 +222,15 @@ def do_train(rank, cfg, output_dir, writer):
                 elif phase == "val":
                     # Save best val Loss Model
                     if epoch_loss < best_loss:
-                        best_loss = epoch_loss
-                        best_epoch = epoch
+                        shutil.rmtree(save_model_path / f"model_best_{best_epoch}.pth")
                         save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
+                        best_loss = epoch_loss
+                        best_epoch = epoch + 1
                         logger.info(
-                            f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch+1}"
+                            f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}"
                         )
                     # early stopping (check val_loss)
-                    if epoch - best_epoch > int(cfg.EARLY_STOP_PATIENCE) > 0:
+                    if epoch + 1 - best_epoch > int(cfg.EARLY_STOP_PATIENCE) > 0:
                         logger.info(
                             f"Stop training at epoch {epoch + 1}. The lowest loss achieved is {best_loss}"
                         )
