@@ -128,7 +128,7 @@ def main(cfg: DictConfig):
 
     result = do_test(cfg, output_dir, device, writer)
 
-    writer.log_artifacts(output_dir)
+    writer.log_result_dir(output_dir)
     writer.close()
 
     message = pprint.pformat(

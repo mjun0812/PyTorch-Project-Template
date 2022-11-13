@@ -77,6 +77,23 @@ class TrainLogger:
         if self.mlflow_logger:
             self.mlflow_logger.log_artifacts(path)
 
+    def log_result_dir(self, path):
+        """重みファイル(models以下)以外をartifactにする
+
+        Args:
+            path (str): result path
+        """
+        if not self.mlflow_logger:
+            return
+        for p in os.listdir(path):
+            if os.path.isdir(p):
+                if "models" in p:
+                    continue
+                else:
+                    self.mlflow_logger.log_artifacts(p)
+            else:
+                self.mlflow_logger.log_artifact(p)
+
     def log_history_figure(self):
         metrics_names = list(self.histories.keys())
         # サンプル不足でのグラフ描画エラーの処理

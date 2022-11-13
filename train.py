@@ -315,7 +315,7 @@ def main(cfg: DictConfig):
                 channel="#error",
                 message=f"Error Train\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
             )
-            writer.log_artifacts(output_dir)
+            writer.log_result_dir(output_dir)
             writer.close("FAILED")
         if local_rank != -1:
             dist.destroy_process_group()
@@ -345,7 +345,7 @@ def main(cfg: DictConfig):
             cfg.GPU.USE = 0
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
         writer.log_artifact(os.path.join(output_dir, "config.yaml"))
-        writer.log_artifacts(output_dir)
+        writer.log_result_dir(output_dir)
 
     # Clean Up multi gpu process
     if local_rank != -1:
@@ -377,8 +377,8 @@ def main(cfg: DictConfig):
         # Send Message to Slack
         post_slack(message=f"Finish Test\n{message}")
         logger.info(f"Finish Test {message}")
-        writer.log_artifacts(output_dir)
-        writer.log_artifacts(output_result_dir)
+        writer.log_result_dir(output_dir)
+        writer.log_result_dir(output_result_dir)
         writer.close()
     return result
 
