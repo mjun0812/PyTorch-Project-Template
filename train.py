@@ -222,7 +222,9 @@ def do_train(rank, cfg, output_dir, writer):
                 elif phase == "val":
                     # Save best val Loss Model
                     if epoch_loss < best_loss:
-                        shutil.rmtree(save_model_path / f"model_best_{best_epoch}.pth")
+                        shutil.rmtree(
+                            save_model_path / f"model_best_{best_epoch}.pth", ignore_errors=True
+                        )
                         save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
                         best_loss = epoch_loss
                         best_epoch = epoch + 1
