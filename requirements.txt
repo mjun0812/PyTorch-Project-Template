@@ -18,7 +18,7 @@ tensorboard
 timm
 tqdm
 clearml
-mlflow
+mlflow==1.30.0
 torchinfo >= 1.7.0
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==1.13.0+cu116
