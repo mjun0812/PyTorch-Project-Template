@@ -292,6 +292,7 @@ def main(cfg: DictConfig):
         # Set Tensorboard, MLflow
         writer = TrainLogger(cfg, output_dir, os.path.dirname(output_dir))
         writer.log_artifact(os.path.join(output_dir, "config.yaml"))
+        writer.log_artifact(os.path.join(output_dir, "cmd_histry.log"))
     else:
         output_dir = ""
         setup_logger()
