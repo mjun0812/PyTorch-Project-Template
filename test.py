@@ -123,7 +123,7 @@ def main(cfg: DictConfig):
 
     # Set Tensorboard, MLflow
     writer = TestLogger(cfg, output_dir, str(Path(output_dir).parents[2]))
-    writer.log_artifact(Path(output_dir).parents[2] / "cmd_histry.log")
+    writer.log_artifact(Path(output_dir).parents[1] / "cmd_histry.log")
     writer.log_artifact(os.path.join(output_dir, "config.yaml"))
     writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
 
