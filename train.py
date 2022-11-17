@@ -91,7 +91,7 @@ def do_train(rank, cfg, output_dir, writer):
         output_dict (dict): resultを格納するDirectry Path
     """
 
-    initial_seed = fix_seed(100 + rank)
+    fix_seed(100 + rank)
     save_model_path = pathlib.Path(output_dir, "models")
 
     # Set Device
@@ -140,7 +140,6 @@ def do_train(rank, cfg, output_dir, writer):
     logger.info("Start Training")
     for epoch in range(max_epoch):
         logger.info(f"Start Epoch {epoch+1}")
-        np.random.seed(initial_seed + epoch + rank)
         for phase in ["train", "val"]:
             hist_epoch_loss = torch.tensor(0)
 
