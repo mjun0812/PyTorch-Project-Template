@@ -165,15 +165,15 @@ def do_train(rank, cfg, output_dir, writer):
                     data = data.to(device, non_blocking=True).float()
 
                     with torch.autocast(
-                        device_type="cuda" if not cfg.CPU else "cpu", enabled=cfg.AMP
+                        device_type="cuda" if not cfg.CPU else "cpu",
+                        enabled=cfg.AMP,
+                        dtype=torch.float16,
                     ):
                         y = model(data)
                         loss = criterion(y)
 
                     if phase == "train":
                         scaler.scale(loss).backward()
-                        scaler.unscale_(optimizer)
-                        torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
                         scaler.step(optimizer)
                         scaler.update()
                         optimizer.zero_grad()
