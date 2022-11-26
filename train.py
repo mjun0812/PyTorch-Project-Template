@@ -244,6 +244,7 @@ def do_train(rank, cfg, output_dir, writer):
         except Exception:
             logger.error(f"Cannot draw graph. {traceback.format_exc()}")
         save_model(model, os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
+        writer.log_artifact(os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
     return best_loss
 
 
@@ -345,6 +346,7 @@ def main(cfg: DictConfig):
         cfg.MODEL.WEIGHT = natsorted(
             glob.glob(os.path.join(output_dir, "models", "model_best_*.pth"))
         )[-1]
+        writer.log_artifact(cfg.MODEL.WEIGHT)
         if local_rank == 0:
             cfg.GPU.MULTI = False
             cfg.GPU.USE = 0
