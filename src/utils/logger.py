@@ -152,7 +152,7 @@ class TestLogger(TrainLogger):
 
         self.mlflow_logger = None
         if self.cfg.USE_MLFLOW:
-            experiment_name = os.path.basename(os.getcwd())
+            experiment_name = self.cfg.EXPERIMENT_NAME
             run_name = os.path.basename(self.output).split("_")
             run_name = "_".join(run_name[0:2] + [self.cfg.MODEL.NAME, self.cfg.DATASET.NAME])
             description = f"{self.cfg.MODEL.NAME} {self.cfg.DATASET.NAME} {self.cfg.TAG} / {self.cfg.MODEL.WEIGHT}"
