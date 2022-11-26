@@ -1,3 +1,4 @@
+import logging
 import torch
 from torch.nn.parallel import DistributedDataParallel
 
@@ -6,6 +7,8 @@ from timm.utils import ModelEmaV2
 from kunai import Registry
 
 MODEL_REGISTRY = Registry("MODEL")
+# Get root logger
+logger = logging.getLogger()
 
 
 def build_model(cfg, device, rank=-1):
@@ -33,5 +36,8 @@ def build_model(cfg, device, rank=-1):
         )
         if cfg.MODEL_EMA:
             model_ema.set(model)
+    elif torch.cuda.device_count() > 1:
+        logger.info("Use DataParallel Training")
+        model = torch.nn.DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
 
     return model, model_ema

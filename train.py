@@ -305,6 +305,7 @@ def main(cfg: DictConfig):
         dist.init_process_group(
             backend="nccl", init_method="env://", timeout=datetime.timedelta(seconds=2700)
         )
+        logging.info("Use Distributed Data Parallel Training")
         logging.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
