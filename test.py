@@ -47,7 +47,7 @@ def do_test(cfg, output_dir, device, writer):
         dataset, pin_memory=True, num_workers=4, batch_size=cfg.BATCH
     )
 
-    model, _ = build_model(cfg, device)
+    model, _ = build_model(cfg, device, phase="test")
     model.load_state_dict(torch.load(cfg.MODEL.WEIGHT, map_location=device))
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     logger.info("Complete load model")

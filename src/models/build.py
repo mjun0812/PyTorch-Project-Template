@@ -11,7 +11,7 @@ MODEL_REGISTRY = Registry("MODEL")
 logger = logging.getLogger()
 
 
-def build_model(cfg, device, rank=-1):
+def build_model(cfg, device, phase="train", rank=-1):
     """build model
 
     Args:
@@ -36,7 +36,7 @@ def build_model(cfg, device, rank=-1):
         )
         if cfg.MODEL_EMA:
             model_ema.set(model)
-    elif torch.cuda.device_count() > 1:
+    elif torch.cuda.device_count() > 1 and phase == "train":
         logger.info("Use DataParallel Training")
         model = torch.nn.DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
 
