@@ -12,6 +12,7 @@ docker run \
     --rm \
     --shm-size=128g \
     --hostname $(hostname) \
+    --net host \
     --env DISPLAY=$DISPLAY \
     --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
     --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
