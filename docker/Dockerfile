@@ -1,6 +1,6 @@
-ARG CUDA_VERSION="11.3.1"
-ARG UBUNTU="20.04"
-ARG CUDNN="8"
+ARG CUDA_VERSION
+ARG UBUNTU
+ARG CUDNN
 
 # Fromの前後でARGのスコープが変わるので注意
 # 上のCUDA_VERSIONはFROMより前に書くこと
@@ -135,7 +135,4 @@ WORKDIR /home/${USER_NAME}/workspace
 COPY --chown=${USER_NAME}:${GROUP_NAME} ./requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# COPY --chown=${USER_NAME}:${GROUP_NAME} ./ ./
-
 CMD ["/usr/bin/zsh"]
-

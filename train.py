@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 import traceback
-import pathlib
+from pathlib import Path
 import pprint
 import datetime
 import shutil
@@ -17,7 +17,6 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from natsort import natsorted
 from clearml import Task
-from timm.utils import ModelEmaV2
 
 from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import (
@@ -65,15 +64,12 @@ def load_last_weight(cfg, model):
         model = model.module
     device = next(model.parameters()).device
 
-    try:
-        missing, unexpexted = model.load_state_dict(
-            torch.load(weight_path, map_location=device), strict=False
-        )
-        logger.info(f"missing model key: {missing}")
-        logger.info(f"unexpected model key: {unexpexted}")
-    except Exception:
-        logger.info("Do Fine Tuninng?")
+    missing, unexpexted = model.load_state_dict(
+        torch.load(weight_path, map_location=device), strict=False
+    )
     logger.info(f"Load weight from {weight_path}")
+    logger.info(f"missing model key: {missing}")
+    logger.info(f"unexpected model key: {unexpexted}")
 
 
 def do_train(rank, cfg, output_dir, writer):
@@ -92,7 +88,7 @@ def do_train(rank, cfg, output_dir, writer):
     """
 
     fix_seed(100 + rank)
-    save_model_path = pathlib.Path(output_dir, "models")
+    save_model_path = Path(output_dir, "models")
 
     # Set Device
     if cfg.CPU:
@@ -105,15 +101,12 @@ def do_train(rank, cfg, output_dir, writer):
         torch.cuda.set_device(0)
 
     # ###### Build Model #######
-    model, _ = build_model(cfg, device, phase="train", rank=rank)
-    load_last_weight(cfg, model)  # Train from exist weight
-    if cfg.MODEL_EMA:
-        model_ema = ModelEmaV2(model, decay=0.9998)
+    model, model_ema = build_model(cfg, device, phase="train", rank=rank)
+    load_last_weight(cfg, model)
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
-    datasets = {}
-    dataloaders = {}
+    datasets, dataloaders = {}, {}
     for phase in ["train", "val"]:
         datasets[phase], dataloaders[phase] = build_dataset(cfg, phase=phase, rank=rank)
     logger.info("Complete Loading Dataset")
@@ -170,13 +163,16 @@ def do_train(rank, cfg, output_dir, writer):
                         dtype=torch.float16,
                     ):
                         y = model(data)
-                        loss = criterion(y)
+                        loss = criterion(y, data)
 
                     if phase == "train":
-                        scaler.scale(loss).backward()
+                        scaler.scale(loss["Loss"]).backward()
+                        if cfg.USE_CLIP_GRAD:
+                            scaler.unscale_(optimizer)
+                            torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.CLIP_GRAD_NORM)
                         scaler.step(optimizer)
                         scaler.update()
-                        optimizer.zero_grad()
+                    optimizer.zero_grad()
                     if cfg.MODEL_EMA:
                         model_ema.update(model)
 

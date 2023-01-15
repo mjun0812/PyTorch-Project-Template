@@ -9,7 +9,7 @@ import torch.optim as optim
 logger = logging.getLogger()
 
 
-def build_optimizer(cfg, model, world_size=1):
+def build_optimizer(cfg, model):
     optimizer_name = cfg.OPTIMIZER.NAME
     lr = cfg.OPTIMIZER.LR
     if optimizer_name == "AdamW":
@@ -34,7 +34,7 @@ def build_optimizer(cfg, model, world_size=1):
         )
     elif optimizer_name == "SGD":
         optimizer = optim.SGD(model.parameters(), lr=lr)
-    logger.info(f"Using Optimizer is {optimizer_name}")
+    logger.info(f"Optimizer: {optimizer_name}")
     logger.info(f"Learning Rate: {lr}")
     return optimizer
 
@@ -76,6 +76,8 @@ def build_lr_scheduler(cfg, optimizer):
             warmup_steps=cfg.LR_SCHEDULER.WARMUP_STEPS,
         )
     elif lr_scheduler_name == "CosineLRScheduler":
+        if cfg.LR_SCHEDULER.NOISE_T:
+            kwargs = {"noise_range_t": [int(cfg.EPOCH * n) for n in cfg.LR_SCHEDULER.NOISE_T]}
         scheduler = CosineLRScheduler(
             optimizer,
             t_initial=cfg.LR_SCHEDULER.T_INITIAL,
@@ -83,8 +85,9 @@ def build_lr_scheduler(cfg, optimizer):
             warmup_t=cfg.LR_SCHEDULER.WARMUP_T,
             warmup_lr_init=cfg.LR_SCHEDULER.WARMUP_LR_INIT,
             warmup_prefix=True,
+            **kwargs,
         )
-    logger.info(f"Using LR Scheduler is {cfg.LR_SCHEDULER}")
+    logger.info(f"LR Scheduler: {cfg.LR_SCHEDULER}")
     return scheduler
 
 

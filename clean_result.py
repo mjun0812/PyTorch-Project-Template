@@ -52,7 +52,7 @@ def main():
     for dir in result_dirs:
         if os.path.basename(dir) not in mlflow_dirs:
             print("remove", dir)
-            # shutil.rmtree(dir)
+            shutil.rmtree(dir)
 
 
 if __name__ == "__main__":

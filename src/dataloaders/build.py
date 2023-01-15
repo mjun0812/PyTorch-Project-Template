@@ -4,26 +4,21 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from kunai.torch_utils import worker_init_fn
+from kunai import Registry
 
-from . import Dataset
 from ..transform import build_transforms
+
+DATASET_REGISTRY = Registry("DATASET")
 
 # Get root logger
 logger = logging.getLogger()
 
 
 def build_dataset(cfg, phase="train", rank=-1):
-    if phase == "train":
-        filelist = cfg.DATASET.TRAIN_LIST
-    elif phase == "val":
-        filelist = cfg.DATASET.VAL_LIST
-    elif phase == "test":
-        filelist = cfg.DATASET.TEST_LIST
-
-    transform = build_transforms(cfg, phase=phase)
-    dataset = Dataset(cfg, filelist)
+    transforms = build_transforms(cfg, phase=phase)
+    dataset = DATASET_REGISTRY.get(cfg.DATASET.TYPE)(cfg, transforms, phase=phase)
     logger.info(f"{phase.capitalize()} Dataset sample num: {len(dataset)}")
-    logger.info(f"{phase.capitalize()} transform: {transform}")
+    logger.info(f"{phase.capitalize()} transform: {transforms}")
 
     common_kwargs = {
         "pin_memory": True,
