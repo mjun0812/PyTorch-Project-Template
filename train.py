@@ -120,7 +120,7 @@ def do_train(rank, cfg, output_dir, writer):
         save_model(model, save_model_path / "model_init_0.pth")
 
     criterion = build_loss(cfg)
-    optimizer = build_optimizer(cfg, model, torch.cuda.device_count())
+    optimizer = build_optimizer(cfg, model)
     scheduler = build_lr_scheduler(cfg, optimizer)
     scaler = torch.cuda.amp.GradScaler(enabled=cfg.AMP)
     if cfg.AMP:
