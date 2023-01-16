@@ -87,6 +87,13 @@ def build_lr_scheduler(cfg, optimizer):
             warmup_prefix=True,
             **kwargs,
         )
+    elif lr_scheduler_name == "PolynomialLRDecay":
+        scheduler = PolynomialLRDecay(
+            optimizer,
+            max_decay_steps=cfg.LR_SCHEDULER.MAX_DECAY_STEPS,
+            end_learning_rate=cfg.LR_SCHEDULER.END_LR,
+            power=cfg.LR_SCHEDULER.POWER,
+        )
     logger.info(f"LR Scheduler: {cfg.LR_SCHEDULER}")
     return scheduler
 

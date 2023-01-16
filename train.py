@@ -68,8 +68,8 @@ def load_last_weight(cfg, model):
         torch.load(weight_path, map_location=device), strict=False
     )
     logger.info(f"Load weight from {weight_path}")
-    logger.info(f"missing model key: {missing}")
-    logger.info(f"unexpected model key: {unexpexted}")
+    logger.info(f"Missing model key: {missing}")
+    logger.info(f"Unexpected model key: {unexpexted}")
 
 
 def do_train(rank, cfg, output_dir, writer):
