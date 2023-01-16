@@ -12,7 +12,7 @@ docker run \
     --shm-size=128g \
     --hostname $(hostname) \
     --env DISPLAY=$DISPLAY \
-    --entrypoint "/usr/bin/zsh" \
+    --entrypoint "./docker/entrypoint.sh" \
     --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
     --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
     --volume $HOME/.cache:$HOME/.cache \
@@ -23,4 +23,3 @@ docker run \
     --name "${IMAGE_NAME}-$(date '+%s')" \
     "${USER}/${IMAGE_NAME}-server:latest" \
     $@
-
