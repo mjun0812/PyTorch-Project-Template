@@ -39,7 +39,6 @@ CLIP_GRAD_NORM: 10
 OUTPUT: ./result/
 TAG: ""
 
-USE_CLEARML: False
 USE_MLFLOW: True
 EXPERIMENT_NAME: "pytorch-project-template"
 

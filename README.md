@@ -19,7 +19,7 @@ This repository provided Dockerfile. But you can execute in local environment.
 - Use [Hydra](https://github.com/facebookresearch/hydra) Config file management (YAML)
 - Continue Training from your own weight
 - Early Stopping
-- MLflow, [ClearML](https://clear.ml) manage experiments
+- [MLflow](https://mlflow.org) manage experiments
 - Tensorboard Logging
 
 ## Install
@@ -46,25 +46,6 @@ If `MLFLOW_TRACKING_URI` is blank(""), MLflow files is saved local directry.
 
 ```bash
 python train.py USE_MLFLOW=True EXPERIMENT_NAME="pytorch-experiment"
-```
-
-### Optional: ClearML
-
-SignUp ClearML or self-host ClearML Server.
-
-- [SignUp ClearML](https://clear.ml)
-- [self-host documentation](https://clear.ml/docs/latest/docs/deploying_clearml/clearml_server)
-
-After setup ClearML server, do below command.
-
-```bash
-> clearml-init
-```
-
-`USE_CLEARML` is default `False`.
-
-```bash
-python test.py USE_CLEARML=True
 ```
 
 ## Usage

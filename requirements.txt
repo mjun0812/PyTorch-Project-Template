@@ -17,7 +17,6 @@ tabulate
 tensorboard
 timm
 tqdm
-clearml
 mlflow==2.1.0
 torchinfo >= 1.7.0
 --find-links https://download.pytorch.org/whl/torch_stable.html

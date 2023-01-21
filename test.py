@@ -12,7 +12,6 @@ from tqdm import tqdm
 import hydra
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
-from clearml import Task
 
 from kunai.torch_utils import set_device, time_synchronized
 from kunai.hydra_utils import set_hydra, validate_config
@@ -79,8 +78,6 @@ def do_test(cfg, output_dir, device, writer):
     for name, value in metric_dict.items():
         logger.info(f"{name}: {value}")
         writer.log_metric(name, value, "test", None)
-        if cfg.USE_CLEARML:
-            Task.current_task().get_logger().report_single_value(name, value)
     json.dump(metric_dict, open(os.path.join(output_dir, "result.json"), "w"), indent=2)
     return metric
 
@@ -99,17 +96,6 @@ def main(cfg: DictConfig):
 
     # set Device
     device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
-
-    # ClearML
-    if cfg.USE_CLEARML:
-        prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
-        if cfg.TAG:
-            prefix += f"_{cfg.TAG}"
-        Task.init(
-            project_name=Path.cwd().name,
-            task_name=prefix,
-            task_type=Task.TaskTypes.testing,
-        )
 
     output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
 

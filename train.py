@@ -16,7 +16,6 @@ import numpy as np
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from natsort import natsorted
-from clearml import Task
 
 from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import (
@@ -264,13 +263,6 @@ def main(cfg: DictConfig):
             prefix=prefix,
             child_dirs=["figs", "models"],
         )
-
-        # ClearML
-        if cfg.USE_CLEARML:
-            try:
-                Task.init(project_name=cfg.EXPERIMENT_NAME, task_name=prefix)
-            except Exception:
-                logger.info("Not Installed ClearML")
 
         # Logging
         setup_logger(os.path.join(output_dir, "train.log"))
