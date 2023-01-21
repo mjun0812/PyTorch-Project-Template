@@ -71,7 +71,7 @@ def load_last_weight(cfg, model):
     logger.info(f"Unexpected model key: {unexpexted}")
 
 
-def do_train(rank, cfg, output_dir, writer):
+def do_train(rank, cfg, device, output_dir, writer):
     """Training Script
        このFunctionでSingle GPUとMulti GPUの両方に対応しています．
 
@@ -88,16 +88,6 @@ def do_train(rank, cfg, output_dir, writer):
 
     fix_seed(100 + rank)
     save_model_path = Path(output_dir, "models")
-
-    # Set Device
-    if cfg.CPU:
-        device = torch.device("cpu")
-    elif rank != -1:
-        device = torch.device(rank)
-        torch.cuda.set_device(rank)
-    else:
-        device = torch.device(0)
-        torch.cuda.set_device(0)
 
     # ###### Build Model #######
     model, model_ema = build_model(cfg, device, phase="train", rank=rank)
@@ -251,7 +241,9 @@ def main(cfg: DictConfig):
     # Hydra Setting
     set_hydra(cfg, verbose=local_rank in [0, -1])
     # set Device
-    set_device(cfg.GPU.USE, is_cpu=cfg.CPU, verbose=local_rank in [0, -1])
+    device = set_device(
+        cfg.GPU.USE, rank=local_rank, is_cpu=cfg.CPU, verbose=local_rank in [0, -1]
+    )
 
     if local_rank in [0, -1]:
         # make Output dir
@@ -301,7 +293,7 @@ def main(cfg: DictConfig):
         )
 
     try:
-        result = do_train(local_rank, cfg, output_dir, writer)
+        result = do_train(local_rank, cfg, device, output_dir, writer)
     except (Exception, KeyboardInterrupt) as e:
         logger.error(f"{e}\n{traceback.format_exc()}")
         if local_rank in [0, -1]:

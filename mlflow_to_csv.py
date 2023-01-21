@@ -60,6 +60,7 @@ def main():
 
     output_dir = "doc/table"
     os.makedirs(output_dir, exist_ok=True)
+    all_runs.reset_index(drop=True).to_csv(os.path.join(output_dir, "all_results.csv"))
     for dataset in datasets:
         idx = all_runs[all_runs["Dataset"] == dataset].index.tolist()
         runs = all_runs.loc[idx]
