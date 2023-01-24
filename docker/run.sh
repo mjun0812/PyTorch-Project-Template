@@ -11,6 +11,8 @@ docker run \
     --rm \
     --shm-size=128g \
     --hostname $(hostname) \
+    --ipc=host \
+    --ulimit memlock=-1 \
     --env DISPLAY=$DISPLAY \
     --entrypoint "./docker/entrypoint.sh" \
     --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
