@@ -19,7 +19,7 @@ def main():
 
     with open("config/config.yaml", "r") as f:
         experiment_name = yaml.safe_load(f)["EXPERIMENT_NAME"]
-    print(f"Experiment: {experiment_name}")
+    # print(f"Experiment: {experiment_name}")
 
     client = mlflow.tracking.MlflowClient()
     experiment_id = client.get_experiment_by_name(experiment_name).experiment_id
@@ -51,8 +51,8 @@ def main():
 
     for dir in result_dirs:
         if os.path.basename(dir) not in mlflow_dirs:
-            print("remove", dir)
-            shutil.rmtree(dir)
+            print(dir)
+            # shutil.rmtree(dir)
 
 
 if __name__ == "__main__":
