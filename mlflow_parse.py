@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 import mlflow
 import yaml
+from natsort import natsorted
 
 
 def arg_parse():
@@ -80,7 +81,7 @@ def main():
             }
         )
     table = tabulate(
-        sorted(table_data, key=lambda x: f"{x['Model']}_{x['Loss']}"),
+        natsorted(table_data, key=lambda x: f"{x['Model']}_{x['Loss']}"),
         headers="keys",
         tablefmt=args.format,
     )
