@@ -2,6 +2,7 @@ import sys
 import torch
 import time
 import hydra
+import os
 from omegaconf import DictConfig, OmegaConf  # noqa
 
 sys.path.append("../")
@@ -10,8 +11,12 @@ from src.dataloaders import build_dataset  # noqa
 
 @hydra.main(version_base=None, config_path="../config", config_name="config")
 def main(cfg: DictConfig):
-    dataset, dataloader = build_dataset(cfg, "train")
-    # dataset, dataloader, batched_transforms = build_dataset(cfg, "train")
+    os.chdir("../")
+    data = build_dataset(cfg, "train")
+    if len(data) == 2:
+        dataset, dataloader = data
+    else:
+        dataset, dataloader, batched_transforms = data
     print("Loading dataset Complete")
     device = torch.device("cuda:0")
 

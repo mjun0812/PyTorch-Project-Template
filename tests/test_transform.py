@@ -1,6 +1,8 @@
 import sys
 import cv2
 import numpy as np
+import os
+import torch
 import torchvision.transforms.functional as TF
 import hydra
 from omegaconf import DictConfig, OmegaConf  # noqa
@@ -14,19 +16,23 @@ rightkeys = (83, 109, 100, 65363, 2555904)
 
 @hydra.main(version_base=None, config_path="../config", config_name="config")
 def main(cfg: DictConfig):
-    cfg.BATCH = 1
-    # cfg_transform = OmegaConf.load("../config/TRANSFORMS/default.yaml")
-
-    dataset, dataloader = build_dataset(cfg, "train")
-    # dataset, dataloader, batched_transform = build_dataset(cfg, "train")
+    os.chdir("../")
+    data = build_dataset(cfg, "train")
+    if len(data) == 2:
+        dataset, dataloader = data
+        batched_transforms = None
+    else:
+        dataset, dataloader, batched_transforms = data
     print("Loading dataset Complete")
+    device = torch.device("cpu")
 
     i = 0
-    while True:
-        image, data = dataset[i]
-        image = image.unsqueeze(0).float()
-        print(image.shape, data)
-        # image, mask = batched_transform(image)
+    for i, data in enumerate(dataloader):
+        image, info = data
+        image = image[0].to(device).to(float())
+        print(image.shape)
+        if batched_transforms:
+            image = batched_transforms(image)
 
         image = TF.normalize(
             image,
