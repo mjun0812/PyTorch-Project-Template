@@ -1,0 +1,4 @@
+NAME: PolynomialLRDecay
+# 割合で指定，Epochで自動計算
+MILESTONES: [0.5, 0.75]
+GAMMA: 0.1

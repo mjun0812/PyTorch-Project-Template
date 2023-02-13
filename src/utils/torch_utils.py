@@ -94,6 +94,13 @@ def build_lr_scheduler(cfg, optimizer):
             end_learning_rate=cfg.LR_SCHEDULER.END_LR,
             power=cfg.LR_SCHEDULER.POWER,
         )
+    elif lr_scheduler_name == "MultiStepLR":
+        scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer,
+            milestones=[round(r * cfg.EPOCH) for r in cfg.LR_SCHEDULER.MILESTONES],
+            gamma=cfg.LR_SCHEDULER.GAMMA,
+        )
+
     logger.info(f"LR Scheduler: {cfg.LR_SCHEDULER}")
     return scheduler
 
