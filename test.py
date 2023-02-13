@@ -48,13 +48,13 @@ def do_test(cfg, output_dir, device, writer):
 
     model, _ = build_model(cfg, device, phase="test")
     model.load_state_dict(torch.load(cfg.MODEL.WEIGHT, map_location=device))
+    model.requires_grad_(False)
+    model.eval()
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     logger.info("Complete load model")
 
     metric = 0
     results = []
-    model.requires_grad_(False)
-    model.eval()
     progress_bar = tqdm(enumerate(dataloader), total=len(dataloader), dynamic_ncols=True)
     for i, data in progress_bar:
         with torch.no_grad():
