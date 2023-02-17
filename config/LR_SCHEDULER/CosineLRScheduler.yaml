@@ -1,6 +1,9 @@
 NAME: CosineLRScheduler
 T_INITIAL: ${EPOCH}
 LR_MIN: 1e-6
-WARMUP_T: 10
-WARMUP_LR_INIT: 1e-6
+WARMUP_T: 5
+WARMUP_LR_INIT: 1e-4
+CYCLE_DECAY: 0.1
 NOISE_T: [0.8, 0.9]
+# warmup終了時の学習率をlrと同じにする
+WARMUP_PREFIX: False

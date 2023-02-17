@@ -76,15 +76,19 @@ def build_lr_scheduler(cfg, optimizer):
             warmup_steps=cfg.LR_SCHEDULER.WARMUP_STEPS,
         )
     elif lr_scheduler_name == "CosineLRScheduler":
-        if cfg.LR_SCHEDULER.NOISE_T:
+        if cfg.LR_SCHEDULER.get("NOISE_T"):
             kwargs = {"noise_range_t": [int(cfg.EPOCH * n) for n in cfg.LR_SCHEDULER.NOISE_T]}
+        else:
+            kwargs = {}
         scheduler = CosineLRScheduler(
             optimizer,
             t_initial=cfg.LR_SCHEDULER.T_INITIAL,
             lr_min=cfg.LR_SCHEDULER.LR_MIN,
             warmup_t=cfg.LR_SCHEDULER.WARMUP_T,
             warmup_lr_init=cfg.LR_SCHEDULER.WARMUP_LR_INIT,
-            warmup_prefix=True,
+            cycle_limit=1,
+            warmup_prefix=cfg.LR_SCHEDULER.WARMUP_PREFIX,
+            cycle_decay=cfg.LR_SCHEDULER.CYCLE_DECAY,
             **kwargs,
         )
     elif lr_scheduler_name == "PolynomialLRDecay":
