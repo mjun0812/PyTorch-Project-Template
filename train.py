@@ -364,6 +364,7 @@ def main(cfg: DictConfig):
         # Send Message to Slack
         post_slack(message=f"Finish Test\n{message}")
         logger.info(f"Finish Test {message}")
+        OmegaConf.save(cfg, os.path.join(output_result_dir, "config.yaml"))
         writer.log_result_dir(output_dir)
         writer.log_result_dir(output_result_dir)
         writer.close()
