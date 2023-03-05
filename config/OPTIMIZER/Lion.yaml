@@ -1,0 +1,3 @@
+NAME: Lion
+LR: 1e-4
+WEIGHT_DECAY: 1e-2

@@ -5,6 +5,7 @@ from timm.scheduler import CosineLRScheduler
 
 import torch.optim as optim
 
+from .optimizer.lion import Lion
 
 logger = logging.getLogger()
 
@@ -34,6 +35,8 @@ def build_optimizer(cfg, model):
         )
     elif optimizer_name == "SGD":
         optimizer = optim.SGD(model.parameters(), lr=lr)
+    elif optimizer_name == "Lion":
+        optimizer = Lion(model.parameters(), lr=lr, weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY)
     logger.info(f"Optimizer: {optimizer_name}")
     logger.info(f"Learning Rate: {lr}")
     return optimizer
