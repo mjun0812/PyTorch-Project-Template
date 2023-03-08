@@ -180,6 +180,7 @@ def do_train(rank, cfg, device, output_dir, writer):
                 dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
                 dist.barrier()
             epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
+            lr = optimizer.param_groups[0]["lr"]
 
             if phase == "train":
                 if cfg.LR_SCHEDULER.NAME == "ReduceLROnPlateau":
@@ -194,9 +195,9 @@ def do_train(rank, cfg, device, output_dir, writer):
                     f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
                     f"Loss: {epoch_loss:8.5f} "
                     f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
-                    f"LR: {optimizer.param_groups[0]['lr']:.4e}"
+                    f"LR: {lr:.4e}"
                 )
-                metric_values = [epoch_loss, optimizer.param_groups[0]["lr"]]
+                metric_values = [epoch_loss, lr]
                 writer.log_metrics(phase, metrics, metric_values, epoch + 1)
 
                 if phase == "train":
