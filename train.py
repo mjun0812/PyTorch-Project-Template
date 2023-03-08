@@ -101,7 +101,6 @@ def do_train(rank, cfg, device, output_dir, writer):
     logger.info("Complete Loading Dataset")
 
     # ###### Logging ######
-    metrics = ["Loss", "Learning Rate"]
     if rank in [-1, 0]:
         # Model構造を出力
         save_model_info(output_dir, model)
@@ -165,11 +164,15 @@ def do_train(rank, cfg, device, output_dir, writer):
                     if cfg.MODEL_EMA:
                         model_ema.update(model)
 
-                    hist_epoch_loss += loss
-                if rank in [-1, 0]:
-                    progress_bar.set_description(
-                        f"Epoch: {epoch + 1}/{max_epoch}. Loss: {loss.item() / data.size(0):7.5f}"
-                    )
+                    for key in loss.keys():
+                        hist_epoch_loss[key] = (
+                            hist_epoch_loss.get(key, 0.0) + loss[key] * data.shape[0]
+                        )
+                    if rank in [-1, 0]:
+                        description = f"Epoch: {epoch + 1:3}/{max_epoch:3}."
+                        for k, v in loss.items():
+                            description += f" {k.capitalize()}: {v.item():8.4f}"
+                        progress_bar.set_description(description)
 
             # Finish Train or Val Epoch Process below
             if rank != -1:
@@ -177,9 +180,12 @@ def do_train(rank, cfg, device, output_dir, writer):
                 # 正確なLossは全プロセスの勾配の平均を元にして計算するべき
                 # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/8
                 # reduceした時点で平均化されている
-                dist.all_reduce(hist_epoch_loss, op=dist.ReduceOp.SUM)
+                for v in hist_epoch_loss.values():
+                    dist.all_reduce(v, op=dist.ReduceOp.SUM)
                 dist.barrier()
-            epoch_loss = hist_epoch_loss.item() / len(datasets[phase])
+            for k, v in hist_epoch_loss.items():
+                hist_epoch_loss[k] = hist_epoch_loss[k].item() / len(datasets[phase])
+            epoch_loss = hist_epoch_loss["Loss"]
             lr = optimizer.param_groups[0]["lr"]
 
             if phase == "train":
@@ -191,19 +197,21 @@ def do_train(rank, cfg, device, output_dir, writer):
                     scheduler.step()
 
             if rank in [-1, 0]:
-                logger.info(
-                    f"{phase.capitalize()} Epoch: {epoch + 1}/{max_epoch}. "
-                    f"Loss: {epoch_loss:8.5f} "
-                    f"GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB. "
-                    f"LR: {lr:.4e}"
+                description = f"{phase.capitalize()} Epoch: {(epoch + 1):3}/{max_epoch:3}. "
+                for k, v in hist_epoch_loss.items():
+                    description += f" {k}: {v:8.4f}"
+                description += (
+                    f" GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB LR: {lr:.4e}"
                 )
-                metric_values = [epoch_loss, lr]
-                writer.log_metrics(phase, metrics, metric_values, epoch + 1)
+                logger.info(description)
+                hist_epoch_loss.update({"Loss": epoch_loss, "Learning Rate": lr})
+                writer.log_metrics(
+                    phase, list(hist_epoch_loss.keys()), list(hist_epoch_loss.values()), epoch + 1
+                )
 
-                if phase == "train":
+                if phase == "train" and ((epoch + 1) % cfg.SAVE_INTERVAL == 0):
                     # Save Model Weight
-                    if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
-                        save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
+                    save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
                 elif phase == "val":
                     # Save best val Loss Model
                     if epoch_loss < best_loss:
