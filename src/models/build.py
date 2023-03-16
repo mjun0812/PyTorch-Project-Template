@@ -26,7 +26,11 @@ def build_model(cfg, device, phase="train", rank=-1):
 
     model_ema = None
     if cfg.MODEL_EMA:
+        logger.info("Use Model Exponential Moving Average(EMA)")
         model_ema = ModelEmaV2(model, decay=cfg.MODEL_EMA_DECAY)
+    if cfg.COMPILE and torch.__version__ >= "2.0.0":
+        logger.info("Use Torch Dynamo Compile")
+        model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
 
     if rank != -1:
         if cfg.MODEL.SYNC_BN:

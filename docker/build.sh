@@ -6,7 +6,7 @@ IMAGE_NAME=$(basename $(pwd))
 # to lowercase
 IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 
-PYTHON="3.10.9"
+PYTHON="3.10.10"
 CUDA_VERSION="11.7.1"
 UBUNTU="22.04"
 CUDNN="8"

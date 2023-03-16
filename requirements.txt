@@ -20,6 +20,8 @@ tqdm
 mlflow==2.2.1
 torchinfo >= 1.7.0
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch==1.13.1+cu117
+torch==2.0.0+cu117
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torchvision==0.14.1+cu117
+torchvision==0.15.1+cu117
+# --find-links https://developer.download.nvidia.com/compute/redist/nvidia-dali-cuda110/
+# nvidia-dali-cuda110
