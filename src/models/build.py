@@ -1,6 +1,5 @@
 import logging
 import torch
-import torch._dynamo as dynamo
 from torch.nn.parallel import DistributedDataParallel
 
 from timm.utils import ModelEmaV2
@@ -41,11 +40,5 @@ def build_model(cfg, device, phase="train", rank=-1):
     elif torch.cuda.device_count() > 1 and phase == "train":
         logger.info("Use DataParallel Training")
         model = torch.nn.DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
-
-    if cfg.COMPILE and torch.__version__ >= "2.0.0":
-        logger.info("Use Torch Dynamo Compile")
-        dynamo.reset()
-        model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
-        # dynamo.config.log_level = logging.WARNING
 
     return model, model_ema
