@@ -10,7 +10,6 @@ import shutil
 
 import torch
 import torch.distributed as dist
-import torch._dynamo as dynamo
 
 from tqdm import tqdm
 import numpy as np
@@ -95,8 +94,8 @@ def do_train(rank, cfg, device, output_dir, writer):
     load_last_weight(cfg, model)
     if cfg.COMPILE and torch.__version__ >= "2.0.0":
         logger.info("Use Torch Dynamo Compile")
-        dynamo.reset()
-        dynamo.config.log_level = logging.WARNING
+        torch._dynamo.reset()
+        torch._dynamo.config.log_level = logging.WARNING
         model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
 
     # ####### Build Dataset and Dataloader #######
