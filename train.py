@@ -93,9 +93,11 @@ def do_train(rank, cfg, device, output_dir, writer):
     model, model_ema = build_model(cfg, device, phase="train", rank=rank)
     load_last_weight(cfg, model)
     if cfg.COMPILE and torch.__version__ >= "2.0.0":
+        import torch._dynamo as dynamo  # noqa
+
         logger.info("Use Torch Dynamo Compile")
-        torch._dynamo.reset()
-        torch._dynamo.config.log_level = logging.WARNING
+        dynamo.reset()
+        dynamo.config.log_level = logging.WARNING
         model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
 
     # ####### Build Dataset and Dataloader #######
