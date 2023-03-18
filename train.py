@@ -97,7 +97,6 @@ def do_train(rank, cfg, device, output_dir, writer):
 
         logger.info("Use Torch Dynamo Compile")
         dynamo.reset()
-        dynamo.config.log_level = logging.WARNING
         model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
 
     # ####### Build Dataset and Dataloader #######
