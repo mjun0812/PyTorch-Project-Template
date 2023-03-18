@@ -98,10 +98,6 @@ def do_train(rank, cfg, device, output_dir, writer):
         logger.info("Use Torch Dynamo Compile")
         dynamo.reset()
         model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
-        if rank in [-1, 0]:
-            setup_logger(os.path.join(output_dir, "train.log"))
-        else:
-            setup_logger()
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
