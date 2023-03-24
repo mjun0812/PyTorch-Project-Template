@@ -51,7 +51,7 @@ def do_test(cfg, output_dir, device, writer):
     # for torch.compile model
     state_dict = {}
     for k, v in check_point.items():
-        state_dict[k.replace("_orig_mod.", "").replace("module.")] = v
+        state_dict[k.replace("_orig_mod.", "").replace("module.", "")] = v
     model.load_state_dict(state_dict)
     model.requires_grad_(False)
     model.eval()
