@@ -47,7 +47,12 @@ def do_test(cfg, output_dir, device, writer):
     )
 
     model, _ = build_model(cfg, device, phase="test")
-    model.load_state_dict(torch.load(cfg.MODEL.WEIGHT, map_location=device))
+    check_point = torch.load(cfg.MODEL.WEIGHT, map_location=device)
+    # for torch.compile model
+    state_dict = {}
+    for k, v in check_point.items():
+        state_dict[k.replace("_orig_mod.", "")] = v
+    model.load_state_dict(state_dict)
     model.requires_grad_(False)
     model.eval()
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
