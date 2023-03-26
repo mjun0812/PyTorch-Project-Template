@@ -63,9 +63,13 @@ def load_last_weight(cfg, model):
         model = model.module
     device = next(model.parameters()).device
 
-    missing, unexpexted = model.load_state_dict(
-        torch.load(weight_path, map_location=device), strict=False
-    )
+    check_point = torch.load(weight_path, map_location=device)
+    # for torch.compile model
+    state_dict = {}
+    for k, v in check_point.items():
+        state_dict[k.replace("_orig_mod.", "").replace("module.", "")] = v
+    missing, unexpexted = model.load_state_dict(state_dict, strict=False)
+
     logger.info(f"Load weight from {weight_path}")
     logger.info(f"Missing model key: {missing}")
     logger.info(f"Unexpected model key: {unexpexted}")
