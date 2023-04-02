@@ -34,6 +34,7 @@ from src.utils import (
     TrainLogger,
     post_slack,
     make_result_dirs,
+    reduce_tensor,
 )
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
@@ -175,8 +176,10 @@ def do_train(rank, cfg, device, output_dir, writer):
                         model_ema.update(model)
 
                     for key in loss.keys():
+                        if rank != -1:
+                            loss[key] = reduce_tensor(loss[key])
                         hist_epoch_loss[key] = (
-                            hist_epoch_loss.get(key, 0.0) + loss[key] * data.shape[0]
+                            hist_epoch_loss.get(key, 0.0) + loss[key].item() * data.shape[0]
                         )
                     if rank in [-1, 0]:
                         description = f"Epoch: {epoch + 1:3}/{max_epoch:3}."
@@ -185,16 +188,8 @@ def do_train(rank, cfg, device, output_dir, writer):
                         progress_bar.set_description(description)
 
             # Finish Train or Val Epoch Process below
-            if rank != -1:
-                # ここで，各プロセスのLossを全て足し合わせる
-                # 正確なLossは全プロセスの勾配の平均を元にして計算するべき
-                # https://discuss.pytorch.org/t/average-loss-in-dp-and-ddp/93306/8
-                # reduceした時点で平均化されている
-                for v in hist_epoch_loss.values():
-                    dist.all_reduce(v, op=dist.ReduceOp.SUM)
-                dist.barrier()
             for k, v in hist_epoch_loss.items():
-                hist_epoch_loss[k] = hist_epoch_loss[k].item() / len(datasets[phase])
+                hist_epoch_loss[k] = hist_epoch_loss[k] / len(datasets[phase])
             epoch_loss = hist_epoch_loss["Loss"]
             lr = optimizer.param_groups[0]["lr"]
 
