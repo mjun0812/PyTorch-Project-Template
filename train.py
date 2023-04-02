@@ -189,7 +189,7 @@ def do_train(rank, cfg, device, output_dir, writer):
 
             # Finish Train or Val Epoch Process below
             for k, v in hist_epoch_loss.items():
-                hist_epoch_loss[k] = hist_epoch_loss[k] / len(datasets[phase])
+                hist_epoch_loss[k] = hist_epoch_loss[k] / (len(dataloaders[phase]) * cfg.BATCH)
             epoch_loss = hist_epoch_loss["Loss"]
             lr = optimizer.param_groups[0]["lr"]
 
@@ -309,8 +309,8 @@ def main(cfg: DictConfig):
     try:
         result = do_train(local_rank, cfg, device, output_dir, writer)
     except (Exception, KeyboardInterrupt) as e:
-        logger.error(f"{e}\n{traceback.format_exc()}")
         if local_rank in [0, -1]:
+            logger.error(f"{e}\n{traceback.format_exc()}")
             post_slack(
                 channel="#error",
                 message=f"Error Train\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
