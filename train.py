@@ -177,7 +177,7 @@ def do_train(rank, cfg, device, output_dir, writer):
 
                     for key in loss.keys():
                         if rank != -1:
-                            loss[key] = reduce_tensor(loss[key])
+                            loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
                         hist_epoch_loss[key] = (
                             hist_epoch_loss.get(key, 0.0) + loss[key].item() * data.shape[0]
                         )
