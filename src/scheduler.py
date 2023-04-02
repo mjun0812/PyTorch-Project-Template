@@ -5,41 +5,8 @@ from timm.scheduler import CosineLRScheduler
 
 import torch.optim as optim
 
-from .optimizer.lion import Lion
 
 logger = logging.getLogger()
-
-
-def build_optimizer(cfg, model):
-    optimizer_name = cfg.OPTIMIZER.NAME
-    lr = cfg.OPTIMIZER.LR
-    if optimizer_name == "AdamW":
-        optimizer = optim.AdamW(model.parameters(), lr=lr)
-    elif optimizer_name == "Adam":
-        optimizer = optim.Adam(model.parameters(), lr=lr)
-    elif optimizer_name == "NesterovMomentum":
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=lr,
-            momentum=cfg.OPTIMIZER.MOMENTUM,
-            nesterov=True,
-            weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY,
-        )
-    elif optimizer_name == "Momentum":
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=lr,
-            momentum=cfg.OPTIMIZER.MOMENTUM,
-            nesterov=False,
-            weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY,
-        )
-    elif optimizer_name == "SGD":
-        optimizer = optim.SGD(model.parameters(), lr=lr)
-    elif optimizer_name == "Lion":
-        optimizer = Lion(model.parameters(), lr=lr, weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY)
-    logger.info(f"Optimizer: {optimizer_name}")
-    logger.info(f"Learning Rate: {lr}")
-    return optimizer
 
 
 def build_lr_scheduler(cfg, optimizer):
@@ -105,6 +72,12 @@ def build_lr_scheduler(cfg, optimizer):
         scheduler = optim.lr_scheduler.MultiStepLR(
             optimizer,
             milestones=[round(r * cfg.EPOCH) for r in cfg.LR_SCHEDULER.MILESTONES],
+            gamma=cfg.LR_SCHEDULER.GAMMA,
+        )
+    elif lr_scheduler_name == "StepLR":
+        scheduler = optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=round(cfg.LR_SCHEDULER.LR_DROP * cfg.EPOCH),
             gamma=cfg.LR_SCHEDULER.GAMMA,
         )
 

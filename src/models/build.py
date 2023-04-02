@@ -29,6 +29,9 @@ def build_model(cfg, device, phase="train", rank=-1):
         logger.info("Use Model Exponential Moving Average(EMA)")
         model_ema = ModelEmaV2(model, decay=cfg.MODEL_EMA_DECAY)
 
+    num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    logger.info(f"Num Model Parameters: {num_parameters}")
+
     if rank != -1:
         if cfg.MODEL.SYNC_BN:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)

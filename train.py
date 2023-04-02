@@ -32,11 +32,11 @@ from src.losses import build_loss
 from src.models import build_model
 from src.utils import (
     TrainLogger,
-    build_lr_scheduler,
-    build_optimizer,
     post_slack,
     make_result_dirs,
 )
+from src.optimizer import build_optimizer
+from src.scheduler import build_lr_scheduler
 from test import do_test
 
 
