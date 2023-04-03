@@ -211,8 +211,12 @@ def do_train(rank, cfg, device, output_dir, writer):
                 logger.info(description)
                 hist_epoch_loss.update({"Loss": epoch_loss, "Learning Rate": lr})
                 writer.log_metrics(
-                    phase, list(hist_epoch_loss.keys()), list(hist_epoch_loss.values()), epoch + 1
+                    phase,
+                    list(hist_epoch_loss.keys()),
+                    list(hist_epoch_loss.values()),
+                    epoch + 1,
                 )
+                writer.log_artifact(os.path.join(output_dir, "train.log"))
 
                 if phase == "train" and ((epoch + 1) % cfg.SAVE_INTERVAL == 0):
                     # Save Model Weight
