@@ -216,11 +216,11 @@ def do_train(rank, cfg, device, output_dir, writer):
                     list(hist_epoch_loss.values()),
                     epoch + 1,
                 )
-                writer.log_artifact(os.path.join(output_dir, "train.log"))
 
                 if phase == "train" and ((epoch + 1) % cfg.SAVE_INTERVAL == 0):
                     # Save Model Weight
                     save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
+                    writer.log_artifact(os.path.join(output_dir, "train.log"))
                 elif phase == "val":
                     # Save best val Loss Model
                     if epoch_loss < best_loss:
