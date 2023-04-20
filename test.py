@@ -100,7 +100,7 @@ def main(cfg: DictConfig):
         cfg.MODEL.WEIGHT = os.path.join(*weight_dir_list)
 
     # set Device
-    device = set_device(cfg.GPU.USE, is_cpu=cfg.CPU)
+    device = set_device(cfg.GPU.USE, use_cudnn=cfg.CUDNN, is_cpu=cfg.CPU)
 
     output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
 

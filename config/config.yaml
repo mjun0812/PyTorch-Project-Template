@@ -29,6 +29,7 @@ CPU: False
 NUM_WORKER: 4
 
 # Training Options
+CUDNN: True
 AMP: False
 MODEL_EMA: False
 MODEL_EMA_DECAY: 0.99

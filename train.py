@@ -260,7 +260,11 @@ def main(cfg: DictConfig):
     set_hydra(cfg, verbose=local_rank in [0, -1])
     # set Device
     device = set_device(
-        cfg.GPU.USE, rank=local_rank, is_cpu=cfg.CPU, verbose=local_rank in [0, -1]
+        cfg.GPU.USE,
+        rank=local_rank,
+        use_cudnn=cfg.CUDNN,
+        is_cpu=cfg.CPU,
+        verbose=local_rank in [0, -1],
     )
 
     if local_rank in [0, -1]:
