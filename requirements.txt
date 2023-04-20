@@ -2,7 +2,7 @@ black
 flake8
 hydra-core >= 1.2.0
 hydra-optuna-sweeper
-kunai @ git+https://github.com/mjun0812/kunai
+kunai @ git+https://github.com/mjun0812/kunai@f35d9c73e370db61f8b41ced37a892f70524ef92
 matplotlib
 natsort
 numpy
