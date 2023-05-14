@@ -75,19 +75,7 @@ def load_last_weight(cfg, model):
 
 
 def do_train(rank, cfg, device, output_dir, writer):
-    """Training Script
-       このFunctionでSingle GPUとMulti GPUの両方に対応しています．
-
-    Args:
-        rank (int): Processランク．Single GPUのときは-1，Multi GPUのときは0,1...
-                    この値でMultiとSingleの区別，Master Prosessの区別を行っている．
-                    MultiGPUの場合，MasterProcess以外でFile IOを行うのはNGなので
-                    この値でFileIOするかを判定する。
-                    rank = [-1,0]のときにIOをして、それ以外ではIOは行わない。
-                    IOはファイル書き込み以外に標準出力も含む
-        cfg (OmegaConf): Hydra Conf
-        output_dict (dict): resultを格納するDirectry Path
-    """
+    """Training Script"""
 
     fix_seed(100 + rank)
     save_model_path = Path(output_dir, "models")
@@ -101,6 +89,11 @@ def do_train(rank, cfg, device, output_dir, writer):
         logger.info("Use Torch Dynamo Compile")
         dynamo.reset()
         model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
+    if rank in [-1, 0]:
+        # Model構造を出力
+        save_model_info(output_dir, model)
+        # save initial model
+        save_model(model, save_model_path / "model_init_0.pth")
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
@@ -108,13 +101,6 @@ def do_train(rank, cfg, device, output_dir, writer):
     for phase in ["train", "val"]:
         datasets[phase], dataloaders[phase] = build_dataset(cfg, phase=phase, rank=rank)
     logger.info("Complete Loading Dataset")
-
-    # ###### Logging ######
-    if rank in [-1, 0]:
-        # Model構造を出力
-        save_model_info(output_dir, model)
-        # save initial model
-        save_model(model, save_model_path / "model_init_0.pth")
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model)
