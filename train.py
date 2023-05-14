@@ -179,7 +179,7 @@ def do_train(rank, cfg, device, output_dir, writer):
             lr = optimizer.param_groups[0]["lr"]
 
             if phase == "train":
-                scheduler.step(epoch=None, metric=None)
+                scheduler.step(epoch=epoch, metric=epoch_loss)
 
             if rank in [-1, 0]:
                 description = f"{phase.capitalize()} Epoch: {(epoch + 1):3}/{max_epoch:3}. "
