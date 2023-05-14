@@ -194,12 +194,7 @@ def do_train(rank, cfg, device, output_dir, writer):
             lr = optimizer.param_groups[0]["lr"]
 
             if phase == "train":
-                if cfg.LR_SCHEDULER.NAME == "ReduceLROnPlateau":
-                    scheduler.step(epoch_loss)
-                elif cfg.LR_SCHEDULER.NAME == "CosineLRScheduler":
-                    scheduler.step(epoch + 1)
-                else:
-                    scheduler.step()
+                scheduler.step(epoch=None, metric=None)
 
             if rank in [-1, 0]:
                 description = f"{phase.capitalize()} Epoch: {(epoch + 1):3}/{max_epoch:3}. "

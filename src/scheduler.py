@@ -14,7 +14,7 @@ def build_lr_scheduler(cfg, optimizer):
     if lr_scheduler_name == "ReduceLROnPlateau":
         # factor : 学習率の減衰率
         # patience : 何ステップ向上しなければlrを変更するか
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        scheduler = ReduceLROnPlateau(
             optimizer,
             patience=cfg.LR_SCHEDULER.PATIENCE,
             verbose=True,
@@ -28,7 +28,7 @@ def build_lr_scheduler(cfg, optimizer):
         # T_0を周期とするコサインカーブで減衰して、
         # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
         # 局所最適を脱出してもっと良いパラメータを探索します
-        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        scheduler = CosineAnnealingWarmRestarts(
             optimizer,
             T_0=cfg.LR_SCHEDULER.T_ZERO,
             T_mult=cfg.LR_SCHEDULER.T_MULT,
@@ -69,13 +69,13 @@ def build_lr_scheduler(cfg, optimizer):
             power=cfg.LR_SCHEDULER.POWER,
         )
     elif lr_scheduler_name == "MultiStepLR":
-        scheduler = optim.lr_scheduler.MultiStepLR(
+        scheduler = MultiStepLR(
             optimizer,
             milestones=[round(r * cfg.EPOCH) for r in cfg.LR_SCHEDULER.MILESTONES],
             gamma=cfg.LR_SCHEDULER.GAMMA,
         )
     elif lr_scheduler_name == "StepLR":
-        scheduler = optim.lr_scheduler.StepLR(
+        scheduler = StepLR(
             optimizer,
             step_size=round(cfg.LR_SCHEDULER.LR_DROP * cfg.EPOCH),
             gamma=cfg.LR_SCHEDULER.GAMMA,
@@ -156,7 +156,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
                 for base_lr in self.base_lrs
             ]
 
-    def step(self, epoch=None):
+    def step(self, epoch=None, metric=None):
         if epoch is None:
             epoch = self.last_epoch + 1
             self.step_in_cycle = self.step_in_cycle + 1
@@ -226,10 +226,10 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
             for base_lr in self.base_lrs
         ]
 
-    def step(self, step=None):
-        if step is None:
-            step = self.last_step + 1
-        self.last_step = step if step != 0 else 1
+    def step(self, epoch=None, metric=None):
+        if epoch is None:
+            epoch = self.last_step + 1
+        self.last_step = epoch if epoch != 0 else 1
         if self.last_step <= self.max_decay_steps:
             decay_lrs = [
                 (base_lr - self.end_learning_rate)
@@ -239,3 +239,23 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
             ]
             for param_group, lr in zip(self.optimizer.param_groups, decay_lrs):
                 param_group["lr"] = lr
+
+
+class ReduceLROnPlateau(optim.lr_scheduler.ReduceLROnPlateau):
+    def step(self, epoch=None, metric=None):
+        super().step(self, metric, epoch=epoch)
+
+
+class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts):
+    def step(self, epoch=None, metric=None):
+        super().step(epoch=epoch)
+
+
+class MultiStepLR(optim.lr_scheduler.MultiStepLR):
+    def step(self, epoch=None, metric=None):
+        super().step(epoch=epoch)
+
+
+class StepLR(optim.lr_scheduler.StepLR):
+    def step(self, epoch=None, metric=None):
+        super().step(epoch=epoch)
