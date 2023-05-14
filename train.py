@@ -6,13 +6,11 @@ import traceback
 from pathlib import Path
 import pprint
 import datetime
-import shutil
 
 import torch
 import torch.distributed as dist
 
 from tqdm import tqdm
-import numpy as np
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from natsort import natsorted
@@ -140,10 +138,11 @@ def do_train(rank, cfg, device, output_dir, writer):
                 continue
 
             model.train(phase == "train")
-            if phase == "train" and rank != -1:
-                dataloaders[phase].sampler.set_epoch(epoch)
-            if phase == "train" and rank in [-1, 0]:
-                writer.log_metric("Epoch", epoch + 1, phase, epoch + 1)
+            if phase == "train":
+                if rank != -1:
+                    dataloaders[phase].sampler.set_epoch(epoch)
+                if rank in [-1, 0]:
+                    writer.log_metric("Epoch", epoch + 1, phase, epoch + 1)
 
             # Set progress bar
             progress_bar = enumerate(dataloaders[phase])
@@ -206,10 +205,7 @@ def do_train(rank, cfg, device, output_dir, writer):
                 logger.info(description)
                 hist_epoch_loss.update({"Loss": epoch_loss, "Learning Rate": lr})
                 writer.log_metrics(
-                    phase,
-                    list(hist_epoch_loss.keys()),
-                    list(hist_epoch_loss.values()),
-                    epoch + 1,
+                    phase, list(hist_epoch_loss.keys()), list(hist_epoch_loss.values()), epoch + 1
                 )
 
                 if phase == "train" and ((epoch + 1) % cfg.SAVE_INTERVAL == 0):
@@ -219,9 +215,6 @@ def do_train(rank, cfg, device, output_dir, writer):
                 elif phase == "val":
                     # Save best val Loss Model
                     if epoch_loss < best_loss:
-                        shutil.rmtree(
-                            save_model_path / f"model_best_{best_epoch}.pth", ignore_errors=True
-                        )
                         save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
                         best_loss = epoch_loss
                         best_epoch = epoch + 1
