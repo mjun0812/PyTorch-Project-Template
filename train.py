@@ -61,16 +61,28 @@ def load_last_weight(cfg, model):
     if check_model_parallel(model):
         model = model.module
     device = next(model.parameters()).device
+    model_state_dict = model.state_dict()
 
     check_point = torch.load(weight_path, map_location=device)
     # for torch.compile model
-    state_dict = {}
+    checkpoint_state_dict = {}
     for k, v in check_point.items():
-        state_dict[k.replace("_orig_mod.", "").replace("module.", "")] = v
-    missing, unexpexted = model.load_state_dict(state_dict, strict=False)
+        checkpoint_state_dict[k.replace("_orig_mod.", "").replace("module.", "")] = v
+
+    unmatch = []
+    for k in list(checkpoint_state_dict.keys()):
+        if k in model_state_dict:
+            shape_model = tuple(model_state_dict[k].shape)
+            shape_checkpoint = tuple(checkpoint_state_dict[k].shape)
+            if shape_model != shape_checkpoint:
+                checkpoint_state_dict.pop(k)
+                unmatch.append(k)
+
+    missing, unexpexted = model.load_state_dict(checkpoint_state_dict, strict=False)
 
     logger.info(f"Load weight from {weight_path}")
     logger.info(f"Missing model key: {missing}")
+    logger.info(f"Unmatch model key: {unmatch}")
     logger.info(f"Unexpected model key: {unexpexted}")
 
 
