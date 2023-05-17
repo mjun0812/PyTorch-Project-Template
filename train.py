@@ -307,7 +307,10 @@ def main(cfg: DictConfig):
             logger.error(f"{e}\n{traceback.format_exc()}")
             post_slack(
                 channel="#error",
-                message=f"Error Train\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
+                message=(
+                    f"Error Train\n{e}\n{traceback.format_exc()}\n"
+                    f"Output: {output_dir}\nHost: {os.uname()[1]}"
+                ),
             )
             writer.log_result_dir(output_dir)
             writer.close("FAILED")
