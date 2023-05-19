@@ -250,7 +250,7 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
 
 class ReduceLROnPlateau(optim.lr_scheduler.ReduceLROnPlateau):
     def step(self, epoch=None, metric=None):
-        super().step(self, metric, epoch=epoch)
+        super().step(self, metric, epoch=None)
 
 
 class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts):
@@ -260,14 +260,14 @@ class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts
 
 class MultiStepLR(optim.lr_scheduler.MultiStepLR):
     def step(self, epoch=None, metric=None):
-        super().step(epoch=epoch)
+        super().step()
 
 
 class StepLR(optim.lr_scheduler.StepLR):
     def step(self, epoch=None, metric=None):
-        super().step(epoch=epoch)
+        super().step()
 
 
 class LinearLR(optim.lr_scheduler.LinearLR):
     def step(self, epoch=None, metric=None):
-        super().step(epoch=epoch)
+        super().step()
