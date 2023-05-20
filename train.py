@@ -116,7 +116,7 @@ def do_train(rank, cfg, device, output_dir, writer):
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model)
-    scheduler = build_lr_scheduler(cfg, optimizer)
+    scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
     scaler = torch.cuda.amp.GradScaler(enabled=cfg.AMP)
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")

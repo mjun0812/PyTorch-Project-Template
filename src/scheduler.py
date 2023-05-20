@@ -9,20 +9,20 @@ import torch.optim as optim
 logger = logging.getLogger()
 
 
-def build_lr_scheduler(cfg, optimizer):
-    lr_scheduler_name = cfg.LR_SCHEDULER.NAME
+def build_lr_scheduler(cfg, optimizer, epoch):
+    lr_scheduler_name = cfg.NAME
     if lr_scheduler_name == "ReduceLROnPlateau":
         # factor : 学習率の減衰率
         # patience : 何ステップ向上しなければlrを変更するか
         scheduler = ReduceLROnPlateau(
             optimizer,
-            patience=cfg.LR_SCHEDULER.PATIENCE,
+            patience=cfg.PATIENCE,
             verbose=True,
-            threshold=cfg.LR_SCHEDULER.THRESHOLD,
+            threshold=cfg.THRESHOLD,
             mode="min",
-            factor=cfg.LR_SCHEDULER.FACTOR,
-            min_lr=cfg.LR_SCHEDULER.MIN_LR,
-            cooldown=cfg.LR_SCHEDULER.COOLDOWN,
+            factor=cfg.FACTOR,
+            min_lr=cfg.MIN_LR,
+            cooldown=cfg.COOLDOWN,
         )
     elif lr_scheduler_name == "CosineAnnealingWarmRestarts":
         # T_0を周期とするコサインカーブで減衰して、
@@ -30,65 +30,65 @@ def build_lr_scheduler(cfg, optimizer):
         # 局所最適を脱出してもっと良いパラメータを探索します
         scheduler = CosineAnnealingWarmRestarts(
             optimizer,
-            T_0=cfg.LR_SCHEDULER.T_ZERO,
-            T_mult=cfg.LR_SCHEDULER.T_MULT,
-            eta_min=cfg.LR_SCHEDULER.ETA_MIN,
+            T_0=cfg.T_ZERO,
+            T_mult=cfg.T_MULT,
+            eta_min=cfg.ETA_MIN,
             verbose=False,
         )
     elif lr_scheduler_name == "CosineAnnealingWarmupReduceRestarts":
         scheduler = CosineAnnealingWarmupReduceRestarts(
             optimizer,
-            first_cycle_steps=cfg.LR_SCHEDULER.FIRST_CYCLE_STEPS,
-            cycle_mult=cfg.LR_SCHEDULER.CYCLE_MULT,
-            max_lr=cfg.LR_SCHEDULER.MAX_LR,
-            min_lr=cfg.LR_SCHEDULER.MIN_LR,
-            gamma=cfg.LR_SCHEDULER.GAMMA,
-            warmup_steps=cfg.LR_SCHEDULER.WARMUP_STEPS,
+            first_cycle_steps=cfg.FIRST_CYCLE_STEPS,
+            cycle_mult=cfg.CYCLE_MULT,
+            max_lr=cfg.MAX_LR,
+            min_lr=cfg.MIN_LR,
+            gamma=cfg.GAMMA,
+            warmup_steps=cfg.WARMUP_STEPS,
         )
     elif lr_scheduler_name == "CosineLRScheduler":
-        if cfg.LR_SCHEDULER.get("NOISE_T"):
-            kwargs = {"noise_range_t": [int(cfg.EPOCH * n) for n in cfg.LR_SCHEDULER.NOISE_T]}
+        if cfg.get("NOISE_T"):
+            kwargs = {"noise_range_t": [int(epoch * n) for n in cfg.NOISE_T]}
         else:
             kwargs = {}
         scheduler = CosineLRScheduler(
             optimizer,
-            t_initial=cfg.LR_SCHEDULER.T_INITIAL,
-            lr_min=cfg.LR_SCHEDULER.LR_MIN,
-            warmup_t=cfg.LR_SCHEDULER.WARMUP_T,
-            warmup_lr_init=cfg.LR_SCHEDULER.WARMUP_LR_INIT,
+            t_initial=cfg.T_INITIAL,
+            lr_min=cfg.LR_MIN,
+            warmup_t=cfg.WARMUP_T,
+            warmup_lr_init=cfg.WARMUP_LR_INIT,
             cycle_limit=1,
-            warmup_prefix=cfg.LR_SCHEDULER.WARMUP_PREFIX,
-            cycle_decay=cfg.LR_SCHEDULER.CYCLE_DECAY,
+            warmup_prefix=cfg.WARMUP_PREFIX,
+            cycle_decay=cfg.CYCLE_DECAY,
             **kwargs,
         )
     elif lr_scheduler_name == "PolynomialLRDecay":
         scheduler = PolynomialLRDecay(
             optimizer,
-            max_decay_steps=cfg.LR_SCHEDULER.MAX_DECAY_STEPS,
-            end_learning_rate=cfg.LR_SCHEDULER.END_LR,
-            power=cfg.LR_SCHEDULER.POWER,
+            max_decay_steps=cfg.MAX_DECAY_STEPS,
+            end_learning_rate=cfg.END_LR,
+            power=cfg.POWER,
         )
     elif lr_scheduler_name == "MultiStepLR":
         scheduler = MultiStepLR(
             optimizer,
-            milestones=[round(r * cfg.EPOCH) for r in cfg.LR_SCHEDULER.MILESTONES],
-            gamma=cfg.LR_SCHEDULER.GAMMA,
+            milestones=[round(r * epoch) for r in cfg.MILESTONES],
+            gamma=cfg.GAMMA,
         )
     elif lr_scheduler_name == "StepLR":
         scheduler = StepLR(
             optimizer,
-            step_size=round(cfg.LR_SCHEDULER.LR_DROP * cfg.EPOCH),
-            gamma=cfg.LR_SCHEDULER.GAMMA,
+            step_size=round(cfg.LR_DROP * epoch),
+            gamma=cfg.GAMMA,
         )
     elif lr_scheduler_name == "LinearLR":
         scheduler = LinearLR(
             optimizer,
-            start_factor=cfg.LR_SCHEDULER.START_FACTOR,
-            end_factor=cfg.LR_SCHEDULER.END_FACTOR,
-            total_iters=cfg.LR_SCHEDULER.TOTAL_ITERS,
+            start_factor=cfg.START_FACTOR,
+            end_factor=cfg.END_FACTOR,
+            total_iters=cfg.TOTAL_ITERS,
         )
 
-    logger.info(f"LR Scheduler: {cfg.LR_SCHEDULER}")
+    logger.info(f"LR Scheduler: {cfg}")
     return scheduler
 
 
@@ -250,7 +250,7 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
 
 class ReduceLROnPlateau(optim.lr_scheduler.ReduceLROnPlateau):
     def step(self, epoch=None, metric=None):
-        super().step(self, metric, epoch=None)
+        super().step(metric, epoch=None)
 
 
 class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts):
