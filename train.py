@@ -5,7 +5,6 @@ import sys
 import traceback
 from pathlib import Path
 import pprint
-import datetime
 
 import torch
 import torch.distributed as dist
@@ -28,12 +27,7 @@ from kunai.utils import get_cmd, get_git_hash, setup_logger, make_output_dirs
 from src.dataloaders import build_dataset
 from src.losses import build_loss
 from src.models import build_model
-from src.utils import (
-    TrainLogger,
-    post_slack,
-    make_result_dirs,
-    reduce_tensor,
-)
+from src.utils import TrainLogger, post_slack, make_result_dirs, reduce_tensor, error_handle
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
 from test import do_test
@@ -291,9 +285,7 @@ def main(cfg: DictConfig):
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
-        dist.init_process_group(
-            backend="nccl", init_method="env://", timeout=datetime.timedelta(seconds=2700)
-        )
+        dist.init_process_group(backend="nccl", init_method="env://")
         logging.info("Use Distributed Data Parallel Training")
         logging.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
@@ -304,18 +296,9 @@ def main(cfg: DictConfig):
         result = do_train(local_rank, cfg, device, output_dir, writer)
     except (Exception, KeyboardInterrupt) as e:
         if local_rank in [0, -1]:
-            logger.error(f"{e}\n{traceback.format_exc()}")
-            post_slack(
-                channel="#error",
-                message=(
-                    f"Error Train\n{e}\n{traceback.format_exc()}\n"
-                    f"Output: {output_dir}\nHost: {os.uname()[1]}"
-                ),
-            )
+            error_handle(e, "Train", f"Output: {output_dir}")
             writer.log_result_dir(output_dir)
             writer.close("FAILED")
-        if local_rank != -1:
-            dist.destroy_process_group()
         sys.exit(1)
 
     if local_rank in [0, -1]:
@@ -338,9 +321,8 @@ def main(cfg: DictConfig):
             glob.glob(os.path.join(output_dir, "models", "model_best_*.pth"))
         )[-1]
         writer.log_artifact(cfg.MODEL.WEIGHT)
-        if local_rank == 0:
-            cfg.GPU.MULTI = False
-            cfg.GPU.USE = 0
+        cfg.GPU.MULTI = False
+        cfg.GPU.USE = 0
         OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
         writer.log_artifact(os.path.join(output_dir, "config.yaml"))
         writer.log_result_dir(output_dir)
@@ -362,11 +344,7 @@ def main(cfg: DictConfig):
         try:
             result = do_test(cfg, output_result_dir, device, writer)
         except (Exception, KeyboardInterrupt) as e:
-            logger.error(f"{e}\n{traceback.format_exc()}")
-            post_slack(
-                channel="#error",
-                message=f"Error Test\n{e}\n{traceback.format_exc()}\nOutput: {output_dir}",
-            )
+            error_handle(e, "Test", f"Output: {output_dir}")
             writer.close("FAILED")
             sys.exit(1)
         message_dict["Test save"] = output_result_dir

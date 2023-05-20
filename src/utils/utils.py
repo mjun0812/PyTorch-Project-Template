@@ -1,9 +1,11 @@
 import os
 import datetime
 import logging
+import traceback
 
-from dotenv import load_dotenv
 import kunai
+from dotenv import load_dotenv
+import torch.distributed as dist
 
 import matplotlib
 
@@ -87,3 +89,16 @@ def make_result_dirs(weight_path, prefix=""):
     output_dir = os.path.join(output_dir, "runs", dir_name)
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
+
+
+def error_handle(e, phase, message):
+    message = (
+        f"Error {phase}\n{e}\n"
+        f"{traceback.format_exc()}\n"
+        f"{message}\n"
+        f"Host: {os.uname()[1]}"
+    )
+    logger.error(message)
+    post_slack(channel="#error", message=message)
+    if dist.is_initialized():
+        dist.destroy_process_group()
