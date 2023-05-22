@@ -21,3 +21,10 @@ def reduce_tensor(tensor, n=1):
     dist.all_reduce(rt, op=dist.ReduceOp.SUM)
     dist.barrier()
     return rt / n
+
+
+def adjust_learning_rate(base_lr, batch_size):
+    world_size = 1
+    if is_distributed():
+        world_size = dist.get_world_size()
+    return base_lr * batch_size * world_size

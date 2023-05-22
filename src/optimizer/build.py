@@ -1,10 +1,11 @@
 import logging
 
-
 import torch.optim as optim
 
-from .lion import Lion
 from kunai.torch_utils import check_model_parallel
+
+from .lion import Lion
+from ..utils import adjust_learning_rate
 
 logger = logging.getLogger()
 
@@ -12,6 +13,8 @@ logger = logging.getLogger()
 def build_optimizer(cfg, model):
     optimizer_name = cfg.OPTIMIZER.NAME
     lr = cfg.OPTIMIZER.LR
+    if cfg.ADJUST_LR:
+        lr = adjust_learning_rate(lr, cfg.BATCH)
 
     target_model = model
     if check_model_parallel(model):

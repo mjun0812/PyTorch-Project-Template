@@ -35,8 +35,9 @@ MODEL_EMA: False
 MODEL_EMA_DECAY: 0.99
 USE_CLIP_GRAD: True
 CLIP_GRAD_NORM: 10
-COMPILE: True
+COMPILE: False
 COMPILE_BACKEND: "inductor"
+ADJUST_LR: False
 
 # Output
 OUTPUT: ./result/
