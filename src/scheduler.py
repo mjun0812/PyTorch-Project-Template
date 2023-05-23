@@ -69,9 +69,15 @@ def build_lr_scheduler(cfg, optimizer, epoch):
             power=cfg.POWER,
         )
     elif lr_scheduler_name == "MultiStepLR":
+        milestones = []
+        for m in cfg.MILESTONES:
+            if isinstance(m, float):
+                milestones.append(round(m * epoch))
+            elif isinstance(m, int):
+                milestones.append(m)
         scheduler = MultiStepLR(
             optimizer,
-            milestones=[round(r * epoch) for r in cfg.MILESTONES],
+            milestones=milestones,
             gamma=cfg.GAMMA,
         )
     elif lr_scheduler_name == "StepLR":
