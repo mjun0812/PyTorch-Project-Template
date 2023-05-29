@@ -29,8 +29,10 @@ def build_model(cfg, device, phase="train", rank=-1):
         logger.info("Use Model Exponential Moving Average(EMA)")
         model_ema = ModelEmaV2(model, decay=cfg.MODEL_EMA_DECAY)
 
-    num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    num_parameters, num_trainable_parameters, num_backbone_parameters = calc_model_prameters(model)
     logger.info(f"Num Model Parameters: {num_parameters}")
+    logger.info(f"Num Trainable Model Parameters: {num_trainable_parameters}")
+    logger.info(f"Num Backbone Model Parameters: {num_backbone_parameters}")
 
     if rank != -1:
         if cfg.MODEL.SYNC_BN:
@@ -45,3 +47,16 @@ def build_model(cfg, device, phase="train", rank=-1):
         model = torch.nn.DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
 
     return model, model_ema
+
+
+def calc_model_prameters(model: torch.nn.Module):
+    num_params = 0
+    num_backbone_prams = 0
+    num_trainable_prams = 0
+    for n, m in model.named_parameters():
+        if "backbone" in n:
+            num_backbone_prams += m.numel()
+        if m.requires_grad:
+            num_trainable_prams += m.numel()
+        num_params += m.numel()
+    return num_params, num_trainable_prams, num_backbone_prams
