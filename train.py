@@ -1,37 +1,35 @@
 import glob
 import logging
 import os
+import pprint
 import sys
 import traceback
 from pathlib import Path
-import pprint
 
+import hydra
 import torch
 import torch.distributed as dist
-
-from tqdm import tqdm
-import hydra
-from omegaconf import DictConfig, OmegaConf
-from natsort import natsorted
-
 from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import (
+    check_model_parallel,
     fix_seed,
     save_model,
     save_model_info,
     set_device,
-    check_model_parallel,
 )
-from kunai.utils import get_cmd, get_git_hash, setup_logger, make_output_dirs
+from kunai.utils import get_cmd, get_git_hash, make_output_dirs, setup_logger
+from natsort import natsorted
+from omegaconf import DictConfig, OmegaConf
+from tqdm import tqdm
 
 from src.dataloaders import build_dataset
 from src.losses import build_loss
 from src.models import build_model
-from src.utils import TrainLogger, post_slack, make_result_dirs, reduce_tensor, error_handle
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
-from test import do_test
+from src.utils import TrainLogger, error_handle, make_result_dirs, post_slack, reduce_tensor
 
+from test import do_test  # isort: skip
 
 # Get root logger
 logger = logging.getLogger()
