@@ -1,15 +1,14 @@
 import logging
 import math
 
-from timm.scheduler import CosineLRScheduler
-
 import torch.optim as optim
-
+from timm.scheduler import CosineLRScheduler
 
 logger = logging.getLogger()
 
 
 def build_lr_scheduler(cfg, optimizer, epoch):
+    iter_scheduler = None
     lr_scheduler_name = cfg.NAME
     if lr_scheduler_name == "ReduceLROnPlateau":
         # factor : 学習率の減衰率
@@ -93,9 +92,15 @@ def build_lr_scheduler(cfg, optimizer, epoch):
             end_factor=cfg.END_FACTOR,
             total_iters=cfg.TOTAL_ITERS,
         )
+    elif lr_scheduler_name == "ChainedScheduler":
+        schedulers = [build_lr_scheduler(c, optimizer, epoch)[1] for c in cfg.SCHEDULERS]
+        scheduler = ChainedScheduler(schedulers)
+    elif lr_scheduler_name == "IterScheduler":
+        _, iter_scheduler = build_lr_scheduler(cfg.ITER_SCHEDULER, optimizer, epoch)
+        _, scheduler = build_lr_scheduler(cfg.EPOCH_SCHEDULER, optimizer, epoch)
 
     logger.info(f"LR Scheduler: {cfg}")
-    return scheduler
+    return iter_scheduler, scheduler
 
 
 class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
@@ -275,5 +280,10 @@ class StepLR(optim.lr_scheduler.StepLR):
 
 
 class LinearLR(optim.lr_scheduler.LinearLR):
+    def step(self, epoch=None, metric=None):
+        super().step()
+
+
+class ChainedScheduler(optim.lr_scheduler.ChainedScheduler):
     def step(self, epoch=None, metric=None):
         super().step()

@@ -27,7 +27,14 @@ from src.losses import build_loss
 from src.models import build_model
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
-from src.utils import TrainLogger, error_handle, make_result_dirs, post_slack, reduce_tensor
+from src.utils import (
+    Writer,
+    build_evaluator,
+    error_handle,
+    make_result_dirs,
+    post_slack,
+    reduce_tensor,
+)
 
 from test import do_test  # isort: skip
 
@@ -78,7 +85,7 @@ def load_last_weight(cfg, model):
     logger.info(f"Unexpected model key: {unexpexted}")
 
 
-def do_train(rank, cfg, device, output_dir, writer):
+def do_train(rank, cfg, device, output_dir, writer: Writer):
     """Training Script"""
 
     fix_seed(100 + rank)
@@ -108,7 +115,8 @@ def do_train(rank, cfg, device, output_dir, writer):
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model)
-    scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
+    iter_scheduler, scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
+    metric_fn = build_evaluator(cfg, phase="train").to(device)
     scaler = torch.cuda.amp.GradScaler(enabled=cfg.AMP)
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
@@ -122,6 +130,7 @@ def do_train(rank, cfg, device, output_dir, writer):
         logger.info(f"Start Epoch {epoch+1}")
         for phase in ["train", "val"]:
             hist_epoch_loss = torch.tensor(0)
+            writer.phase = phase
 
             # Skip Validation
             if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
@@ -141,7 +150,7 @@ def do_train(rank, cfg, device, output_dir, writer):
                     progress_bar, total=len(dataloaders[phase]), dynamic_ncols=True
                 )
 
-            for _, data in progress_bar:
+            for i, data in progress_bar:
                 with torch.set_grad_enabled(phase == "train"):
                     data = data.to(device, non_blocking=True).float()
 
@@ -160,9 +169,13 @@ def do_train(rank, cfg, device, output_dir, writer):
                             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.CLIP_GRAD_NORM)
                         scaler.step(optimizer)
                         scaler.update()
-                    optimizer.zero_grad()
-                    if cfg.MODEL_EMA:
-                        model_ema.update(model)
+                        if iter_scheduler:
+                            iter_scheduler.step(epoch=i, metric=loss["Loss"].item())
+                        optimizer.zero_grad()
+                        if cfg.MODEL_EMA:
+                            model_ema.update(model)
+                    elif phase == "val":
+                        metric_fn.update(y, data)
 
                     for key in loss.keys():
                         if rank != -1:
@@ -171,7 +184,8 @@ def do_train(rank, cfg, device, output_dir, writer):
                             hist_epoch_loss.get(key, 0.0) + loss[key].item() * data.shape[0]
                         )
                     if rank in [-1, 0]:
-                        description = f"Epoch: {epoch + 1:3}/{max_epoch:3}."
+                        lr = optimizer.param_groups[0]["lr"]
+                        description = f"Epoch: {epoch + 1:3}/{max_epoch:3}. LR: {lr:.4e}"
                         for k, v in loss.items():
                             description += f" {k.capitalize()}: {v.item():8.4f}"
                         progress_bar.set_description(description)
@@ -184,6 +198,9 @@ def do_train(rank, cfg, device, output_dir, writer):
 
             if phase == "train":
                 scheduler.step(epoch=epoch, metric=epoch_loss)
+            elif phase == "val":
+                metric_values = metric_fn.compute()
+                metric_fn.reset()
 
             if rank in [-1, 0]:
                 description = f"{phase.capitalize()} Epoch: {(epoch + 1):3}/{max_epoch:3}. "
@@ -195,7 +212,7 @@ def do_train(rank, cfg, device, output_dir, writer):
                 logger.info(description)
                 hist_epoch_loss.update({"Loss": epoch_loss, "Learning Rate": lr})
                 writer.log_metrics(
-                    phase, list(hist_epoch_loss.keys()), list(hist_epoch_loss.values()), epoch + 1
+                    list(hist_epoch_loss.keys()), list(hist_epoch_loss.values()), epoch + 1
                 )
 
                 if phase == "train" and ((epoch + 1) % cfg.SAVE_INTERVAL == 0):
@@ -203,6 +220,9 @@ def do_train(rank, cfg, device, output_dir, writer):
                     save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
                     writer.log_artifact(os.path.join(output_dir, "train.log"))
                 elif phase == "val":
+                    for k, v in metric_values:
+                        logger.info(f"{phase.capitalize()}: {k}: {v}")
+                        writer.log_metric(k, v, epoch + 1)
                     # Save best val Loss Model
                     if epoch_loss < best_loss:
                         save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
@@ -269,8 +289,8 @@ def main(cfg: DictConfig):
         with open(os.path.join(output_dir, "cmd_histry.log"), "a") as f:
             print(get_cmd(), file=f)
 
-        # Set Tensorboard, MLflow
-        writer = TrainLogger(cfg, output_dir, os.path.dirname(output_dir))
+        # Set MLflow
+        writer = Writer(cfg, output_dir, "train")
         writer.log_artifact(os.path.join(output_dir, "config.yaml"))
         writer.log_artifact(os.path.join(output_dir, "cmd_histry.log"))
     else:
@@ -284,8 +304,8 @@ def main(cfg: DictConfig):
     # DDP Mode
     if bool(cfg.GPU.MULTI):
         dist.init_process_group(backend="nccl", init_method="env://")
-        logging.info("Use Distributed Data Parallel Training")
-        logging.info(
+        logger.info("Use Distributed Data Parallel Training")
+        logger.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
         )
@@ -333,6 +353,7 @@ def main(cfg: DictConfig):
     # Test
     if local_rank in [0, -1]:
         logger.info("Start Test")
+        writer.phase = "test"
         writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
         output_result_dir = make_result_dirs(cfg.MODEL.WEIGHT)
         if cfg.CPU:

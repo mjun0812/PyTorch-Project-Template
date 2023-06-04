@@ -1,18 +1,16 @@
-import os
 import datetime
 import logging
+import os
 import traceback
 
 import kunai
-from dotenv import load_dotenv
-import torch.distributed as dist
-
 import matplotlib
+import torch.distributed as dist
+from dotenv import load_dotenv
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa
 import matplotlib.font_manager as font_manager  # noqa
-
+import matplotlib.pyplot as plt  # noqa
 
 logger = logging.getLogger()
 

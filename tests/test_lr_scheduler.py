@@ -1,19 +1,21 @@
+"""LR SchedulerのLRの推移をテスト"""
 from pathlib import Path
+
+import matplotlib
+import torch.nn as nn
+import torch.optim as optim
 from omegaconf import OmegaConf
 
-import torch.optim as optim
-import torch.nn as nn
-import matplotlib
-
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa
-
 import sys  # noqa
+
+import matplotlib.pyplot as plt  # noqa
 
 sys.path.append("./")
 from src.scheduler import build_lr_scheduler  # noqa
 
 EPOCH = 100
+ITER = 1500
 
 
 def main():
@@ -24,20 +26,27 @@ def main():
         cfg = OmegaConf.load(path)
         cfg["EPOCH"] = EPOCH
         if "MAX_LR" in cfg:
-            print("aaaa")
-            cfg["MAX_LR"] = 1e-3
+            cfg["MAX_LR"] = 0.12
         print(cfg)
         model = nn.Sequential(nn.Conv2d(3, 32, 3))
-        optimizer = optim.SGD(model.parameters(), lr=1e-3, momentum=0.9, weight_decay=0.1)
-        scheduler = build_lr_scheduler(cfg, optimizer, EPOCH)
+        optimizer = optim.SGD(model.parameters(), lr=0.12, momentum=0.9, weight_decay=1e-4)
+        iter_scheduler, scheduler = build_lr_scheduler(cfg, optimizer, EPOCH)
 
-        epochs = list(range(100))
+        print(iter_scheduler, scheduler)
+
+        epochs = list(range(EPOCH))
         lrs = []
         for epoch in epochs:
-            optimizer.zero_grad()
-            lrs.append(optimizer.param_groups[0]["lr"])
-            optimizer.step()
+            for i in range(ITER):
+                optimizer.step()
+                if iter_scheduler:
+                    iter_scheduler.step(epoch=i, metric=0.1 - 0.0001 * epoch)
+                    lrs.append(optimizer.param_groups[0]["lr"])
             scheduler.step(epoch=epoch, metric=0.1 - 0.0001 * epoch)
+            lrs.append(optimizer.param_groups[0]["lr"])
+        epochs = list(range(len(lrs)))
+        print(len(lrs))
+
         draw(epochs, lrs, cfg.NAME, output / f"{cfg.NAME}.png")
 
 

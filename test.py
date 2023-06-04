@@ -1,45 +1,29 @@
-import os
-import logging
 import csv
-import pprint
 import json
+import logging
+import os
+import pprint
 from pathlib import Path
 
-import torch
-
-import numpy as np
-from tqdm import tqdm
 import hydra
+import numpy as np
+import torch
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig, OmegaConf
-
-from kunai.torch_utils import set_device, time_synchronized
 from kunai.hydra_utils import set_hydra, validate_config
+from kunai.torch_utils import set_device, time_synchronized
 from kunai.utils import get_cmd, get_git_hash, setup_logger
+from omegaconf import DictConfig, OmegaConf
+from tqdm import tqdm
 
-from src.models import build_model
-from src.utils import post_slack, make_result_dirs, TestLogger
 from src.dataloaders import build_dataset
+from src.models import build_model
+from src.utils import Writer, make_result_dirs, post_slack
 
 # Get root logger
 logger = logging.getLogger()
 
 
-def calc_inference_speed(model, dataset):
-    inference_speed = 0
-    num_iter = 50
-    dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
-    for i, data in enumerate(dataloader):
-        with torch.no_grad():
-            t = time_synchronized()
-            _ = model(data)
-            inference_speed += time_synchronized() - t
-            if i == num_iter:
-                break
-    return inference_speed / num_iter
-
-
-def do_test(cfg, output_dir, device, writer):
+def do_test(cfg, output_dir, device, writer: Writer):
     logger.info("Loading Dataset...")
     dataset, _ = build_dataset(cfg, phase="test")
     dataloader = torch.utils.data.DataLoader(
@@ -60,29 +44,34 @@ def do_test(cfg, output_dir, device, writer):
 
     metric = 0
     results = []
+    inference_times = []
     progress_bar = tqdm(enumerate(dataloader), total=len(dataloader), dynamic_ncols=True)
     for i, data in progress_bar:
         with torch.no_grad():
             input_data = data.to(device)
+
+            t = time_synchronized()
             y = model(input_data)
+            inference_times.append(time_synchronized() - t)
+
             # calc metrics below
             result = y
             results.append(result)
 
-    inference_speed = calc_inference_speed(model, dataset)
+    inference_speed = np.mean(inference_times[len(inference_times) // 2 :])
     logger.info(
         f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
     )
 
     # 評価結果の保存
     with open(os.path.join(output_dir, "result.csv"), "w") as f:
-        writer = csv.writer(f)
-        writer.writerows(results)
+        csv_writer = csv.writer(f)
+        csv_writer.writerows(results)
 
     metric_dict = {"result": metric, "Speed/s": inference_speed, "fps": 1.0 / inference_speed}
     for name, value in metric_dict.items():
         logger.info(f"{name}: {value}")
-        writer.log_metric(name, value, "test", None)
+        writer.log_metric(name, value, None)
     json.dump(metric_dict, open(os.path.join(output_dir, "result.json"), "w"), indent=2)
     return metric
 
@@ -113,10 +102,9 @@ def main(cfg: DictConfig):
     OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
 
     # Set Tensorboard, MLflow
-    writer = TestLogger(cfg, output_dir, str(Path(output_dir).parents[2]))
+    writer = Writer(cfg, output_dir, "test")
     writer.log_artifact(Path(output_dir).parents[1] / "cmd_histry.log")
     writer.log_artifact(os.path.join(output_dir, "config.yaml"))
-    writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
 
     result = do_test(cfg, output_dir, device, writer)
 
