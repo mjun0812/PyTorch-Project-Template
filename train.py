@@ -108,9 +108,11 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
-    datasets, dataloaders = {}, {}
+    datasets, dataloaders, batched_transform = {}, {}, {}
     for phase in ["train", "val"]:
-        datasets[phase], dataloaders[phase] = build_dataset(cfg, phase=phase, rank=rank)
+        datasets[phase], dataloaders[phase], batched_transform[phase] = build_dataset(
+            cfg, phase=phase, rank=rank
+        )
     logger.info("Complete Loading Dataset")
 
     criterion = build_loss(cfg)
@@ -150,16 +152,19 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
                     progress_bar, total=len(dataloaders[phase]), dynamic_ncols=True
                 )
 
-            for i, data in progress_bar:
+            for i, (image, data) in progress_bar:
                 with torch.set_grad_enabled(phase == "train"):
                     data = data.to(device, non_blocking=True).float()
+
+                    if batched_transform[phase] is not None:
+                        image, data = batched_transform[phase](image, data)
 
                     with torch.autocast(
                         device_type="cuda" if not cfg.CPU else "cpu",
                         enabled=cfg.AMP,
                         dtype=torch.float16,
                     ):
-                        y = model(data)
+                        y = model(image)
                         loss = criterion(y, data)
 
                     if phase == "train":

@@ -1,10 +1,9 @@
 import logging
 
+from kunai import Registry
+from kunai.torch_utils import worker_init_fn
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-
-from kunai.torch_utils import worker_init_fn
-from kunai import Registry
 
 from ..transform import build_transforms
 
@@ -15,10 +14,12 @@ logger = logging.getLogger()
 
 
 def build_dataset(cfg, phase="train", rank=-1):
-    transforms = build_transforms(cfg, phase=phase)
+    transforms, batched_transform = build_transforms(cfg, phase=phase)
     dataset = DATASET_REGISTRY.get(cfg.DATASET.TYPE)(cfg, transforms, phase=phase)
     logger.info(f"{phase.capitalize()} Dataset sample num: {len(dataset)}")
     logger.info(f"{phase.capitalize()} transform: {transforms}")
+    if batched_transform is not None:
+        logger.info(f"{phase.capitalize()} batched transform: {batched_transform}")
 
     common_kwargs = {
         "pin_memory": True,
@@ -34,4 +35,4 @@ def build_dataset(cfg, phase="train", rank=-1):
         common_kwargs["sampler"] = DistributedSampler(dataset, shuffle=(phase == "train"))
     dataloader = DataLoader(dataset, **common_kwargs)
 
-    return dataset, dataloader
+    return dataset, dataloader, batched_transform

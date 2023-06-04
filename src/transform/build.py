@@ -1,13 +1,17 @@
+from kunai import Registry
 from torchvision import transforms
 
-from kunai import Registry
-
 TRANSFORM_REGISTRY = Registry("TRANSFORM")
+BATCHED_TRANSFORM_REGISTRY = Registry("BATCHED_TRANSFORM")
 
 
 def build_transforms(cfg, phase="train"):
     cfg = cfg.DATASET.TRANSFORMS
+
+    batched_transform = None
     if phase == "train":
+        if "TRAIN_BATCH" in cfg:
+            batched_transform = None
         cfg = cfg.TRAIN
     elif phase == "val":
         cfg = cfg.VAL
@@ -22,7 +26,7 @@ def build_transforms(cfg, phase="train"):
             params = {k: v for k, v in trans.args.items()}
             transform = TRANSFORM_REGISTRY.get(trans.name)(**params)
         transes.append(transform)
-    return transforms.Compose(transes)
+    return transforms.Compose(transes), batched_transform
 
 
 # Use below Compose when using transforms has multi input.
