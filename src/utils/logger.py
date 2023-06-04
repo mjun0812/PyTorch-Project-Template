@@ -113,7 +113,7 @@ class Writer:
         Args:
             path (str): result path
         """
-        if not self.mlflow_logger:
+        if self.use_mlflow:
             return
         for p in os.listdir(path):
             target = os.path.join(path, p)
