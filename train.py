@@ -20,6 +20,7 @@ from kunai.torch_utils import (
 from kunai.utils import get_cmd, get_git_hash, make_output_dirs, setup_logger
 from natsort import natsorted
 from omegaconf import DictConfig, OmegaConf
+from torch.distributed.elastic.multiprocessing.errors import record
 from tqdm import tqdm
 
 from src.dataloaders import build_dataset
@@ -85,6 +86,7 @@ def load_last_weight(cfg, model):
     logger.info(f"Unexpected model key: {unexpexted}")
 
 
+@record
 def do_train(rank, cfg, device, output_dir, writer: Writer):
     """Training Script"""
 
@@ -132,7 +134,8 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
         logger.info(f"Start Epoch {epoch+1}")
         for phase in ["train", "val"]:
             hist_epoch_loss = torch.tensor(0)
-            writer.phase = phase
+            if writer:
+                writer.phase = phase
 
             # Skip Validation
             if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
