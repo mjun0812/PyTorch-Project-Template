@@ -5,11 +5,8 @@ defaults:
   - DATASET: dataset
   - OPTIMIZER: Momentum
   - LR_SCHEDULER: CosineLRScheduler
-  - LOSS: loss
   - override hydra/job_logging: disabled
   - override hydra/hydra_logging: disabled
-  - override hydra/sweeper: optuna
-  - override hydra/sweeper/sampler: tpe
   - override hydra/run/dir: ./result/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 # Training Params
@@ -45,23 +42,3 @@ TAG: ""
 
 USE_MLFLOW: True
 EXPERIMENT_NAME: "pytorch-project-template"
-
-hydra:
-  output_subdir: null
-  run:
-    dir: .
-  sweeper:
-    sampler:
-      seed: 123
-    direction: maximize
-    study_name: train
-    storage: null
-    n_trials: 20
-    n_jobs: 1
-
-    search_space:
-      DATASET.FRAME:
-        type: int
-        low: 5
-        high: 60
-        step: 5

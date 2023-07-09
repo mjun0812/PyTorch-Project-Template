@@ -1,18 +1,15 @@
 black
 flake8
 hydra-core >= 1.2.0
-hydra-optuna-sweeper
 kunai @ git+https://github.com/mjun0812/kunai@6b61ab91e2b2a6be9786649c85a16af5a577d54f
 matplotlib
 natsort
 numpy
 opencv-python
-optuna
 Pillow
 pandas
 python-dotenv
 requests
-scikit-learn
 tabulate
 tensorboard
 timm
