@@ -1,3 +1,4 @@
+import argparse
 import glob
 import logging
 import os
@@ -6,7 +7,6 @@ import sys
 import traceback
 from pathlib import Path
 
-import hydra
 import torch
 import torch.distributed as dist
 from kunai.hydra_utils import set_hydra
@@ -19,7 +19,6 @@ from kunai.torch_utils import (
 )
 from kunai.utils import get_cmd, get_git_hash, make_output_dirs, setup_logger
 from natsort import natsorted
-from omegaconf import DictConfig, OmegaConf
 from torch.distributed.elastic.multiprocessing.errors import record
 from tqdm import tqdm
 
@@ -29,7 +28,9 @@ from src.models import build_model
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
 from src.utils import (
+    Config,
     Writer,
+    auto_argparser,
     build_evaluator,
     error_handle,
     make_result_dirs,
@@ -257,10 +258,11 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
     return best_loss
 
 
-@hydra.main(version_base=None, config_path="./config", config_name="config")
-def main(cfg: DictConfig):
+def main():
     # Set Local Rank for Multi GPU Training
     local_rank = int(os.environ.get("LOCAL_RANK", -1))
+
+    parser, cfg = auto_argparser("Pytorch Training Script")
 
     # Hydra Setting
     set_hydra(cfg, verbose=local_rank in [0, -1])
@@ -290,8 +292,8 @@ def main(cfg: DictConfig):
         logger.info(f"Output dir: {output_dir}")
         logger.info(f"Git Hash: {get_git_hash()}")
 
-        # Hydra config
-        OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
+        # Save config
+        Config.dump(cfg, os.path.join(output_dir, "config.yaml"))
 
         # Execute CLI command
         with open(os.path.join(output_dir, "cmd_histry.log"), "a") as f:

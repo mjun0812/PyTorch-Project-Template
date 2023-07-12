@@ -1,12 +1,17 @@
-# MODEL Param
-# MODEL:
-NAME: Model_Name
-MODEL: Model # Class名
-PRE_TRAINED: True
-PRE_TRAINED_WEIGHT: result/PreTrain/efficientdet-d0.pth
-INPUT_SIZE: 512
-# Load Weight Path
-WEIGHT: "./"
-SYNC_BN: False
+__BASE__:
+  - config/__BASE__/config.yaml
+  - config/__BASE__/OPTIMIZER/Momentum.yaml
+  - config/__BASE__/LR_SCHEDULER/ReduceLROnPlateau.yaml
+  - config/__BASE__/DATASET/dataset.yaml
 
-LOSS: loss
+# MODEL Param
+MODEL:
+  NAME: Model_Name
+  MODEL: Model # Class名
+  PRE_TRAINED: True
+  PRE_TRAINED_WEIGHT: result/PreTrain/efficientdet-d0.pth
+  INPUT_SIZE: 512
+  # Load Weight Path
+  WEIGHT: "./"
+  SYNC_BN: False
+  LOSS: loss

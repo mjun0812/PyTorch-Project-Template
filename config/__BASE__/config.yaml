@@ -1,14 +1,3 @@
-defaults:
-  # 分ける場合は以下のように
-  - _self_
-  - MODEL: model
-  - DATASET: dataset
-  - OPTIMIZER: Momentum
-  - LR_SCHEDULER: CosineLRScheduler
-  - override hydra/job_logging: disabled
-  - override hydra/hydra_logging: disabled
-  - override hydra/run/dir: ./result/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-
 # Training Params
 EPOCH: 200
 BATCH: 16

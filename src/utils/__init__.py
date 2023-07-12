@@ -1,5 +1,6 @@
 # flake8: noqa
 
+from .config import Config, auto_argparser
 from .evaluator import build_evaluator
 from .logger import Writer
 from .torch_utils import adjust_learning_rate, is_distributed, reduce_tensor
