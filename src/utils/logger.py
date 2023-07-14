@@ -113,6 +113,7 @@ class Writer:
         """
         if self.use_mlflow:
             return
+
         for p in os.listdir(path):
             target = os.path.join(path, p)
             if os.path.isdir(target):

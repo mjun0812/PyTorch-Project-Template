@@ -5,19 +5,15 @@ import os
 import pprint
 from pathlib import Path
 
-import hydra
 import numpy as np
 import torch
-from hydra.core.hydra_config import HydraConfig
-from kunai.hydra_utils import set_hydra, validate_config
 from kunai.torch_utils import set_device, time_synchronized
 from kunai.utils import get_cmd, get_git_hash, setup_logger
-from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from src.dataloaders import build_dataset
 from src.models import build_model
-from src.utils import Writer, make_result_dirs, post_slack
+from src.utils import Config, Writer, make_result_dirs, post_slack
 
 # Get root logger
 logger = logging.getLogger()
@@ -76,18 +72,8 @@ def do_test(cfg, output_dir, device, writer: Writer):
     return metric
 
 
-@hydra.main(version_base=None, config_path="./config", config_name="config")
-def main(cfg: DictConfig):
-    set_hydra(cfg)
-    cfg = validate_config(cfg)
-
-    # Validate Model Weight Path
-    config_path = os.path.basename(HydraConfig.get().runtime.config_sources[1].path)
-    if config_path not in cfg.MODEL.WEIGHT:
-        weight_dir_list = cfg.MODEL.WEIGHT.split("/")
-        weight_dir_list[-3] = config_path
-        cfg.MODEL.WEIGHT = os.path.join(*weight_dir_list)
-
+@Config.main
+def main(cfg):
     # set Device
     device = set_device(cfg.GPU.USE, use_cudnn=cfg.CUDNN, is_cpu=cfg.CPU)
 
@@ -99,7 +85,7 @@ def main(cfg: DictConfig):
     logger.info(f"Git Hash: {get_git_hash()}")
     with open(Path(output_dir).parents[1] / "cmd_histry.log", "a") as f:
         print(get_cmd(), file=f)
-    OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
+    Config.dump(cfg, os.path.join(output_dir, "config.yaml"))
 
     # Set Tensorboard, MLflow
     writer = Writer(cfg, output_dir, "test")

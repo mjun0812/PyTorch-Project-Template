@@ -1,4 +1,3 @@
-import argparse
 import glob
 import logging
 import os
@@ -9,7 +8,6 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from kunai.hydra_utils import set_hydra
 from kunai.torch_utils import (
     check_model_parallel,
     fix_seed,
@@ -30,7 +28,6 @@ from src.scheduler import build_lr_scheduler
 from src.utils import (
     Config,
     Writer,
-    auto_argparser,
     build_evaluator,
     error_handle,
     make_result_dirs,
@@ -92,7 +89,7 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
     """Training Script"""
 
     fix_seed(100 + rank)
-    save_model_path = Path(output_dir, "models")
+    save_model_path = output_dir / "models"
 
     # ###### Build Model #######
     model, model_ema = build_model(cfg, device, phase="train", rank=rank)
@@ -105,7 +102,7 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
         model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
     if rank in [-1, 0]:
         # Model構造を出力
-        save_model_info(output_dir, model)
+        save_model_info(str(output_dir), model)
         # save initial model
         save_model(model, save_model_path / "model_init_0.pth")
 
@@ -258,14 +255,11 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
     return best_loss
 
 
-def main():
+@Config.main
+def main(cfg):
     # Set Local Rank for Multi GPU Training
     local_rank = int(os.environ.get("LOCAL_RANK", -1))
 
-    parser, cfg = auto_argparser("Pytorch Training Script")
-
-    # Hydra Setting
-    set_hydra(cfg, verbose=local_rank in [0, -1])
     # set Device
     device = set_device(
         cfg.GPU.USE,
@@ -278,38 +272,34 @@ def main():
     if local_rank in [0, -1]:
         # make Output dir
         prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
-        if cfg.TAG:
-            prefix += f"_{cfg.TAG}"
-        output_dir = make_output_dirs(
-            os.path.join(cfg.OUTPUT, cfg.DATASET.NAME),
-            prefix=prefix,
-            child_dirs=["figs", "models"],
+        prefix += f"{'_' + cfg.TAG if cfg.TAG else ''}"
+        output_dir = Path(
+            make_output_dirs(
+                os.path.join(cfg.OUTPUT, cfg.DATASET.NAME),
+                prefix=prefix,
+                child_dirs=["figs", "models"],
+            )
         )
 
         # Logging
-        setup_logger(os.path.join(output_dir, "train.log"))
+        setup_logger(output_dir / "train.log")
+        logger.info(Config.pretty_text(cfg))
         logger.info(f"Command: {get_cmd()}")
-        logger.info(f"Output dir: {output_dir}")
+        logger.info(f"Output dir: {str(output_dir)}")
         logger.info(f"Git Hash: {get_git_hash()}")
-
-        # Save config
-        Config.dump(cfg, os.path.join(output_dir, "config.yaml"))
-
-        # Execute CLI command
-        with open(os.path.join(output_dir, "cmd_histry.log"), "a") as f:
-            print(get_cmd(), file=f)
-
         # Set MLflow
         writer = Writer(cfg, output_dir, "train")
-        writer.log_artifact(os.path.join(output_dir, "config.yaml"))
-        writer.log_artifact(os.path.join(output_dir, "cmd_histry.log"))
+
+        # Save config
+        Config.dump(cfg, output_dir / "config.yaml")
+        # Execute CLI command
+        with open(output_dir / "cmd_histry.log", "a") as f:
+            print(get_cmd(), file=f)
+        writer.log_artifacts(output_dir)
     else:
         output_dir = ""
         setup_logger()
         writer = None
-
-    # PyTorch A6000 Bug Fix: GPU間通信をP2PからPCI or NVLINKに変更する
-    # os.environ["NCCL_P2P_DISABLE"] = "1"
 
     # DDP Mode
     if bool(cfg.GPU.MULTI):
@@ -324,10 +314,15 @@ def main():
         result = do_train(local_rank, cfg, device, output_dir, writer)
     except (Exception, KeyboardInterrupt) as e:
         if local_rank in [0, -1]:
-            error_handle(e, "Train", f"Output: {output_dir}")
+            error_handle(e, "Train", f"Output: {str(output_dir)}")
             writer.log_result_dir(output_dir)
             writer.close("FAILED")
         sys.exit(1)
+
+    # Clean Up multi gpu process
+    if local_rank != -1:
+        dist.destroy_process_group()
+    torch.cuda.empty_cache()
 
     if local_rank in [0, -1]:
         message_dict = {
@@ -345,23 +340,16 @@ def main():
         logger.info(f"Finish Training {message}")
 
         # Prepare config for Test
-        cfg.MODEL.WEIGHT = natsorted(
-            glob.glob(os.path.join(output_dir, "models", "model_best_*.pth"))
-        )[-1]
-        writer.log_artifact(cfg.MODEL.WEIGHT)
+        cfg.MODEL.WEIGHT = natsorted(glob.glob(str(output_dir / "models" / "model_best_*.pth")))[
+            -1
+        ]
         cfg.GPU.MULTI = False
         cfg.GPU.USE = 0
-        OmegaConf.save(cfg, os.path.join(output_dir, "config.yaml"))
-        writer.log_artifact(os.path.join(output_dir, "config.yaml"))
+        Config.dump(cfg, output_dir / "config.yaml")
+        writer.log_artifact(cfg.MODEL.WEIGHT)
         writer.log_result_dir(output_dir)
 
-    # Clean Up multi gpu process
-    if local_rank != -1:
-        dist.destroy_process_group()
-    torch.cuda.empty_cache()
-
-    # Test
-    if local_rank in [0, -1]:
+        # Test
         logger.info("Start Test")
         writer.phase = "test"
         writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
@@ -376,14 +364,12 @@ def main():
             error_handle(e, "Test", f"Output: {output_dir}")
             writer.close("FAILED")
             sys.exit(1)
-        message_dict["Test save"] = output_result_dir
-        message_dict["result"] = result
+        message_dict.update({"Test save": output_result_dir, "result": result})
         message = pprint.pformat(message_dict, width=150)
         # Send Message to Slack
         post_slack(message=f"Finish Test\n{message}")
         logger.info(f"Finish Test {message}")
-        OmegaConf.save(cfg, os.path.join(output_result_dir, "config.yaml"))
-        writer.log_result_dir(output_dir)
+        Config.dump(cfg, os.path.join(output_result_dir, "config.yaml"))
         writer.log_result_dir(output_result_dir)
         writer.close()
     return result

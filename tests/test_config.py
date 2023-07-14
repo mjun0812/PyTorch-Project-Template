@@ -1,8 +1,19 @@
+import argparse
 import sys
 
+from addict import Dict
+
 sys.path.append("./")
-from src.utils.config import Config, auto_argparser
+from src.utils.config import Config
 
-cfg = auto_argparser()
+# cfg = Config.build()
 
-print(Config.pretty_text(cfg))
+# print(Config.pretty_text(cfg))
+
+
+@Config.main
+def main(cfg):
+    print(Config.pretty_text(cfg))
+
+
+main()

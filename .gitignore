@@ -330,8 +330,6 @@ $RECYCLE.BIN/
 .vscode/settings.json
 
 outputs
-dataset
-!config/DATASET
 *.pth
 *.pt
 result/*
