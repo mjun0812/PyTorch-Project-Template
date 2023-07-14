@@ -29,8 +29,6 @@ class Writer:
             self.setup_mlflow()
 
     def setup_mlflow(self):
-        run_name = os.path.basename(self.output)
-
         run_name = os.path.basename(self.output).split("_")
         run_name = "_".join(run_name[0:2] + [self.cfg.MODEL.NAME, self.cfg.DATASET.NAME])
 
