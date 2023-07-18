@@ -1,11 +1,10 @@
 import logging
 
 import torch.optim as optim
-
 from kunai.torch_utils import check_model_parallel
 
-from .lion import Lion
 from ..utils import adjust_learning_rate
+from .lion import Lion
 
 logger = logging.getLogger()
 
@@ -30,7 +29,8 @@ def build_optimizer(cfg, model):
         parameters = target_model.parameters()
 
     if optimizer_name == "AdamW":
-        optimizer = optim.AdamW(parameters, lr=lr)
+        args = {"weight_decay": cfg.OPTIMIZER.get("WEIGHT_DECAY", 1e-2)}
+        optimizer = optim.AdamW(parameters, lr=lr, **args)
     elif optimizer_name == "Adam":
         optimizer = optim.Adam(parameters, lr=lr)
     elif optimizer_name == "NesterovMomentum":
