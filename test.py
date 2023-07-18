@@ -87,7 +87,6 @@ def main(cfg):
         print(get_cmd(), file=f)
     Config.dump(cfg, os.path.join(output_dir, "config.yaml"))
 
-    # Set Tensorboard, MLflow
     writer = Writer(cfg, output_dir, "test")
     writer.log_artifact(Path(output_dir).parents[1] / "cmd_histry.log")
     writer.log_artifact(os.path.join(output_dir, "config.yaml"))
