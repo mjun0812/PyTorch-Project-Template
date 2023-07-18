@@ -18,13 +18,13 @@ from kunai.torch_utils import (
 from kunai.utils import get_cmd, get_git_hash, make_output_dirs, setup_logger
 from natsort import natsorted
 from torch.distributed.elastic.multiprocessing.errors import record
-from tqdm import tqdm
 
 from src.dataloaders import build_dataset
 from src.losses import build_loss
 from src.models import build_model
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
+from src.trainer import Trainer
 from src.utils import (
     Config,
     Writer,
@@ -32,7 +32,6 @@ from src.utils import (
     error_handle,
     make_result_dirs,
     post_slack,
-    reduce_tensor,
 )
 
 from test import do_test  # isort: skip
@@ -85,7 +84,7 @@ def load_last_weight(cfg, model):
 
 
 @record
-def do_train(rank, cfg, device, output_dir, writer: Writer):
+def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, writer: Writer):
     """Training Script"""
 
     fix_seed(100 + rank)
@@ -117,132 +116,88 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model)
-    iter_scheduler, scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
-    metric_fn = build_evaluator(cfg, phase="train").to(device)
-    scaler = torch.cuda.amp.GradScaler(enabled=cfg.AMP)
+    iter_lr_scheduler, lr_scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
+    evaluator = build_evaluator(cfg, phase="train").to(device)
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
 
-    max_epoch = cfg.EPOCH
+    trainer = Trainer(
+        rank=rank,
+        epochs=cfg.EPOCH,
+        device=device,
+        use_amp=cfg.AMP,
+        optimizer=optimizer,
+        lr_scheduler=lr_scheduler,
+        use_clip_grad=cfg.USE_CLIP_GRAD,
+        clip_grad=cfg.CLIP_GRAD_NORM,
+        iter_lr_scheduler=iter_lr_scheduler,
+    )
     best_loss = 1e8
     best_epoch = 0
 
     logger.info("Start Training")
-    for epoch in range(max_epoch):
+    for epoch in range(cfg.EPOCH):
         logger.info(f"Start Epoch {epoch+1}")
-        for phase in ["train", "val"]:
-            hist_epoch_loss = torch.tensor(0)
-            if writer:
-                writer.phase = phase
+        if rank in [-1, 0]:
+            writer.phase = "train"
+            writer.log_metric("Epoch", epoch + 1, phase, epoch + 1)
+        if rank != -1:
+            dataloaders[phase].sampler.set_epoch(epoch)
 
-            # Skip Validation
-            if phase == "val" and ((epoch + 1) % cfg.VAL_INTERVAL != 0):
-                continue
+        result_train = trainer.do_one_epoch(
+            phase="train",
+            epoch=epoch,
+            model=model,
+            criterion=criterion,
+            dataloader=dataloaders["train"],
+            batched_transform=batched_transform["train"],
+            model_ema=model_ema,
+        )
+        if rank in [-1, 0]:
+            logger.info(trainer.build_epoch_log("train", epoch, **result_train))
+            epoch_losses = result_train["epoch_losses"]
+            epoch_losses["Loss"] = epoch_losses.pop("total_loss")
+            writer.log_metrics(list(epoch_losses.keys()), list(epoch_losses.values()), epoch + 1)
+            writer.log_metric("Learning Rate", result_train["lr"], epoch + 1)
+            if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
+                # Save Model Weight
+                save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
+                writer.log_artifact(os.path.join(output_dir, "train.log"))
 
-            model.train(phase == "train")
-            if phase == "train":
-                if rank != -1:
-                    dataloaders[phase].sampler.set_epoch(epoch)
-                if rank in [-1, 0]:
-                    writer.log_metric("Epoch", epoch + 1, phase, epoch + 1)
-
-            # Set progress bar
-            progress_bar = enumerate(dataloaders[phase])
+        if (epoch + 1) % cfg.VAL_INTERVAL == 0:
+            result_val = trainer.do_one_epoch(
+                phase="val",
+                epoch=epoch,
+                model=model,
+                criterion=criterion,
+                dataloader=dataloaders["val"],
+                batched_transform=batched_transform["val"],
+                evaluator=evaluator,
+            )
             if rank in [-1, 0]:
-                progress_bar = tqdm(
-                    progress_bar, total=len(dataloaders[phase]), dynamic_ncols=True
-                )
+                logger.info(trainer.build_epoch_log("val", epoch, **result_val))
 
-            for i, (image, data) in progress_bar:
-                with torch.set_grad_enabled(phase == "train"):
-                    data = data.to(device, non_blocking=True).float()
-
-                    if batched_transform[phase] is not None:
-                        image, data = batched_transform[phase](image, data)
-
-                    with torch.autocast(
-                        device_type="cuda" if not cfg.CPU else "cpu",
-                        enabled=cfg.AMP,
-                        dtype=torch.float16,
-                    ):
-                        y = model(image)
-                        loss = criterion(y, data)
-
-                    if phase == "train":
-                        scaler.scale(loss["Loss"]).backward()
-                        if cfg.USE_CLIP_GRAD:
-                            scaler.unscale_(optimizer)
-                            torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.CLIP_GRAD_NORM)
-                        scaler.step(optimizer)
-                        scaler.update()
-                        if iter_scheduler:
-                            iter_scheduler.step(epoch=i, metric=loss["Loss"].item())
-                        optimizer.zero_grad()
-                        if cfg.MODEL_EMA:
-                            model_ema.update(model)
-                    elif phase == "val":
-                        metric_fn.update(y, data)
-
-                    for key in loss.keys():
-                        if rank != -1:
-                            loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
-                        hist_epoch_loss[key] = (
-                            hist_epoch_loss.get(key, 0.0) + loss[key].item() * data.shape[0]
-                        )
-                    if rank in [-1, 0]:
-                        lr = optimizer.param_groups[0]["lr"]
-                        description = f"Epoch: {epoch + 1:3}/{max_epoch:3}. LR: {lr:.4e}"
-                        for k, v in loss.items():
-                            description += f" {k.capitalize()}: {v.item():8.4f}"
-                        progress_bar.set_description(description)
-
-            # Finish Train or Val Epoch Process below
-            for k, v in hist_epoch_loss.items():
-                hist_epoch_loss[k] = hist_epoch_loss[k] / (len(dataloaders[phase]) * cfg.BATCH)
-            epoch_loss = hist_epoch_loss["Loss"]
-            lr = optimizer.param_groups[0]["lr"]
-
-            if phase == "train":
-                scheduler.step(epoch=epoch, metric=epoch_loss)
-            elif phase == "val":
-                metric_values = metric_fn.compute()
-                metric_fn.reset()
-
-            if rank in [-1, 0]:
-                description = f"{phase.capitalize()} Epoch: {(epoch + 1):3}/{max_epoch:3}. "
-                for k, v in hist_epoch_loss.items():
-                    description += f" {k}: {v:8.4f}"
-                description += (
-                    f" GPU: {torch.cuda.memory_reserved(device) / 1e9:.1f}GB LR: {lr:.4e}"
-                )
-                logger.info(description)
-                hist_epoch_loss.update({"Loss": epoch_loss, "Learning Rate": lr})
+                writer.phase = "val"
+                epoch_losses = result_val["epoch_losses"]
+                epoch_losses["Loss"] = epoch_losses.pop("total_loss")
                 writer.log_metrics(
-                    list(hist_epoch_loss.keys()), list(hist_epoch_loss.values()), epoch + 1
+                    list(epoch_losses.keys()), list(epoch_losses.values()), epoch + 1
                 )
+                writer.log_metric("Learning Rate", result_val["lr"], epoch + 1)
 
-                if phase == "train" and ((epoch + 1) % cfg.SAVE_INTERVAL == 0):
-                    # Save Model Weight
-                    save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
-                    writer.log_artifact(os.path.join(output_dir, "train.log"))
-                elif phase == "val":
-                    for k, v in metric_values:
-                        logger.info(f"{phase.capitalize()}: {k}: {v}")
-                        writer.log_metric(k, v, epoch + 1)
-                    # Save best val Loss Model
-                    if epoch_loss < best_loss:
-                        save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
-                        best_loss = epoch_loss
-                        best_epoch = epoch + 1
-                        logger.info(
-                            f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}"
-                        )
-                    # early stopping (check val_loss)
-                    if epoch + 1 - best_epoch > int(cfg.EARLY_STOP_PATIENCE) > 0:
-                        logger.info(
-                            f"Stop training at epoch {epoch + 1}. The lowest loss achieved is {best_loss}"
-                        )
-                        break
+                metrics = result_val["metrics"]
+                for k, v in metrics:
+                    logger.info(f"Val {k}: {v}")
+                writer.log_metric(list(metrics.keys()), list(metrics.values()), epoch + 1)
+
+                # Save best val Loss Model
+                if epoch_losses["Loss"] < best_loss:
+                    save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
+                    best_loss = epoch_losses["Loss"]
+                    best_epoch = epoch + 1
+                    logger.info(
+                        f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}"
+                    )
 
     # Finish Training Process below
     if rank in [-1, 0]:
@@ -250,8 +205,8 @@ def do_train(rank, cfg, device, output_dir, writer: Writer):
             writer.log_history_figure()
         except Exception:
             logger.error(f"Cannot draw graph. {traceback.format_exc()}")
-        save_model(model, os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
-        writer.log_artifact(os.path.join(save_model_path, f"model_final_{max_epoch}.pth"))
+        save_model(model, save_model_path / f"model_final_{cfg.EPOCH}.pth")
+        writer.log_artifact(save_model_path / f"model_final_{cfg.EPOCH}.pth")
     return best_loss
 
 
