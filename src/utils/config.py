@@ -2,7 +2,6 @@ import abc
 import argparse
 import json
 from distutils.util import strtobool
-from pprint import pprint
 
 import yaml
 from addict import Dict
@@ -32,7 +31,6 @@ class Config:
         parser = Config.add_args(parser, cfg)
         args = vars(parser.parse_args())
         args.pop("config")
-        pprint(args)
         cfg = Config.merge_args_to_cfg(cfg, args)
 
         return cfg
