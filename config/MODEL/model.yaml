@@ -13,4 +13,6 @@ MODEL:
   # Load Weight Path
   WEIGHT: "./"
   SYNC_BN: False
+  TIMM_SYNC_BN: False
+  FIND_UNUSED_PARAMETERS: False
   LOSS: loss

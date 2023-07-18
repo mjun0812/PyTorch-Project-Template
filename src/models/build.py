@@ -1,10 +1,14 @@
 import logging
+
 import torch
+from kunai import Registry
+from timm.utils import ModelEmaV2
 from torch.nn.parallel import DistributedDataParallel
 
-from timm.utils import ModelEmaV2
-
-from kunai import Registry
+try:
+    from timm.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
+except Exception:
+    from timm.models.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
 
 MODEL_REGISTRY = Registry("MODEL")
 # Get root logger
@@ -37,8 +41,15 @@ def build_model(cfg, device, phase="train", rank=-1):
     if rank != -1:
         if cfg.MODEL.SYNC_BN:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        elif cfg.MODEL.TIMM_SYNC_BN:
+            logger.info("USE Timm Sync BatchNorm")
+            model = convert_sync_batchnorm_timm(model)
+
         model = DistributedDataParallel(
-            model, device_ids=[rank], output_device=rank, find_unused_parameters=False
+            model,
+            device_ids=[rank],
+            output_device=rank,
+            find_unused_parameters=cfg.MODEL.get("FIND_UNUSED_PARAMETERS", False),
         )
         if cfg.MODEL_EMA:
             model_ema.set(model)
