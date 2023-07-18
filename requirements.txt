@@ -1,25 +1,20 @@
 black
 flake8
-hydra-core >= 1.2.0
 kunai @ git+https://github.com/mjun0812/kunai@6b61ab91e2b2a6be9786649c85a16af5a577d54f
 matplotlib
 natsort
 numpy
 opencv-python
 Pillow
-pandas
 python-dotenv
 requests
 tabulate
-tensorboard
 timm
 tqdm
-mlflow==2.3.1
+mlflow==2.5.0
 torchinfo >= 1.7.0
 torchmetrics
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==2.0.1+cu118
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torchvision==0.15.2+cu118
-# --find-links https://developer.download.nvidia.com/compute/redist/nvidia-dali-cuda110/
-# nvidia-dali-cuda110
