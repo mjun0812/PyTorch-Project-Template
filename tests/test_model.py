@@ -7,6 +7,7 @@ sys.path.append("./")
 from src.models import build_model  # noqa
 from src.utils import Config
 
+
 @Config.main
 def main(cfg):
     logger = logging.getLogger()
@@ -17,7 +18,6 @@ def main(cfg):
 
     # cfg.TRANSFORMS = OmegaConf.create(transform)
     cfg.MODEL.PRE_TRAINED = False
-    print(type(cfg.MODEL.INPUT_SIZE))
     model, _ = build_model(cfg, device=torch.device("cpu"), phase="val")
     num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(num_parameters)

@@ -2,7 +2,7 @@ from torch import distributed as dist
 
 
 def is_distributed():
-    if dist.is_distributed() and dist.is_initialized():
+    if dist.is_initialized():
         return True
     return False
 
