@@ -7,6 +7,12 @@ def is_distributed():
     return False
 
 
+def get_world_size():
+    if not is_distributed():
+        return 1
+    return dist.get_world_size()
+
+
 def reduce_tensor(tensor, n=1):
     """分散学習時に，指定したtensorを各プロセスから集めて総和を取る
 
