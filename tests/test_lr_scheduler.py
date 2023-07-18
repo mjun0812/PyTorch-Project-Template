@@ -1,16 +1,16 @@
 """LR SchedulerのLRの推移をテスト"""
 from pathlib import Path
 
-import matplotlib
 import torch.nn as nn
 import torch.optim as optim
-from omegaconf import OmegaConf
+from addict import Dict
+import yaml
 
+import matplotlib
 matplotlib.use("Agg")
-import sys  # noqa
-
 import matplotlib.pyplot as plt  # noqa
 
+import sys  # noqa
 sys.path.append("./")
 from src.scheduler import build_lr_scheduler  # noqa
 
@@ -23,7 +23,9 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
 
     for path in Path("config/LR_SCHEDULER").glob("*.yaml"):
-        cfg = OmegaConf.load(path)
+        with open(path) as f:
+            cfg = yaml.safe_load(f)
+        cfg = Dict(cfg)
         cfg["EPOCH"] = EPOCH
         if "MAX_LR" in cfg:
             cfg["MAX_LR"] = 0.12

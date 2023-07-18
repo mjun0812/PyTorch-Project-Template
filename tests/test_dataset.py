@@ -2,16 +2,14 @@
 
 import sys
 
-import hydra
-from omegaconf import DictConfig  # noqa
 from tqdm import tqdm
 
 sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
+from src.utils.config import Config
 
-
-@hydra.main(version_base=None, config_path="../config", config_name="config")
-def main(cfg: DictConfig):
+@Config.main
+def main(cfg):
     data = build_dataset(cfg, "train")
     if len(data) == 2:
         dataset, dataloader = data

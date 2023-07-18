@@ -1,1 +1,21 @@
 NAME: dataset
+
+TRANSFORMS:
+  TRAIN:
+    - name: Resizer
+      args:
+        img_scale: ${MODEL.INPUT_SIZE}
+    - name: NormalizeImage
+      args: null
+  VAL:
+    - name: Resizer
+      args:
+        img_scale: ${MODEL.INPUT_SIZE}
+    - name: NormalizeImage
+      args: null
+  TEST:
+    - name: Resizer
+      args:
+        img_scale: ${MODEL.INPUT_SIZE}
+    - name: NormalizeImage
+      args: null

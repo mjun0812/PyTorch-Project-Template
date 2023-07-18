@@ -1,0 +1,10 @@
+NAME: ChainedScheduler
+SCHEDULERS:
+  - NAME: LinearLR
+    START_FACTOR: 0.00066667
+    END_FACTOR: 1e-3
+    TOTAL_ITERS: 1
+  - NAME: MultiStepLR
+    # 割合で指定，Epochで自動計算
+    MILESTONES: [0.66, 0.90]
+    GAMMA: 0.1

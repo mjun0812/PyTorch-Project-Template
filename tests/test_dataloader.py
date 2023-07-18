@@ -3,12 +3,11 @@
 import sys
 import time
 
-import hydra
 import torch
-from omegaconf import DictConfig  # noqa
 
 sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
+from src.utils.config import Config
 
 
 class TimeCompose:
@@ -30,14 +29,11 @@ class TimeCompose:
         return format_string
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="config")
-def main(cfg: DictConfig):
+
+@Config.main
+def main(cfg):
     data = build_dataset(cfg, "train")
-    if len(data) == 2:
-        dataset, dataloader = data
-        batched_transforms = None
-    else:
-        dataset, dataloader, batched_transforms = data
+    dataset, dataloader, batched_transforms = data
     dataloader.dataset.transform = TimeCompose(dataset.transform.transforms)
     print("Loading dataset Complete")
 

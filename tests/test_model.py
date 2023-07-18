@@ -1,17 +1,14 @@
 import logging
 import sys
 
-import hydra
 import torch
-from omegaconf import DictConfig, OmegaConf  # noqa
 
 sys.path.append("./")
-from src.losses import build_loss
 from src.models import build_model  # noqa
+from src.utils import Config
 
-
-@hydra.main(version_base=None, config_path="../config", config_name="config")
-def main(cfg: DictConfig):
+@Config.main
+def main(cfg):
     logger = logging.getLogger()
     logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
     logger.setLevel(logging.INFO)

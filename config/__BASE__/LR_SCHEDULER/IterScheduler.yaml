@@ -1,0 +1,11 @@
+NAME: IterScheduler
+ITER_SCHEDULER:
+  NAME: LinearLR
+  START_FACTOR: 0.00066667
+  END_FACTOR: 1.0
+  TOTAL_ITERS: 1500
+EPOCH_SCHEDULER:
+  NAME: MultiStepLR
+  # 割合で指定，Epochで自動計算
+  MILESTONES: [8, 11]
+  GAMMA: 0.1

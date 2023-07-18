@@ -2,14 +2,14 @@ import logging
 import random
 import sys
 
-import hydra
 import numpy as np
 import torch
-from omegaconf import DictConfig, OmegaConf  # noqa
+
 
 sys.path.append("./")
 from src.losses import build_loss
 from src.models import build_model  # noqa
+from src.utils import Config
 
 random.seed(42)
 np.random.seed(42)
@@ -19,8 +19,8 @@ torch.backends.cudnn.deterministic = True
 torch.use_deterministic_algorithms = True
 
 
-@hydra.main(version_base=None, config_path="../config", config_name="config")
-def main(cfg: DictConfig):
+@Config.main
+def main(cfg):
     logger = logging.getLogger()
     logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
     logger.setLevel(logging.INFO)
