@@ -102,7 +102,7 @@ class Writer:
             mlflow.log_artifact(path)
 
     def log_artifacts(self, path):
-        if self.mlflow_logger:
+        if self.use_mlflow:
             mlflow.log_artifacts(path)
 
     def log_result_dir(self, path):
