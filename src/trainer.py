@@ -39,7 +39,7 @@ class Trainer:
         self,
         phase: Literal["train", "val"],
         epoch: int,
-        model: torch.Module,
+        model: torch.nn.Module,
         criterion,
         dataloader: DataLoader,
         batched_transform,

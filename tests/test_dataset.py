@@ -8,13 +8,12 @@ sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
 from src.utils.config import Config
 
+
 @Config.main
 def main(cfg):
     data = build_dataset(cfg, "train")
-    if len(data) == 2:
-        dataset, dataloader = data
-    else:
-        dataset, dataloader, batched_transforms = data
+
+    dataset, dataloader, batched_transforms = data
     print("Loading dataset Complete")
 
     for i, data in enumerate(tqdm(dataloader)):
