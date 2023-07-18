@@ -1,10 +1,12 @@
 import datetime
+import json
 import logging
 import os
 import traceback
 
 import kunai
 import matplotlib
+import numpy as np
 import torch.distributed as dist
 from dotenv import load_dotenv
 
@@ -100,3 +102,17 @@ def error_handle(e, phase, message):
     post_slack(channel="#error", message=message)
     if dist.is_initialized():
         dist.destroy_process_group()
+
+
+class JsonEncoder(json.JSONEncoder):
+    """Json Classのエンコーダ
+    numpy.arrayをjsonにencodeできる
+    """
+
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, (np.floating, np.complexfloating)):
+            return float(obj)
+        else:
+            return super(JsonEncoder, self).default(obj)
