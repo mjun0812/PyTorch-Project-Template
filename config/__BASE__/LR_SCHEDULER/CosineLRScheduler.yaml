@@ -1,5 +1,4 @@
 NAME: CosineLRScheduler
-T_INITIAL: ${EPOCH}
 LR_MIN: 1e-6
 WARMUP_T: 5
 WARMUP_LR_INIT: 1e-4

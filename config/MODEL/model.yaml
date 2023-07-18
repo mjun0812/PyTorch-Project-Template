@@ -10,7 +10,6 @@ MODEL:
   MODEL: Model # Class名
   PRE_TRAINED: True
   PRE_TRAINED_WEIGHT: result/PreTrain/efficientdet-d0.pth
-  INPUT_SIZE: 512
   # Load Weight Path
   WEIGHT: "./"
   SYNC_BN: False

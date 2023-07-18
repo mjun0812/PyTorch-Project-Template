@@ -51,7 +51,7 @@ def build_lr_scheduler(cfg, optimizer, epoch):
             kwargs = {}
         scheduler = CosineLRScheduler(
             optimizer,
-            t_initial=cfg.T_INITIAL,
+            t_initial=epoch,
             lr_min=cfg.LR_MIN,
             warmup_t=cfg.WARMUP_T,
             warmup_lr_init=cfg.WARMUP_LR_INIT,
@@ -63,7 +63,7 @@ def build_lr_scheduler(cfg, optimizer, epoch):
     elif lr_scheduler_name == "PolynomialLRDecay":
         scheduler = PolynomialLRDecay(
             optimizer,
-            max_decay_steps=cfg.MAX_DECAY_STEPS,
+            max_decay_steps=epoch,
             end_learning_rate=cfg.END_LR,
             power=cfg.POWER,
         )
@@ -90,7 +90,7 @@ def build_lr_scheduler(cfg, optimizer, epoch):
             optimizer,
             start_factor=cfg.START_FACTOR,
             end_factor=cfg.END_FACTOR,
-            total_iters=cfg.TOTAL_ITERS,
+            total_iters=epoch,
         )
     elif lr_scheduler_name == "ChainedScheduler":
         schedulers = [build_lr_scheduler(c, optimizer, epoch)[1] for c in cfg.SCHEDULERS]

@@ -27,8 +27,8 @@ def build_dataset(cfg, phase="train", rank=-1):
         "batch_size": cfg.BATCH,
         "sampler": None,
         "worker_init_fn": worker_init_fn,
-        "drop_last": True,
-        "shuffle": True,
+        "drop_last": phase == "train",
+        "shuffle": phase == "train",
     }
     if rank != -1:
         common_kwargs["shuffle"] = False

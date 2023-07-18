@@ -6,7 +6,7 @@ NAME: CosineAnnealingWarmupReduceRestarts
 # https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup
 FIRST_CYCLE_STEPS: 10
 CYCLE_MULT: 2
-MAX_LR: ${OPTIMIZER.LR}
+MAX_LR: 1e-3
 MIN_LR: 1e-6
 GAMMA: 0.5
 WARMUP_STEPS: 5

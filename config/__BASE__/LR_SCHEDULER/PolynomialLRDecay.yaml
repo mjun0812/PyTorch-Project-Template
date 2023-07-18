@@ -1,4 +1,3 @@
 NAME: PolynomialLRDecay
-MAX_DECAY_STEPS: ${EPOCH}
 END_LR: 1e-4
 POWER: 0.9
