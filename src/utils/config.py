@@ -1,6 +1,6 @@
-import abc
 import argparse
 import json
+from collections.abc import Iterable
 from distutils.util import strtobool
 
 import yaml
@@ -48,7 +48,7 @@ class Config:
                 parser.add_argument("--" + prefix + k, type=float)
             elif isinstance(v, dict):
                 Config.add_args(parser, v, prefix + k + ".")
-            elif isinstance(v, abc.Iterable):
+            elif isinstance(v, Iterable):
                 parser.add_argument("--" + prefix + k, type=type(next(iter(v))), nargs="+")
         return parser
 
