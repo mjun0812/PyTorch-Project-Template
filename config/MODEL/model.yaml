@@ -4,10 +4,13 @@ __BASE__:
   - config/__BASE__/LR_SCHEDULER/ReduceLROnPlateau.yaml
   - config/__BASE__/DATASET/dataset.yaml
 
+EPOCH: 12
+
 # MODEL Param
 MODEL:
   NAME: Model_Name
   MODEL: Model # Class名
+  INPUT_SIZE: [224, 224]
   PRE_TRAINED: True
   PRE_TRAINED_WEIGHT: result/PreTrain/efficientdet-d0.pth
   # Load Weight Path
