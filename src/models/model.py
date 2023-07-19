@@ -7,6 +7,7 @@ from .build import MODEL_REGISTRY
 # @MODEL_REGISTRY.register()
 class BaseModel(nn.Module):
     def __init__(self, cfg, phase):
+        super().__init__()
         self.cfg = cfg
         self.phase = phase
 
