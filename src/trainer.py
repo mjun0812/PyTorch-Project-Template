@@ -93,7 +93,7 @@ class Trainer:
                     if self.rank != -1:
                         loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
                     hist_epoch_loss[key] = (
-                        hist_epoch_loss.get(key, 0.0) + loss[key].item() * data.shape[0]
+                        hist_epoch_loss.get(key, 0.0) + loss[key].item() * image.shape[0]
                     )
                 if self.rank in [-1, 0]:
                     lr = self.optimizer.param_groups[0]["lr"]
