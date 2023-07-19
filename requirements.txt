@@ -12,8 +12,8 @@ tabulate
 timm
 tqdm
 mlflow==2.5.0
-torchinfo >= 1.7.0
-torchmetrics
+torchinfo>=1.7.0
+torchmetrics>=1.0.1
 --find-links https://download.pytorch.org/whl/torch_stable.html
 torch==2.0.1+cu118
 --find-links https://download.pytorch.org/whl/torch_stable.html
