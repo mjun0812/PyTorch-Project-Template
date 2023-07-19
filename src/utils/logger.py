@@ -39,10 +39,10 @@ class Writer:
 
         experiment = mlflow.get_experiment_by_name(experiment_name)
         if experiment is None:
-            # 当該Experiment存在しないとき、新たに作成
+            # 当該Experimentが存在しないとき、新たに作成
             experiment_id = mlflow.create_experiment(name=experiment_name)
         else:
-            # 当該Experiment存在するとき、IDを取得
+            # 当該Experimentが存在するとき、IDを取得
             experiment_id = experiment.experiment_id
 
         self.run = mlflow.start_run(experiment_id=experiment_id, run_name=run_name, description="")
@@ -77,12 +77,12 @@ class Writer:
         if self.use_mlflow:
             mlflow.log_metric(f"{name}_{self.phase}", metric, step)
 
-    def log_metrics(self, metric_names, metric_values, step: int):
+    def log_metrics(self, metrics: dict, step: int):
         self.last_epoch = step
-
-        for name, value in zip(metric_names, metric_values):
+        mlflow_metrics = {}
+        for name, value in metrics.items():
             if self.use_mlflow:
-                mlflow.log_metric(f"{name}_{self.phase}", value, step)
+                mlflow_metrics[f"{name}_{self.phase}"] = value
 
             # Log value history
             if name not in self.histories:
@@ -90,6 +90,7 @@ class Writer:
             if self.phase not in self.histories[name]:
                 self.histories[name][self.phase] = []
             self.histories[name][self.phase].append(value)
+        mlflow.log_metrics(mlflow_metrics, step)
 
     def log_figure(self, fig, path):
         if self.use_mlflow:

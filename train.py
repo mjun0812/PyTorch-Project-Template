@@ -157,7 +157,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
             logger.info(trainer.build_epoch_log("train", epoch, **result_train))
             epoch_losses = result_train["epoch_losses"]
             epoch_losses["Loss"] = epoch_losses.pop("total_loss")
-            writer.log_metrics(list(epoch_losses.keys()), list(epoch_losses.values()), epoch + 1)
+            writer.log_metrics(epoch_losses, epoch + 1)
             writer.log_metric("Learning Rate", result_train["lr"], epoch + 1)
             if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
                 # Save Model Weight
@@ -180,15 +180,13 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
                 writer.phase = "val"
                 epoch_losses = result_val["epoch_losses"]
                 epoch_losses["Loss"] = epoch_losses.pop("total_loss")
-                writer.log_metrics(
-                    list(epoch_losses.keys()), list(epoch_losses.values()), epoch + 1
-                )
+                writer.log_metrics(epoch_losses, epoch + 1)
                 writer.log_metric("Learning Rate", result_val["lr"], epoch + 1)
 
                 metrics = result_val["metrics"]
                 for k, v in metrics.items():
                     logger.info(f"Val {k}: {v}")
-                writer.log_metric(list(metrics.keys()), list(metrics.values()), epoch + 1)
+                writer.log_metrics(metrics, epoch + 1)
 
                 # Save best val Loss Model
                 if epoch_losses["Loss"] < best_loss:
