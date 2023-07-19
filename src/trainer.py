@@ -126,8 +126,8 @@ class Trainer:
     ):
         description = (
             f"{phase.capitalize()} Epoch: {(epoch + 1):3}/{self.epochs:3}. "
-            f"GPU: {torch.cuda.memory_reserved(self.device) / 1e9:.1f}GB. ",
-            f"LR: {lr:.4e}",
+            f"GPU: {torch.cuda.memory_reserved(self.device) / 1e9:.1f}GB. "
+            f"LR: {lr:.4e}"
         )
         for k, v in epoch_losses.items():
             description += f" {k}: {v:8.4f}"
