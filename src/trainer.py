@@ -132,3 +132,7 @@ class Trainer:
         for k, v in epoch_losses.items():
             description += f" {k}: {v:8.4f}"
         return description
+
+    @staticmethod
+    def generate_input_evaluator(output, data):
+        return output, data

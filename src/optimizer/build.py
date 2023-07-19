@@ -54,7 +54,7 @@ def build_optimizer(cfg, model):
     elif optimizer_name == "Lion":
         optimizer = Lion(parameters, lr=lr, weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY)
     logger.info(f"Optimizer: {optimizer_name}")
-    logger.info(f"Optimizer Option: {optimizer}")
+    logger.info(f"Optimizer Group: {optimizer}")
     logger.info(f"Learning Rate: {lr}")
     return optimizer
 
