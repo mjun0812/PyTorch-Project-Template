@@ -1,7 +1,6 @@
 import argparse
 import json
 
-import yaml
 from omegaconf import DictConfig, OmegaConf
 
 BASE_KEY = "__BASE__"

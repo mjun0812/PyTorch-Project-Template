@@ -1,7 +1,6 @@
 import torch.nn as nn
 
-from ..losses import build_loss
-from .build import MODEL_REGISTRY
+from .build import MODEL_REGISTRY  # noqa
 
 
 # @MODEL_REGISTRY.register()

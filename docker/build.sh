@@ -6,7 +6,7 @@ IMAGE_NAME=$(basename $(pwd))
 # to lowercase
 IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 
-PYTHON="3.10"
+PYTHON="3.11"
 CUDA_VERSION="11.8.0"
 
 DESCRIPTION=$(cat <<< "CUDA + Python Docker

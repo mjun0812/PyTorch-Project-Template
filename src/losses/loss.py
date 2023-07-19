@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .build import LOSS_REGISTRY
+from .build import LOSS_REGISTRY  # noqa
 
 
 # @LOSS_REGISTRY.register()
