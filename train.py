@@ -186,7 +186,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
                 writer.log_metric("Learning Rate", result_val["lr"], epoch + 1)
 
                 metrics = result_val["metrics"]
-                for k, v in metrics:
+                for k, v in metrics.items():
                     logger.info(f"Val {k}: {v}")
                 writer.log_metric(list(metrics.keys()), list(metrics.values()), epoch + 1)
 
