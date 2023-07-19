@@ -54,6 +54,11 @@ class Trainer:
             progress_bar = tqdm(progress_bar, total=len(dataloader), dynamic_ncols=True)
 
         model.train(phase == "train")
+        if self.rank != -1:
+            model.module.phase = phase
+        else:
+            model.phase = phase
+
         for i, (image, data) in progress_bar:
             with torch.set_grad_enabled(phase == "train"):
                 # ####### Prepare Input Data #######
