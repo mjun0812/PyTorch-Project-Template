@@ -45,12 +45,12 @@ class Config:
     def _load_cfg(filename: str):
         if filename.endswith(".json"):
             cfg_dict = Config._load_json(filename)
+            cfg_dict = OmegaConf.create(cfg_dict)
         elif filename.endswith(".yaml"):
             cfg_dict = Config._load_yaml(filename)
         else:
             raise NotImplementedError(f"Not Supported file format: '{filename}'")
 
-        cfg_dict = OmegaConf.create(cfg_dict)
         return cfg_dict
 
     @staticmethod
@@ -61,8 +61,7 @@ class Config:
 
     @staticmethod
     def _load_yaml(filename: str):
-        with open(filename) as f:
-            cfg_dict = yaml.safe_load(f)
+        cfg_dict = OmegaConf.load(filename)
         return cfg_dict
 
     @staticmethod
