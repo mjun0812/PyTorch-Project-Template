@@ -88,7 +88,7 @@ class Trainer:
                         model_ema.update(model)
 
                 if evaluator:
-                    evaluator.update(*Trainer.generate_input_evaluator(output, input))
+                    evaluator.update(*self.generate_input_evaluator(output, data))
                 for key in loss.keys():
                     if self.rank != -1:
                         loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
@@ -133,6 +133,5 @@ class Trainer:
             description += f" {k}: {v:8.4f}"
         return description
 
-    @staticmethod
-    def generate_input_evaluator(output, data):
+    def generate_input_evaluator(self, output, data):
         return output, data
