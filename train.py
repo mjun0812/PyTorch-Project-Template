@@ -140,7 +140,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
         logger.info(f"Start Epoch {epoch+1}")
         if rank in [-1, 0]:
             writer.phase = "train"
-            writer.log_metric("Epoch", epoch + 1, phase, epoch + 1)
+            writer.log_metric("Epoch", epoch + 1, epoch + 1)
         if rank != -1:
             dataloaders[phase].sampler.set_epoch(epoch)
 
