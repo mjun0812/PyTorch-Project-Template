@@ -6,9 +6,11 @@ from timm.utils import ModelEmaV2
 from torch.nn.parallel import DistributedDataParallel
 
 try:
-    from timm.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
+    from timm.layers import \
+        convert_sync_batchnorm as convert_sync_batchnorm_timm
 except Exception:
-    from timm.models.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
+    from timm.models.layers import \
+        convert_sync_batchnorm as convert_sync_batchnorm_timm
 
 MODEL_REGISTRY = Registry("MODEL")
 # Get root logger

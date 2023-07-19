@@ -1,6 +1,6 @@
-import pathlib
 import argparse
 import json
+import pathlib
 
 from tabulate import tabulate
 

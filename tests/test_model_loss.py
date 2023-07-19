@@ -5,7 +5,6 @@ import sys
 import numpy as np
 import torch
 
-
 sys.path.append("./")
 from src.losses import build_loss
 from src.models import build_model  # noqa

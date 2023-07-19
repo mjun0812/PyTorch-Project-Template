@@ -1,10 +1,9 @@
-from typing import Iterator, Optional
 from operator import itemgetter
-from torch.utils.data import DistributedSampler
+from typing import Iterator, Optional
 
-from torch.utils.data import Dataset, Sampler
 import numpy as np
 import torch
+from torch.utils.data import Dataset, DistributedSampler, Sampler
 
 
 class DatasetFromSampler(Dataset):

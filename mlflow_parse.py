@@ -2,11 +2,11 @@ import argparse
 import os
 import sys
 
-from dotenv import load_dotenv
-from tabulate import tabulate
 import mlflow
 import yaml
+from dotenv import load_dotenv
 from natsort import natsorted
+from tabulate import tabulate
 
 
 def arg_parse():

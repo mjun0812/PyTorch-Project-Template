@@ -1,16 +1,17 @@
 """LR SchedulerのLRの推移をテスト"""
 from pathlib import Path
 
+import matplotlib
 import torch.nn as nn
 import torch.optim as optim
-from addict import Dict
 import yaml
+from addict import Dict
 
-import matplotlib
 matplotlib.use("Agg")
+import sys  # noqa
+
 import matplotlib.pyplot as plt  # noqa
 
-import sys  # noqa
 sys.path.append("./")
 from src.scheduler import build_lr_scheduler  # noqa
 

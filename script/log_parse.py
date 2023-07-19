@@ -1,5 +1,5 @@
-import pathlib
 import argparse
+import pathlib
 
 from tabulate import tabulate
 

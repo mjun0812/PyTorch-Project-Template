@@ -4,6 +4,7 @@ kunai @ git+https://github.com/mjun0812/kunai@6b61ab91e2b2a6be9786649c85a16af5a5
 matplotlib
 natsort
 numpy
+omegaconf
 opencv-python
 Pillow
 python-dotenv

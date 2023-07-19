@@ -8,13 +8,8 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from kunai.torch_utils import (
-    check_model_parallel,
-    fix_seed,
-    save_model,
-    save_model_info,
-    set_device,
-)
+from kunai.torch_utils import (check_model_parallel, fix_seed, save_model,
+                               save_model_info, set_device)
 from kunai.utils import get_cmd, get_git_hash, make_output_dirs, setup_logger
 from natsort import natsorted
 from torch.distributed.elastic.multiprocessing.errors import record
@@ -25,14 +20,8 @@ from src.models import build_model
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
 from src.trainer import Trainer
-from src.utils import (
-    Config,
-    Writer,
-    build_evaluator,
-    error_handle,
-    make_result_dirs,
-    post_slack,
-)
+from src.utils import (Config, Writer, build_evaluator, error_handle,
+                       make_result_dirs, post_slack)
 
 from test import do_test  # isort: skip
 

@@ -1,10 +1,10 @@
 import argparse
 import os
 
-from dotenv import load_dotenv
 import mlflow
-from mlflow.tracking import fluent
 import yaml
+from dotenv import load_dotenv
+from mlflow.tracking import fluent
 
 
 def arg_parse():
