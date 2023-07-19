@@ -99,7 +99,7 @@ def build_lr_scheduler(cfg, optimizer, epoch):
         _, iter_scheduler = build_lr_scheduler(cfg.ITER_SCHEDULER, optimizer, epoch)
         _, scheduler = build_lr_scheduler(cfg.EPOCH_SCHEDULER, optimizer, epoch)
 
-    logger.info(f"LR Scheduler: {cfg}")
+    logger.info(f"LR Scheduler: {cfg.NAME}")
     return iter_scheduler, scheduler
 
 
