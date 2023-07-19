@@ -6,11 +6,9 @@ from timm.utils import ModelEmaV2
 from torch.nn.parallel import DistributedDataParallel
 
 try:
-    from timm.layers import \
-        convert_sync_batchnorm as convert_sync_batchnorm_timm
+    from timm.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
 except Exception:
-    from timm.models.layers import \
-        convert_sync_batchnorm as convert_sync_batchnorm_timm
+    from timm.models.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
 
 MODEL_REGISTRY = Registry("MODEL")
 # Get root logger
@@ -35,7 +33,11 @@ def build_model(cfg, device, phase="train", rank=-1):
         logger.info("Use Model Exponential Moving Average(EMA)")
         model_ema = ModelEmaV2(model, decay=cfg.MODEL_EMA_DECAY)
 
-    num_parameters, num_trainable_parameters, num_backbone_parameters = calc_model_prameters(model)
+    (
+        num_parameters,
+        num_trainable_parameters,
+        num_backbone_parameters,
+    ) = calc_model_prameters(model)
     logger.info(f"Num Model Parameters: {num_parameters}")
     logger.info(f"Num Trainable Model Parameters: {num_trainable_parameters}")
     logger.info(f"Num Backbone Model Parameters: {num_backbone_parameters}")

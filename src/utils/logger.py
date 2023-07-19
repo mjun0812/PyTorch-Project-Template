@@ -56,15 +56,13 @@ class Writer:
     def log_hydra_config(self):
         parameters = {
             "Optimizer": self.cfg.OPTIMIZER.NAME,
-            "LR scheduler": self.cfg.LR_SCHEDULER,
+            "LR scheduler": self.cfg.LR_SCHEDULER.NAME,
             "Learning Rate": self.cfg.OPTIMIZER.LR,
             "Epoch": self.cfg.EPOCH,
             "Model": self.cfg.MODEL.NAME,
             "Dataset": self.cfg.DATASET.NAME,
             "Loss": self.cfg.LOSS.NAME,
             "Input size": self.cfg.MODEL.INPUT_SIZE,
-            "PRE_TRAINED_WEIGHT": self.cfg.MODEL.PRE_TRAINED_WEIGHT,
-            "Weight": self.cfg.MODEL.WEIGHT,
             "Batch": self.cfg.BATCH,
             "GPU Ids": self.cfg.GPU.USE,
             "hostname": os.uname()[1],

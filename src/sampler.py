@@ -113,9 +113,7 @@ class BalancedSampler:
         count = 0
         while count < len(self.dataset):
             # 重みを元にlabelをランダム選択
-            label_index = np.random.choice(
-                len(self.label_weight), 1, p=self.label_weight
-            )[0]
+            label_index = np.random.choice(len(self.label_weight), 1, p=self.label_weight)[0]
             # label内のindicesを選択
             index = self.used_indices[label_index]
             if len(self.label_index_list[label_index]) != 0:

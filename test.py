@@ -64,7 +64,11 @@ def do_test(cfg, output_dir, device, writer: Writer):
         csv_writer = csv.writer(f)
         csv_writer.writerows(results)
 
-    metric_dict = {"result": metric, "Speed/s": inference_speed, "fps": 1.0 / inference_speed}
+    metric_dict = {
+        "result": metric,
+        "Speed/s": inference_speed,
+        "fps": 1.0 / inference_speed,
+    }
     for name, value in metric_dict.items():
         logger.info(f"{name}: {value}")
         writer.log_metric(name, value, None)

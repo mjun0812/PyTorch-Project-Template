@@ -29,7 +29,6 @@ class TimeCompose:
         return format_string
 
 
-
 @Config.main
 def main(cfg):
     data = build_dataset(cfg, "train")
