@@ -82,7 +82,8 @@ class Writer:
         mlflow_metrics = {}
         for name, value in metrics.items():
             if self.use_mlflow:
-                mlflow_metrics[f"{name}_{self.phase}"] = value
+                if isinstance(value, (int, float)):
+                    mlflow_metrics[f"{name}_{self.phase}"] = value
 
             # Log value history
             if name not in self.histories:
