@@ -13,18 +13,62 @@ from tqdm import tqdm
 
 from src.dataloaders import build_dataset
 from src.models import build_model
-from src.utils import Config, Writer, make_result_dirs, post_slack
+from src.utils import Config, Writer, build_evaluator, make_result_dirs, post_slack
 
 # Get root logger
 logger = logging.getLogger()
 
 
+class Tester:
+    def __init__(
+        self,
+        device: torch.device,
+        model,
+        dataloader,
+        evaluator,
+    ):
+        self.device = device
+        self.model = model
+        self.model.phase = "test"
+        self.dataloader = dataloader
+        self.evaluator = evaluator
+
+    def do_test(self):
+        progress_bar = tqdm(
+            enumerate(self.dataloader), total=len(self.dataloader), dynamic_ncols=True
+        )
+
+        results = []
+        inference_times = []
+
+        for i, (image, data) in progress_bar:
+            with torch.no_grad():
+                image = image.to(self.device)
+                for k, v in data.items():
+                    if isinstance(v, torch.Tensor):
+                        data[k] = v.to(self.device, non_blocking=True)
+
+                t = time_synchronized()
+                output = self.model(image, data)
+                inference_times.append(time_synchronized() - t)
+
+                self.evaluator.update(*self.generate_input_evaluator(output, data))
+                results.append(output)
+
+        inference_speed = np.mean(inference_times[len(inference_times) // 2 :])
+        return {"outputs": results, "inference_speed": inference_speed}
+
+    def generate_input_evaluator(self, output, data):
+        return output, data
+
+    def save_results(self, result, output_dir):
+        pass
+
+
 def do_test(cfg, output_dir, device, writer: Writer):
     logger.info("Loading Dataset...")
-    dataset, _ = build_dataset(cfg, phase="test")
-    dataloader = torch.utils.data.DataLoader(
-        dataset, pin_memory=True, num_workers=4, batch_size=cfg.BATCH
-    )
+    dataset, _, _ = build_dataset(cfg, phase="test")
+    dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
 
     model, _ = build_model(cfg, device, phase="test")
     check_point = torch.load(cfg.MODEL.WEIGHT, map_location=device)
@@ -38,42 +82,30 @@ def do_test(cfg, output_dir, device, writer: Writer):
     logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
     logger.info("Complete load model")
 
-    metric = 0
-    results = []
-    inference_times = []
-    progress_bar = tqdm(enumerate(dataloader), total=len(dataloader), dynamic_ncols=True)
-    for i, data in progress_bar:
-        with torch.no_grad():
-            input_data = data.to(device)
+    evaluator = build_evaluator(cfg, phase="train").to(device)
 
-            t = time_synchronized()
-            y = model(input_data)
-            inference_times.append(time_synchronized() - t)
+    tester = Tester(device, model, dataloader, evaluator)
+    results = tester.do_test()
 
-            # calc metrics below
-            result = y
-            results.append(result)
-
-    inference_speed = np.mean(inference_times[len(inference_times) // 2 :])
+    inference_speed = results["inference_speed"]
     logger.info(
-        f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
+        f"Average Inferance Speed: {inference_speed:.5f}s, " f"{(1.0 / inference_speed):.2f}fps"
     )
 
-    # 評価結果の保存
-    with open(os.path.join(output_dir, "result.csv"), "w") as f:
-        csv_writer = csv.writer(f)
-        csv_writer.writerows(results)
+    tester.save_results(results["outputs"], output_dir)
 
-    metric_dict = {
-        "result": metric,
-        "Speed/s": inference_speed,
-        "fps": 1.0 / inference_speed,
-    }
-    for name, value in metric_dict.items():
+    metrics = evaluator.compute()
+    metrics.update(
+        {
+            "Speed/s": inference_speed,
+            "fps": 1.0 / inference_speed,
+        }
+    )
+    for name, value in metrics.items():
         logger.info(f"{name}: {value}")
-        writer.log_metric(name, value, None)
-    json.dump(metric_dict, open(os.path.join(output_dir, "result.json"), "w"), indent=2)
-    return metric
+    writer.log_metrics(metrics, None)
+    with open(os.path.join(output_dir, "result.json"), "w") as f:
+        json.dump(metrics, f, indent=2)
 
 
 @Config.main
@@ -81,19 +113,19 @@ def main(cfg):
     # set Device
     device = set_device(cfg.GPU.USE, use_cudnn=cfg.CUDNN, is_cpu=cfg.CPU)
 
-    output_dir = make_result_dirs(cfg.MODEL.WEIGHT)
+    output_dir = Path(make_result_dirs(cfg.MODEL.WEIGHT))
 
-    setup_logger(os.path.join(output_dir, "test.log"))
+    setup_logger(output_dir / "test.log")
     logger.info(f"Command: {get_cmd()}")
-    logger.info(f"Make output_dir at {output_dir}")
+    logger.info(f"Make output_dir at {str(output_dir)}")
     logger.info(f"Git Hash: {get_git_hash()}")
-    with open(Path(output_dir).parents[1] / "cmd_histry.log", "a") as f:
+    with open(output_dir.parents[1] / "cmd_histry.log", "a") as f:
         print(get_cmd(), file=f)
-    Config.dump(cfg, os.path.join(output_dir, "config.yaml"))
+    Config.dump(cfg, output_dir / "config.yaml")
 
     writer = Writer(cfg, output_dir, "test")
-    writer.log_artifact(Path(output_dir).parents[1] / "cmd_histry.log")
-    writer.log_artifact(os.path.join(output_dir, "config.yaml"))
+    writer.log_artifact(output_dir.parents[1] / "cmd_histry.log")
+    writer.log_artifact(output_dir, "config.yaml")
 
     result = do_test(cfg, output_dir, device, writer)
 
