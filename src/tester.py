@@ -37,7 +37,8 @@ class Tester:
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
                         data[k] = v.to(self.device, non_blocking=True)
-                image, data = self.batched_transform(image, data)
+                if self.batched_transform:
+                    image, data = self.batched_transform(image, data)
 
                 t = time_synchronized()
                 output = self.model(image, data)

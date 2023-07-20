@@ -17,7 +17,7 @@ def main():
         mlflow_uri = "./result/mlruns"
     mlflow.set_tracking_uri(mlflow_uri)
 
-    with open("config/config.yaml", "r") as f:
+    with open("config/__BASE__/config.yaml", "r") as f:
         experiment_name = yaml.safe_load(f)["EXPERIMENT_NAME"]
     # print(f"Experiment: {experiment_name}")
 
