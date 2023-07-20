@@ -11,6 +11,7 @@ class Tester:
         device: torch.device,
         model,
         dataloader,
+        batched_transform,
         evaluator,
     ):
         self.cfg = cfg
@@ -18,6 +19,7 @@ class Tester:
         self.model = model
         self.model.phase = "test"
         self.dataloader = dataloader
+        self.batched_transform = batched_transform
         self.evaluator = evaluator
 
     def do_test(self):
@@ -35,6 +37,7 @@ class Tester:
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
                         data[k] = v.to(self.device, non_blocking=True)
+                image, data = self.batched_transform(image, data)
 
                 t = time_synchronized()
                 output = self.model(image, data)

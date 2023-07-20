@@ -19,8 +19,8 @@ logger = logging.getLogger()
 
 def do_test(cfg, output_dir, device, writer: Writer):
     logger.info("Loading Dataset...")
-    dataset, _, _ = build_dataset(cfg, phase="test")
-    dataloader = torch.utils.data.DataLoader(dataset, pin_memory=True, num_workers=4, batch_size=1)
+    cfg.BATCH = 1
+    _, dataloader, batched_transform = build_dataset(cfg, phase="test")
 
     model, _ = build_model(cfg, device, phase="test")
     check_point = torch.load(cfg.MODEL.WEIGHT, map_location=device)
@@ -36,7 +36,7 @@ def do_test(cfg, output_dir, device, writer: Writer):
 
     evaluator = build_evaluator(cfg, phase="train").to(device)
 
-    tester = Tester(cfg, device, model, dataloader, evaluator)
+    tester = Tester(cfg, device, model, dataloader, batched_transform, evaluator)
     results = tester.do_test()
 
     inference_speed = results["inference_speed"]
