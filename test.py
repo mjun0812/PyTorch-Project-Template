@@ -39,6 +39,7 @@ class Tester:
         )
 
         results = []
+        targets = []
         inference_times = []
 
         for i, (image, data) in progress_bar:
@@ -53,10 +54,15 @@ class Tester:
                 inference_times.append(time_synchronized() - t)
 
                 self.evaluator.update(*self.generate_input_evaluator(output, data))
+
                 results.append(output)
+                for k, v in data.items():
+                    if isinstance(v, torch.Tensor):
+                        data[k] = v.cpu()
+                targets.append(data)
 
         inference_speed = np.mean(inference_times[len(inference_times) // 2 :])
-        return {"outputs": results, "inference_speed": inference_speed}
+        return {"outputs": results, "targets": targets, "inference_speed": inference_speed}
 
     def generate_input_evaluator(self, output, data):
         return output, data
