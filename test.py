@@ -22,11 +22,13 @@ logger = logging.getLogger()
 class Tester:
     def __init__(
         self,
+        cfg,
         device: torch.device,
         model,
         dataloader,
         evaluator,
     ):
+        self.cfg = cfg
         self.device = device
         self.model = model
         self.model.phase = "test"
@@ -90,7 +92,7 @@ def do_test(cfg, output_dir, device, writer: Writer):
 
     evaluator = build_evaluator(cfg, phase="train").to(device)
 
-    tester = Tester(device, model, dataloader, evaluator)
+    tester = Tester(cfg, device, model, dataloader, evaluator)
     results = tester.do_test()
 
     inference_speed = results["inference_speed"]
