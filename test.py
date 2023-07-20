@@ -67,7 +67,7 @@ class Tester:
     def generate_input_evaluator(self, output, data):
         return output, data
 
-    def save_results(self, result, output_dir):
+    def save_results(self, output_dir, results, targets):
         pass
 
 
@@ -98,7 +98,7 @@ def do_test(cfg, output_dir, device, writer: Writer):
         f"Average Inferance Speed: {inference_speed:.5f}s, " f"{(1.0 / inference_speed):.2f}fps"
     )
 
-    tester.save_results(results["outputs"], output_dir)
+    tester.save_results(output_dir, results["outputs"], results["targets"])
 
     metrics = evaluator.compute()
     metrics.update(
