@@ -78,7 +78,7 @@ def main(cfg):
 
     writer = Writer(cfg, output_dir, "test")
     writer.log_artifact(output_dir.parents[1] / "cmd_histry.log")
-    writer.log_artifact(output_dir, "config.yaml")
+    writer.log_artifact(output_dir / "config.yaml")
 
     result = do_test(cfg, output_dir, device, writer)
 
