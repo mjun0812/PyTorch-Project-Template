@@ -55,6 +55,8 @@ def do_test(cfg, output_dir, device, writer: Writer):
     )
     for name, value in metrics.items():
         logger.info(f"{name}: {value}")
+        if isinstance(value, torch.Tensor):
+            metrics[name] = value.item()
     writer.log_metrics(metrics, None)
     with open(os.path.join(output_dir, "result.json"), "w") as f:
         json.dump(metrics, f, indent=2)
