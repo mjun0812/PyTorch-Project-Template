@@ -68,6 +68,7 @@ def main(cfg):
     output_dir = Path(make_result_dirs(cfg.MODEL.WEIGHT))
 
     setup_logger(output_dir / "test.log")
+    logger.info("\n" + Config.pretty_text(cfg))
     logger.info(f"Command: {get_cmd()}")
     logger.info(f"Make output_dir at {str(output_dir)}")
     logger.info(f"Git Hash: {get_git_hash()}")

@@ -236,7 +236,7 @@ def main(cfg):
 
         # Logging
         setup_logger(output_dir / "train.log")
-        logger.info(Config.pretty_text(cfg))
+        logger.info("\n" + Config.pretty_text(cfg))
         logger.info(f"Command: {get_cmd()}")
         logger.info(f"Output dir: {str(output_dir)}")
         logger.info(f"Git Hash: {get_git_hash()}")
