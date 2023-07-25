@@ -11,7 +11,14 @@ from kunai.utils import get_cmd, get_git_hash, setup_logger
 from src.dataloaders import build_dataset
 from src.models import build_model
 from src.tester import Tester
-from src.utils import Config, Writer, build_evaluator, make_result_dirs, post_slack
+from src.utils import (
+    Config,
+    JsonEncoder,
+    Writer,
+    build_evaluator,
+    make_result_dirs,
+    post_slack,
+)
 
 # Get root logger
 logger = logging.getLogger()
@@ -55,11 +62,11 @@ def do_test(cfg, output_dir, device, writer: Writer):
     )
     for name, value in metrics.items():
         logger.info(f"{name}: {value}")
-        if isinstance(value, torch.Tensor):
+        if isinstance(value, torch.Tensor) and value.dim() == 0:
             metrics[name] = value.item()
     writer.log_metrics(metrics, None)
     with open(os.path.join(output_dir, "result.json"), "w") as f:
-        json.dump(metrics, f, indent=2)
+        json.dump(metrics, f, indent=2, cls=JsonEncoder)
 
 
 @Config.main

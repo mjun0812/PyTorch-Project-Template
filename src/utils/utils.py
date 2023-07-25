@@ -7,6 +7,7 @@ import traceback
 import kunai
 import matplotlib
 import numpy as np
+import torch
 import torch.distributed as dist
 from dotenv import load_dotenv
 
@@ -105,14 +106,12 @@ def error_handle(e, phase, message):
 
 
 class JsonEncoder(json.JSONEncoder):
-    """Json Classのエンコーダ
-    numpy.arrayをjsonにencodeできる
-    """
-
     def default(self, obj):
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         elif isinstance(obj, (np.floating, np.complexfloating)):
             return float(obj)
+        elif isinstance(obj, torch.Tensor) and obj.dim() == 0:
+            return obj.item()
         else:
             return super(JsonEncoder, self).default(obj)
