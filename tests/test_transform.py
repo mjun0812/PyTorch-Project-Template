@@ -18,10 +18,10 @@ def main(cfg):
     cfg.BATCH = 1
     cfg.CPU = True
     data = build_dataset(cfg, phase)
-    dataset, dataloader, batched_transforms = data
+    _, dataloader, batched_transforms = data
     print("Loading dataset Complete")
 
-    for i, data in enumerate(dataloader):
+    for _, data in enumerate(dataloader):
         image, data = data
         if batched_transforms:
             image, _ = batched_transforms(image, data)

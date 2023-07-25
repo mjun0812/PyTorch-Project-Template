@@ -7,7 +7,7 @@ import torch
 
 sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
-from src.utils.config import Config
+from src.utils.config import Config  # noqa
 
 
 class TimeCompose:
@@ -18,7 +18,7 @@ class TimeCompose:
         for t in self.transforms:
             start = time.time()
             img, annotations = t(img, annotations)
-            print(f"{t.__class__.__name__}: {time.time()-start:.4f}")
+            print(f"    {t.__class__.__name__}: {time.time()-start:.4f}")
         return img, annotations
 
     def __repr__(self):
@@ -40,18 +40,21 @@ def main(cfg):
     else:
         device = torch.device("cpu")
 
-    loader_time = time.time()
-    start_time = loader_time
+    start_time = time.time()
 
-    for _ in range(2):
-        for i, data in enumerate(dataloader):
-            image, data = data
-            image = image.to(device, non_blocking=True).float()
-            tmp = time.time()
-            print(f"{i:4}/{len(dataloader):5}: {tmp - start_time:.5f}")
-            start_time = tmp
+    for i, (image, data) in enumerate(dataloader):
+        start_one_batch = time.time()
 
-    print(f"{time.time() - loader_time:.5f}")
+        image = image.to(device, non_blocking=True).float()
+        for k, v in data.items():
+            if isinstance(v, torch.Tensor):
+                data[k] = v.to(device, non_blocking=True)
+        if batched_transforms:
+            image, data = batched_transforms(image, data)
+
+        print(f"{i:4}/{len(dataloader):5}: {time.time() - start_one_batch:.5f}")
+
+    print(f"{time.time() - start_time:.5f}")
 
 
 if __name__ == "__main__":
