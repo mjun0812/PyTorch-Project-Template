@@ -39,7 +39,7 @@ def main(cfg):
     _, dataloader, batched_transforms = build_dataset(cfg, phase)
     print("Loading dataset Complete")
 
-    image, data = dataloader[0]
+    image, data = next(iter(dataloader))
     if batched_transforms:
         image, data = batched_transforms(image, data)
     print(image.shape)
