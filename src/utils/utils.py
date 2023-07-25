@@ -111,7 +111,10 @@ class JsonEncoder(json.JSONEncoder):
             return obj.tolist()
         elif isinstance(obj, (np.floating, np.complexfloating)):
             return float(obj)
-        elif isinstance(obj, torch.Tensor) and obj.dim() == 0:
-            return obj.item()
+        elif isinstance(obj, torch.Tensor):
+            if obj.dim() == 0:
+                return obj.item()
+            else:
+                return obj.cpu().tolist()
         else:
             return super(JsonEncoder, self).default(obj)
