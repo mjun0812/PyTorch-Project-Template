@@ -31,8 +31,7 @@ class TimeCompose:
 
 @Config.main
 def main(cfg):
-    data = build_dataset(cfg, "train")
-    dataset, dataloader, batched_transforms = data
+    dataset, dataloader, batched_transforms = build_dataset(cfg, "train")
     dataloader.dataset.transform = TimeCompose(dataset.transform.transforms)
     print("Loading dataset Complete")
 

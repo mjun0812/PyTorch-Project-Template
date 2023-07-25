@@ -6,7 +6,7 @@ import torchvision.transforms.functional as TF
 
 sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
-from src.utils import Config
+from src.utils import Config  # noqa
 
 leftkeys = (81, 110, 97, 65361, 2424832)
 rightkeys = (83, 109, 100, 65363, 2555904)
@@ -15,13 +15,16 @@ rightkeys = (83, 109, 100, 65363, 2555904)
 @Config.main
 def main(cfg):
     phase = "train"
+    cfg.BATCH = 1
+    cfg.CPU = True
     data = build_dataset(cfg, phase)
     dataset, dataloader, batched_transforms = data
     print("Loading dataset Complete")
 
     for i, data in enumerate(dataloader):
         image, data = data
-        image = image[0].unsqueeze(0).float()
+        if batched_transforms:
+            image, _ = batched_transforms(image, data)
 
         print(image.shape)
 
@@ -37,17 +40,11 @@ def main(cfg):
         cv2.imshow("Image", image)
 
         key = cv2.waitKeyEx(0)
-        if key in rightkeys:
-            i += 1
-            if i >= len(dataset):
-                i = 0
-        if key in leftkeys:
-            i -= 1
-            if i < 0:
-                i = len(dataset) - 1
         if (key == ord("q")) or (key == 27):
             cv2.destroyAllWindows()
             break
+        else:
+            continue
 
 
 if __name__ == "__main__":

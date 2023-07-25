@@ -1,11 +1,22 @@
 import logging
+import random
 import sys
 
+import numpy as np
 import torch
 
 sys.path.append("./")
+from src.dataloaders import build_dataset  # noqa
+from src.losses import build_loss  # noqa
 from src.models import build_model  # noqa
-from src.utils import Config
+from src.utils import Config  # noqa
+
+random.seed(42)
+np.random.seed(42)
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+torch.backends.cudnn.deterministic = True
+torch.use_deterministic_algorithms = True
 
 
 @Config.main
@@ -16,29 +27,26 @@ def main(cfg):
     default_handler = logger.handlers[0]
     default_handler.setLevel(logging.INFO)
 
-    # cfg.TRANSFORMS = OmegaConf.create(transform)
+    phase = "train"
+    cfg.BATCH = 1
+    cfg.CPU = True
     cfg.MODEL.PRE_TRAINED = False
-    model, _ = build_model(cfg, device=torch.device("cpu"), phase="val")
-    num_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(num_parameters)
 
+    model, _ = build_model(cfg, device=torch.device("cpu"), phase="train")
+    criterion = build_loss(cfg)
     print(model)
 
-    x = torch.zeros((2, 3, 512, 512))
-    data = {
-        "bbox": torch.zeros((2, 8, 4)).float(),
-        "class": torch.zeros((2, 8, 1)).squeeze(-1).long(),
-        "scale": torch.ones(2),
-        "image_size": torch.tensor([[512, 512], [512, 512]]),
-        "org_size": torch.tensor([[512, 512], [512, 512]]),
-        "mask": torch.zeros((2, 512, 512)).bool(),
-    }
-    # model.phase = "val"
+    _, dataloader, batched_transforms = build_dataset(cfg, phase)
+    print("Loading dataset Complete")
 
-    y = model(x, data)
-    print(y)
+    image, data = dataloader[0]
+    if batched_transforms:
+        image, data = batched_transforms(image, data)
+    print(image.shape)
 
-    # print(y)
+    y = model(image, data)
+    loss = criterion(y, data)
+    print(loss)
 
 
 if __name__ == "__main__":

@@ -11,9 +11,7 @@ from src.utils.config import Config
 
 @Config.main
 def main(cfg):
-    data = build_dataset(cfg, "train")
-
-    dataset, dataloader, batched_transforms = data
+    dataset, dataloader, batched_transforms = build_dataset(cfg, "train")
     print("Loading dataset Complete")
 
     for i, data in enumerate(tqdm(dataloader)):
