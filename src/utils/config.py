@@ -28,6 +28,10 @@ class Config:
         cfg_cli = OmegaConf.from_cli(override_args)
         cfg_cli = Config.load_base_config(cfg_cli)
 
+        # データセットは上書きではなく入れ替え(replace)を行う
+        if "DATASET" in cfg_cli:
+            cfg.DATASET = cfg_cli.DATASET
+
         cfg = Config.merge_dict(cfg, cfg_cli)
 
         return cfg
@@ -115,8 +119,5 @@ class Config:
         merge dict `override_dict` into `base_dict`, if the key overlapped, set replace = True to
         use the key in `a` otherwise use the key in `b`
         """
-        # データセットは上書きではなく入れ替え(replace)を行う
-        if "DATASET" in override_dict:
-            base_dict.DATASET = override_dict.DATASET
         base_dict = OmegaConf.merge(base_dict, override_dict)
         return base_dict
