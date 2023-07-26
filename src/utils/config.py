@@ -115,5 +115,8 @@ class Config:
         merge dict `override_dict` into `base_dict`, if the key overlapped, set replace = True to
         use the key in `a` otherwise use the key in `b`
         """
+        # データセットは上書きではなく入れ替え(replace)を行う
+        if "DATASET" in override_dict:
+            base_dict.DATASET = override_dict.DATASET
         base_dict = OmegaConf.merge(base_dict, override_dict)
         return base_dict
