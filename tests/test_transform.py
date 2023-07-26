@@ -37,14 +37,24 @@ def main(cfg):
         image = np.array(image, dtype=np.uint8)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
+        if "bbox" in data:
+            bbox = data["bbox"][0].numpy()
+            for box in bbox:
+                cv2.rectangle(
+                    image,
+                    (int(box[0]), int(box[1])),
+                    (int(box[2]), int(box[3])),
+                    (255, 0, 0),
+                    2,
+                    cv2.LINE_AA,
+                )
+
         cv2.imshow("Image", image)
 
         key = cv2.waitKeyEx(0)
         if (key == ord("q")) or (key == 27):
             cv2.destroyAllWindows()
             break
-        else:
-            continue
 
 
 if __name__ == "__main__":
