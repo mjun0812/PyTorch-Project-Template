@@ -2,7 +2,8 @@ __BASE__:
   - config/__BASE__/config.yaml
   - config/__BASE__/OPTIMIZER/Momentum.yaml
   - config/__BASE__/LR_SCHEDULER/ReduceLROnPlateau.yaml
-  - config/__BASE__/DATASET/dataset.yaml
+
+__DATASET__: config/__BASE__/DATASET/dataset.yaml
 
 EPOCH: 12
 

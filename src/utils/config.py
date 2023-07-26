@@ -4,6 +4,7 @@ import json
 from omegaconf import DictConfig, OmegaConf
 
 BASE_KEY = "__BASE__"
+BASE_DATASET_KEY = "__DATASET__"
 
 
 class Config:
@@ -93,6 +94,12 @@ class Config:
 
                 # Merge base into current
                 cfg = Config.merge_dict(base_cfg_dict, cfg)
+        if BASE_DATASET_KEY in cfg:
+            base_cfg_dict = OmegaConf.create(
+                {"DATASET": Config.build_config(cfg.pop(BASE_DATASET_KEY))}
+            )
+            # Merge base into current
+            cfg = Config.merge_dict(base_cfg_dict, cfg)
         return cfg
 
     @staticmethod
