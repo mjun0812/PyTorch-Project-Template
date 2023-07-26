@@ -30,6 +30,8 @@ class Config:
 
         # データセットは上書きではなく入れ替え(replace)を行う
         if "DATASET" in cfg_cli:
+            # TRANSFORMSはモデル固有のものが多いため，置き換えない
+            cfg_cli.DATASET.TRANSFORMS = cfg.DATASET.TRANSFORMS
             cfg.DATASET = cfg_cli.DATASET
 
         cfg = Config.merge_dict(cfg, cfg_cli)
