@@ -88,7 +88,6 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
     """Training Script"""
 
     fix_seed(100 + rank)
-    save_model_path = output_dir / "models"
 
     # ###### Build Model #######
     model, model_ema = build_model(cfg, device, phase="train", rank=rank)
@@ -100,6 +99,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
         dynamo.reset()
         model = torch.compile(model, backend=cfg.COMPILE_BACKEND)
     if rank in [-1, 0]:
+        save_model_path = output_dir / "models"
         # Model構造を出力
         save_model_info(str(output_dir), model)
         # save initial model
