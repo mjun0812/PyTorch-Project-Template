@@ -100,7 +100,7 @@ def main(cfg):
             "tag": cfg.TAG,
             "model": cfg.MODEL.NAME,
             "dataset": cfg.DATASET.NAME,
-            "save": output_dir,
+            "save": str(output_dir),
             "result": f"{result:7.3f}",
         },
         width=150,
