@@ -285,7 +285,7 @@ def main(cfg):
             "dataset": cfg.DATASET.NAME,
             "Train save": output_dir,
             "Val Loss": f"{result:7.3f}",
-            "Test Cmd": f"python test.py -cp {output_dir}",
+            "Test Cmd": f"python test.py {str(output_dir / 'config.yaml')}",
         }
         message = pprint.pformat(message_dict, width=150)
         # Send Message to Slack
@@ -306,11 +306,8 @@ def main(cfg):
         logger.info("Start Test")
         writer.phase = "test"
         writer.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
-        output_result_dir = make_result_dirs(cfg.MODEL.WEIGHT)
-        if cfg.CPU:
-            device = torch.device("cpu")
-        else:
-            device = torch.device("cuda:0")
+        output_result_dir = Path(make_result_dirs(cfg.MODEL.WEIGHT))
+        device = torch.device("cpu" if cfg.CPU else "cuda:0")
         try:
             result = do_test(cfg, output_result_dir, device, writer)
         except (Exception, KeyboardInterrupt) as e:
