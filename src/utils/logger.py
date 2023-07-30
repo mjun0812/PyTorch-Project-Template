@@ -62,7 +62,7 @@ class Writer:
             "Model": self.cfg.MODEL.NAME,
             "Dataset": self.cfg.DATASET.NAME,
             "Loss": self.cfg.LOSS.NAME,
-            "Input size": self.cfg.MODEL.INPUT_SIZE,
+            "Input size": self.cfg.MODEL.get("INPUT_SIZE"),
             "Batch": self.cfg.BATCH,
             "GPU Ids": self.cfg.GPU.USE,
             "hostname": os.uname()[1],
