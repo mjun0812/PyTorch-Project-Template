@@ -9,27 +9,55 @@ GROUP_ID=`id -g`
 GROUP_NAME=`id -gn`
 USER_NAME=$USER
 
-docker run \
-    -it \
-    --gpus all \
-    --rm \
-    --shm-size=128g \
-    --hostname $(hostname) \
-    --ipc=host \
-    --net=host \
-    --ulimit memlock=-1 \
-    --env DISPLAY=$DISPLAY \
-    --env USER_NAME=$USER_NAME \
-    --env USER_ID=$USER_ID \
-    --env GROUP_NAME=$GROUP_NAME \
-    --env GROUP_ID=$GROUP_ID \
-    --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
-    --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    --volume $HOME/.cache:$HOME/.cache \
-    --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
-    --volume "$(pwd):$(pwd)" \
-    --volume "$(pwd)/result:$(pwd)/result" \
-    --workdir $(pwd) \
-    --name "${IMAGE_NAME}-$(date '+%s')" \
-    "${USER}/${IMAGE_NAME}-server:latest" \
-    $@
+if type nvcc > /dev/null 2>&1; then
+    # Use GPU
+    docker run \
+        -it \
+        --gpus all \
+        --rm \
+        --shm-size=128g \
+        --hostname $(hostname) \
+        --ipc=host \
+        --net=host \
+        --ulimit memlock=-1 \
+        --env DISPLAY=$DISPLAY \
+        --env USER_NAME=$USER_NAME \
+        --env USER_ID=$USER_ID \
+        --env GROUP_NAME=$GROUP_NAME \
+        --env GROUP_ID=$GROUP_ID \
+        --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
+        --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
+        --volume $HOME/.cache:$HOME/.cache \
+        --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
+        --volume "$(pwd):$(pwd)" \
+        --volume "$(pwd)/result:$(pwd)/result" \
+        --workdir $(pwd) \
+        --name "${IMAGE_NAME}-$(date '+%s')" \
+        "${USER}/${IMAGE_NAME}-server:latest" \
+        $@
+else
+    # CPU
+    docker run \
+        -it \
+        --rm \
+        --shm-size=128g \
+        --hostname $(hostname) \
+        --ipc=host \
+        --net=host \
+        --ulimit memlock=-1 \
+        --env DISPLAY=$DISPLAY \
+        --env USER_NAME=$USER_NAME \
+        --env USER_ID=$USER_ID \
+        --env GROUP_NAME=$GROUP_NAME \
+        --env GROUP_ID=$GROUP_ID \
+        --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
+        --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
+        --volume $HOME/.cache:$HOME/.cache \
+        --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
+        --volume "$(pwd):$(pwd)" \
+        --volume "$(pwd)/result:$(pwd)/result" \
+        --workdir $(pwd) \
+        --name "${IMAGE_NAME}-$(date '+%s')" \
+        "${USER}/${IMAGE_NAME}-server:latest" \
+        $@
+fi
