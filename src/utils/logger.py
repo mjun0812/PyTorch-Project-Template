@@ -48,7 +48,8 @@ class Writer:
         self.run = mlflow.start_run(experiment_id=experiment_id, run_name=run_name, description="")
 
         logger.info(
-            f"Start MLflow Tracking: experiment_name={experiment_name} run_name={run_name} experiment_id: {experiment_id} run_id: {self.run.info.run_id}"
+            f"Start MLflow Tracking: experiment_name={experiment_name} "
+            f"run_name={run_name} experiment_id: {experiment_id} run_id: {self.run.info.run_id}"
         )
         self.log_tag("phase", self.phase.capitalize())
         self.log_hydra_config()
