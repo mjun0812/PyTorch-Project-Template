@@ -80,7 +80,7 @@ class Trainer:
 
                 # ####### Backward #######
                 if phase == "train":
-                    self.scaler.scale(loss["total_loss"])
+                    self.scaler.scale(loss["total_loss"]).backward()
                     if self.use_clip_grad:
                         self.scaler.unscale_(self.optimizer)
                         torch.nn.utils.clip_grad_norm_(model.parameters(), self.clip_grad)
