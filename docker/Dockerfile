@@ -14,4 +14,4 @@ ENV PATH=$POETRY_HOME/bin:$PATH
 COPY ./poetry.* ./pyproject.toml* ./
 RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=${POETRY_VERSION} python - \
     && poetry config virtualenvs.create false \
-    && poetry install
+    && poetry install --no-interaction --no-ansi
