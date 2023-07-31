@@ -100,15 +100,6 @@ class Config:
 
                 # Merge base into current
                 cfg = Config.merge_dict(base_cfg_dict, cfg)
-        if BASE_DATASET_KEY in cfg:
-            base_cfg_dict = OmegaConf.create(
-                {"DATASET": Config.build_config(cfg.pop(BASE_DATASET_KEY))}
-            )
-            # MODEL側の設定ファイルにTRANSFORMSがあるならDATASET側のTRANSFORMSは使わない
-            if cfg.DATASET.get("TRANSFORMS"):
-                base_cfg_dict.DATASET.pop("TRANSFORMS")
-            # Merge base into current
-            cfg = Config.merge_dict(base_cfg_dict, cfg)
         return cfg
 
     @staticmethod
