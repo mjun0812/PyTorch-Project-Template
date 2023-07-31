@@ -28,13 +28,13 @@ class Config:
         cfg_cli = OmegaConf.from_cli(override_args)
         cfg_cli = Config.load_base_config(cfg_cli)
 
-        # データセットは上書きではなく入れ替え(replace)を行う
-        if "DATASET" in cfg_cli:
-            # TRANSFORMSはモデル固有のものが多いため，置き換えない
-            cfg_cli.DATASET.TRANSFORMS = cfg.DATASET.TRANSFORMS
-            cfg.DATASET = cfg_cli.DATASET
-
         cfg = Config.merge_dict(cfg, cfg_cli)
+
+        if BASE_DATASET_KEY in cfg:
+            base_cfg_dict = OmegaConf.create(
+                {"DATASET": Config.build_config(cfg.pop(BASE_DATASET_KEY))}
+            )
+            cfg = Config.merge_dict(base_cfg_dict, cfg)
 
         return cfg
 
@@ -104,6 +104,9 @@ class Config:
             base_cfg_dict = OmegaConf.create(
                 {"DATASET": Config.build_config(cfg.pop(BASE_DATASET_KEY))}
             )
+            # MODEL側の設定ファイルにTRANSFORMSがあるならDATASET側のTRANSFORMSは使わない
+            if cfg.DATASET.get("TRANSFORMS"):
+                base_cfg_dict.DATASET.pop("TRANSFORMS")
             # Merge base into current
             cfg = Config.merge_dict(base_cfg_dict, cfg)
         return cfg
