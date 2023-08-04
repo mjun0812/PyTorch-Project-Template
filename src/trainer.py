@@ -62,7 +62,7 @@ class Trainer:
         for i, (image, data) in progress_bar:
             with torch.set_grad_enabled(phase == "train"):
                 # ####### Prepare Input Data #######
-                image = image.to(self.device, non_blocking=True)
+                image = image.to(self.device, non_blocking=True).float()
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
                         data[k] = v.to(self.device, non_blocking=True)

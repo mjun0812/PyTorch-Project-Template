@@ -33,7 +33,7 @@ class Tester:
 
         for i, (image, data) in progress_bar:
             with torch.no_grad():
-                image = image.to(self.device)
+                image = image.to(self.device).float()
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
                         data[k] = v.to(self.device, non_blocking=True)
