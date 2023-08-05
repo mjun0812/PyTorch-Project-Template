@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 matplotlib.use("Agg")
 import matplotlib.font_manager as font_manager  # noqa
 import matplotlib.pyplot as plt  # noqa
+from torch import Tensor
 
 # Get root logger
 logger = logging.getLogger()
@@ -82,16 +83,18 @@ class Writer:
         self.last_epoch = step
         mlflow_metrics = {}
         for name, value in metrics.items():
-            if self.use_mlflow:
-                if isinstance(value, (int, float)):
+            if isinstance(value, Tensor):
+                value = value.cpu().item()
+            if isinstance(value, (int, float)):
+                if self.use_mlflow:
                     mlflow_metrics[f"{name}_{self.phase}"] = value
 
-            # Log value history
-            if name not in self.histories:
-                self.histories[name] = {}
-            if self.phase not in self.histories[name]:
-                self.histories[name][self.phase] = []
-            self.histories[name][self.phase].append(value)
+                # Log value history
+                if name not in self.histories:
+                    self.histories[name] = {}
+                if self.phase not in self.histories[name]:
+                    self.histories[name][self.phase] = []
+                self.histories[name][self.phase].append(value)
         mlflow.log_metrics(mlflow_metrics, step)
 
     def log_figure(self, fig, path):

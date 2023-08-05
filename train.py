@@ -283,7 +283,7 @@ def main(cfg):
             "tag": cfg.TAG,
             "model": cfg.MODEL.NAME,
             "dataset": cfg.DATASET.NAME,
-            "Train save": output_dir,
+            "Train save": str(output_dir),
             "Val Loss": f"{result:7.3f}",
             "Test Cmd": f"python test.py {str(output_dir / 'config.yaml')}",
         }
