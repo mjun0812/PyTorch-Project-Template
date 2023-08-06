@@ -46,6 +46,9 @@ class Tester:
 
                 self.evaluator.update(*self.generate_input_evaluator(output, data))
 
+                for k, v in output.items():
+                    if isinstance(v, torch.Tensor):
+                        output[k] = v.cpu().detach()
                 results.append(output)
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
