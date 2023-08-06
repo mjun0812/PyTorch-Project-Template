@@ -30,6 +30,7 @@ def main(cfg):
     phase = "train"
     cfg.BATCH = 1
     cfg.CPU = True
+    cfg.GPU.USE = ""
     cfg.MODEL.PRE_TRAINED = False
 
     model, _ = build_model(cfg, device=torch.device("cpu"), phase="train")
