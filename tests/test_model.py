@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 import sys
 
@@ -32,6 +33,7 @@ def main(cfg):
     cfg.CPU = True
     cfg.GPU.USE = ""
     cfg.MODEL.PRE_TRAINED = False
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
     model, _ = build_model(cfg, device=torch.device("cpu"), phase="train")
     criterion = build_loss(cfg)
