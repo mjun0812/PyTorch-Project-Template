@@ -29,6 +29,7 @@ if type nvcc > /dev/null 2>&1; then
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume $HOME/.cache:$HOME/.cache \
         --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
+        --volume "/home/mjun/model_zoo:/home/mjun/model_zoo" \
         --volume "$(pwd):$(pwd)" \
         --volume "$(pwd)/result:$(pwd)/result" \
         --workdir $(pwd) \
@@ -54,6 +55,7 @@ else
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume $HOME/.cache:$HOME/.cache \
         --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
+        --volume "/home/mjun/model_zoo:/home/mjun/model_zoo" \
         --volume "$(pwd):$(pwd)" \
         --volume "$(pwd)/result:$(pwd)/result" \
         --workdir $(pwd) \
