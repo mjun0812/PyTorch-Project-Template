@@ -314,7 +314,7 @@ def main(cfg):
             error_handle(e, "Test", f"Output: {output_dir}")
             writer.close("FAILED")
             sys.exit(1)
-        message_dict.update({"Test save": output_result_dir, "result": result})
+        message_dict.update({"Test save": str(output_result_dir), "result": result})
         message = pprint.pformat(message_dict, width=150)
         # Send Message to Slack
         post_slack(message=f"Finish Test\n{message}")
