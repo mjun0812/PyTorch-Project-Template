@@ -139,8 +139,11 @@ class Writer:
             self.histories[name]["val"] = np.interp(x, val_x, self.histories[name]["val"])
 
         for metric in metrics_names:
-            labels = [f"{metric}_train", f"{metric}_val"]
-            data = [self.histories[metric]["train"], self.histories[metric]["val"]]
+            labels = []
+            data = []
+            for k, v in self.histories[metric].items():
+                labels.append(f"{metric}_{k}")
+                data.append(v)
             fig = self.plot_graph(metric, labels, data)
             fig_path = os.path.join(self.output, f"{metric}.png".replace(" ", "_"))
             fig.savefig(fig_path)
