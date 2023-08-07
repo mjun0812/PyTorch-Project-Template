@@ -28,10 +28,10 @@ if type nvcc > /dev/null 2>&1; then
         --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume $HOME/.cache:$HOME/.cache \
-        --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
-        --volume "/home/mjun/model_zoo:/home/mjun/model_zoo" \
         --volume "$(pwd):$(pwd)" \
+        --volume "$(pwd)/dataset:$(pwd)/dataset" \
         --volume "$(pwd)/result:$(pwd)/result" \
+        --volume "/home/mjun/model_zoo:/home/mjun/model_zoo" \
         --workdir $(pwd) \
         --name "${IMAGE_NAME}-$(date '+%s')" \
         "${USER}/${IMAGE_NAME}-server:latest" \
@@ -54,10 +54,10 @@ else
         --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
         --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
         --volume $HOME/.cache:$HOME/.cache \
-        --volume "$(dirname $(pwd))/dataset:$(dirname $(pwd))/dataset" \
-        --volume "/home/mjun/model_zoo:/home/mjun/model_zoo" \
         --volume "$(pwd):$(pwd)" \
+        --volume "$(pwd)/dataset:$(pwd)/dataset" \
         --volume "$(pwd)/result:$(pwd)/result" \
+        --volume "/home/mjun/model_zoo:/home/mjun/model_zoo" \
         --workdir $(pwd) \
         --name "${IMAGE_NAME}-$(date '+%s')" \
         "${USER}/${IMAGE_NAME}-server:latest" \
