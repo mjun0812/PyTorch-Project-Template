@@ -300,7 +300,7 @@ def main(cfg):
         cfg.GPU.USE = 0
         Config.dump(cfg, output_dir / "config.yaml")
         writer.log_artifact(cfg.MODEL.WEIGHT)
-        writer.log_result_dir(output_dir)
+        writer.log_result_dir(str(output_dir))
 
         # Test
         logger.info("Start Test")
@@ -320,7 +320,7 @@ def main(cfg):
         post_slack(message=f"Finish Test\n{message}")
         logger.info(f"Finish Test {message}")
         Config.dump(cfg, os.path.join(output_result_dir, "config.yaml"))
-        writer.log_result_dir(output_result_dir)
+        writer.log_result_dir(str(output_result_dir))
         writer.close()
     return result
 

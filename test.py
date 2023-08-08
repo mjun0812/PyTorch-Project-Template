@@ -91,9 +91,6 @@ def main(cfg):
 
     result = do_test(cfg, output_dir, device, writer)
 
-    writer.log_result_dir(output_dir)
-    writer.close()
-
     message = pprint.pformat(
         {
             "host": os.uname()[1],
@@ -108,6 +105,8 @@ def main(cfg):
     # Send Message to Slack
     post_slack(message=f"Finish Test\n{message}")
     logger.info(f"Finish Test {message}")
+    writer.log_result_dir(str(output_dir))
+    writer.close()
 
     return result
 
