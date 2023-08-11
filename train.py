@@ -104,6 +104,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
         save_model_info(str(output_dir), model)
         # save initial model
         save_model(model, save_model_path / "model_init_0.pth")
+        writer.log_artifacts(output_dir)
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
