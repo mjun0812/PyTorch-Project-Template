@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import matplotlib
 import mlflow
@@ -102,10 +103,14 @@ class Writer:
             mlflow.log_figure(fig, path)
 
     def log_artifact(self, path):
+        if isinstance(path, Path):
+            path = str(path)
         if self.use_mlflow:
             mlflow.log_artifact(path)
 
     def log_artifacts(self, path):
+        if isinstance(path, Path):
+            path = str(path)
         if self.use_mlflow:
             mlflow.log_artifacts(path)
 
