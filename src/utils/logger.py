@@ -120,7 +120,7 @@ class Writer:
         Args:
             path (str): result path
         """
-        if self.use_mlflow:
+        if not self.use_mlflow:
             return
 
         for p in os.listdir(path):
