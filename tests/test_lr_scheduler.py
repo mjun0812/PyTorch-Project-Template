@@ -2,10 +2,10 @@
 from pathlib import Path
 
 import matplotlib
-import torch.nn as nn
+import torch
 import torch.optim as optim
 import yaml
-from addict import Dict
+from omegaconf import OmegaConf
 
 matplotlib.use("Agg")
 import sys  # noqa
@@ -23,16 +23,13 @@ def main():
     output = Path("./doc/lr_scheduler")
     output.mkdir(parents=True, exist_ok=True)
 
-    for path in Path("config/LR_SCHEDULER").glob("*.yaml"):
-        with open(path) as f:
-            cfg = yaml.safe_load(f)
-        cfg = Dict(cfg)
+    for path in Path("config/__BASE__/LR_SCHEDULER").glob("*.yaml"):
+        cfg = OmegaConf.load(path)
         cfg["EPOCH"] = EPOCH
         if "MAX_LR" in cfg:
             cfg["MAX_LR"] = 0.12
         print(cfg)
-        model = nn.Sequential(nn.Conv2d(3, 32, 3))
-        optimizer = optim.SGD(model.parameters(), lr=0.12, momentum=0.9, weight_decay=1e-4)
+        optimizer = optim.SGD([torch.zeros(3)], lr=0.12, momentum=0.9, weight_decay=1e-4)
         iter_scheduler, scheduler = build_lr_scheduler(cfg, optimizer, EPOCH)
 
         print(iter_scheduler, scheduler)

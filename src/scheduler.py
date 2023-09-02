@@ -92,6 +92,25 @@ def build_lr_scheduler(cfg, optimizer, epoch):
             end_factor=cfg.END_FACTOR,
             total_iters=epoch,
         )
+    elif lr_scheduler_name == "mmdet_1x":
+        lr = optimizer.defaults["lr"]
+        iter_scheduler = LinearLR(
+            optimizer,
+            start_factor=cfg.ITER_SCHEDULER.START_FACTOR,
+            end_factor=lr,
+            total_iters=cfg.ITER_SCHEDULER.TOTAL_ITERS,
+        )
+        milestones = []
+        for m in cfg.EPOCH_SCHEDULER.MILESTONES:
+            if isinstance(m, float):
+                milestones.append(round(m * epoch))
+            elif isinstance(m, int):
+                milestones.append(m)
+        scheduler = MultiStepLR(
+            optimizer,
+            milestones=milestones,
+            gamma=cfg.EPOCH_SCHEDULER.GAMMA,
+        )
     elif lr_scheduler_name == "ChainedScheduler":
         schedulers = [build_lr_scheduler(c, optimizer, epoch)[1] for c in cfg.SCHEDULERS]
         scheduler = ChainedScheduler(schedulers)
