@@ -57,7 +57,7 @@ else
         --volume "$(pwd):$(pwd)" \
         --volume "$(pwd)/dataset:$(pwd)/dataset" \
         --volume "$(pwd)/result:$(pwd)/result" \
-        --volume "/home/mjun/model_zoo:/home/mjun/model_zoo" \
+        --volume "$(pwd)/model_zoo:$(pwd)/model_zoo" \
         --workdir $(pwd) \
         --name "${IMAGE_NAME}-$(date '+%s')" \
         "${USER}/${IMAGE_NAME}-server:latest" \
