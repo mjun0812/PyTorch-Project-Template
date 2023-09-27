@@ -11,7 +11,7 @@ from tabulate import tabulate
 
 def arg_parse():
     parser = argparse.ArgumentParser(description="fetch result from mlflow")
-    parser.add_argument("dataset", help="Dataset Name")
+    parser.add_argument("dataset", help="Dataset Name or all")
     parser.add_argument(
         "--format",
         help="table format. Default value is 'simple'",
@@ -43,7 +43,7 @@ def main():
 
     runs = client.search_runs(
         experiment_ids=experiment_id,
-        filter_string=f"params.Dataset LIKE '%{args.dataset}%'",
+        filter_string=f"params.Dataset LIKE '%{args.dataset}%'" if args.dataset != "all" else "",
     )
     if len(runs) == 0:
         print("No data")
@@ -51,7 +51,7 @@ def main():
 
     table_data = []
     for run in runs:
-        model = run.data.params["Model"]
+        model = run.data.params.get("Model", "")
         name = (
             run.data.tags["mlflow.runName"]
             .replace(f"_{model}", "")
