@@ -28,14 +28,14 @@ class Writer:
         self.phase = phase
 
         if self.use_mlflow:
-            self.setup_mlflow()
+            run_name = os.path.basename(self.output).split("_")
+            run_name = "_".join(run_name[0:2] + [self.cfg.MODEL.NAME, self.cfg.DATASET.NAME])
+            experiment_name = self.cfg.EXPERIMENT_NAME
+            self.setup_mlflow(run_name, experiment_name)
+            self.log_tag("phase", self.phase.capitalize())
+            self.log_hydra_config()
 
-    def setup_mlflow(self):
-        run_name = os.path.basename(self.output).split("_")
-        run_name = "_".join(run_name[0:2] + [self.cfg.MODEL.NAME, self.cfg.DATASET.NAME])
-
-        experiment_name = self.cfg.EXPERIMENT_NAME
-
+    def setup_mlflow(self, run_name, experiment_name):
         mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
         mlflow.set_tracking_uri(mlflow_uri)
 
@@ -53,8 +53,6 @@ class Writer:
             f"Start MLflow Tracking: experiment_name={experiment_name} "
             f"run_name={run_name} experiment_id: {experiment_id} run_id: {self.run.info.run_id}"
         )
-        self.log_tag("phase", self.phase.capitalize())
-        self.log_hydra_config()
 
     def log_hydra_config(self):
         parameters = {
