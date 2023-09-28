@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import tempfile
 
 import mlflow
 import yaml
@@ -52,13 +53,26 @@ def main():
     table_data = []
     for run in runs:
         model = run.data.params.get("Model", "")
-        name = (
-            run.data.tags["mlflow.runName"]
-            .replace(f"_{model}", "")
-            .replace(f"-{model.replace('_', '-')}", "")
-            .replace(f"_{model.replace('_', '-')}", "")
-        )
+        name = "_".join(run.data.tags["mlflow.runName"].split("_")[:2])
         loss = run.data.params["Loss"]
+
+        config = None
+        backbone_name = None
+        dataset_name = None
+        artifacts = client.list_artifacts(run_id=run.info.run_id)
+        for a in artifacts:
+            if a.path.endswith("config.yaml"):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    mlflow.artifacts.download_artifacts(
+                        run_id=run.info.run_id, artifact_path=a.path, dst_path=tmpdir
+                    )
+                    with open(os.path.join(tmpdir, "config.yaml"), "r") as f:
+                        config = yaml.safe_load(f)
+
+                backbone_name = config["MODEL"].get("BACKBONE", None)
+                dataset_name = config["DATASET"].get("NAME", None)
+                break
+
         input_size = run.data.params["Input size"]
 
         mlflow_metrics = run.data.metrics
@@ -68,17 +82,19 @@ def main():
         if mean_ap_50 is None:
             mean_ap_50 = mlflow_metrics.get("AP/IoU 0.50_test")
 
-        fps = mlflow_metrics.get("fps_test")
+        # fps = mlflow_metrics.get("fps_test")
 
         table_data.append(
             {
                 "Name": name,
+                "Dataset": dataset_name,
+                "Backbone": backbone_name,
                 "Model": model,
                 "Loss": loss,
                 "Input size": input_size,
                 "mAP": mean_ap,
                 "mAP 0.5": mean_ap_50,
-                "FPS": fps,
+                # "FPS": fps,
             }
         )
     table = tabulate(
