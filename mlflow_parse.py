@@ -16,7 +16,7 @@ def arg_parse():
         "--format",
         help="table format. Default value is 'simple'",
         type=str,
-        default="simple",
+        default="github",
         choices=["simple", "plain", "html", "latex", "latex_row", "github"],
     )
     parser.add_argument("--local", help="use localhost", action="store_true", default=False)
