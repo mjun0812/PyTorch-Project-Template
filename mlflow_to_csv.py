@@ -6,6 +6,8 @@ import yaml
 from dotenv import load_dotenv
 from mlflow.tracking import fluent
 
+os.environ["MLFLOW_ENABLE_ARTIFACTS_PROGRESS_BAR"] = "false"
+
 
 def arg_parse():
     parser = argparse.ArgumentParser(description="fetch result from mlflow")

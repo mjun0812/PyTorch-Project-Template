@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 from natsort import natsorted
 from tabulate import tabulate
 
+os.environ["MLFLOW_ENABLE_ARTIFACTS_PROGRESS_BAR"] = "false"
+
 
 def arg_parse():
     parser = argparse.ArgumentParser(description="fetch result from mlflow")
