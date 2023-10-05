@@ -80,9 +80,13 @@ def build_lr_scheduler(cfg, optimizer, epoch):
             gamma=cfg.GAMMA,
         )
     elif lr_scheduler_name == "StepLR":
+        if isinstance(cfg.LR_DROP, float):
+            step_size = round(cfg.LR_DROP * epoch)
+        else:
+            step_size = cfg.LR_DROP
         scheduler = StepLR(
             optimizer,
-            step_size=round(cfg.LR_DROP * epoch),
+            step_size=step_size,
             gamma=cfg.GAMMA,
         )
     elif lr_scheduler_name == "LinearLR":
