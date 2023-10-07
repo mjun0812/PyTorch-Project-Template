@@ -333,4 +333,4 @@ outputs
 *.pth
 *.pt
 result/*
-!result/.gitkeep
+result

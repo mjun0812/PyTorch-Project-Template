@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import tempfile
 
 import mlflow
 import yaml
@@ -8,15 +9,17 @@ from dotenv import load_dotenv
 from natsort import natsorted
 from tabulate import tabulate
 
+os.environ["MLFLOW_ENABLE_ARTIFACTS_PROGRESS_BAR"] = "false"
+
 
 def arg_parse():
     parser = argparse.ArgumentParser(description="fetch result from mlflow")
-    parser.add_argument("dataset", help="Dataset Name")
+    parser.add_argument("dataset", help="Dataset Name or all")
     parser.add_argument(
         "--format",
         help="table format. Default value is 'simple'",
         type=str,
-        default="simple",
+        default="github",
         choices=["simple", "plain", "html", "latex", "latex_row", "github"],
     )
     parser.add_argument("--local", help="use localhost", action="store_true", default=False)
@@ -43,7 +46,7 @@ def main():
 
     runs = client.search_runs(
         experiment_ids=experiment_id,
-        filter_string=f"params.Dataset LIKE '%{args.dataset}%'",
+        filter_string=f"params.Dataset LIKE '%{args.dataset}%'" if args.dataset != "all" else "",
     )
     if len(runs) == 0:
         print("No data")
@@ -51,14 +54,27 @@ def main():
 
     table_data = []
     for run in runs:
-        model = run.data.params["Model"]
-        name = (
-            run.data.tags["mlflow.runName"]
-            .replace(f"_{model}", "")
-            .replace(f"-{model.replace('_', '-')}", "")
-            .replace(f"_{model.replace('_', '-')}", "")
-        )
+        model = run.data.params.get("Model", "")
+        name = "_".join(run.data.tags["mlflow.runName"].split("_")[:2])
         loss = run.data.params["Loss"]
+
+        config = None
+        backbone_name = None
+        dataset_name = None
+        artifacts = client.list_artifacts(run_id=run.info.run_id)
+        for a in artifacts:
+            if a.path.endswith("config.yaml"):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    mlflow.artifacts.download_artifacts(
+                        run_id=run.info.run_id, artifact_path=a.path, dst_path=tmpdir
+                    )
+                    with open(os.path.join(tmpdir, "config.yaml"), "r") as f:
+                        config = yaml.safe_load(f)
+
+                backbone_name = config["MODEL"].get("BACKBONE", None)
+                dataset_name = config["DATASET"].get("NAME", None)
+                break
+
         input_size = run.data.params["Input size"]
 
         mlflow_metrics = run.data.metrics
@@ -68,17 +84,19 @@ def main():
         if mean_ap_50 is None:
             mean_ap_50 = mlflow_metrics.get("AP/IoU 0.50_test")
 
-        fps = mlflow_metrics.get("fps_test")
+        # fps = mlflow_metrics.get("fps_test")
 
         table_data.append(
             {
                 "Name": name,
+                "Dataset": dataset_name,
+                "Backbone": backbone_name,
                 "Model": model,
                 "Loss": loss,
                 "Input size": input_size,
                 "mAP": mean_ap,
                 "mAP 0.5": mean_ap_50,
-                "FPS": fps,
+                # "FPS": fps,
             }
         )
     table = tabulate(
