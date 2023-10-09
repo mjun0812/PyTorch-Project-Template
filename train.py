@@ -87,7 +87,7 @@ def load_last_weight(cfg, model):
 def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, writer: Writer):
     """Training Script"""
 
-    fix_seed(100 + rank)
+    fix_seed(cfg.SEED + rank)
 
     # ###### Build Model #######
     model, model_ema = build_model(cfg, device, phase="train", rank=rank)
