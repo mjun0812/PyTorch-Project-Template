@@ -87,7 +87,7 @@ def load_last_weight(cfg, model):
 def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, writer: Writer):
     """Training Script"""
 
-    fix_seed(100 + rank)
+    fix_seed(cfg.SEED + rank)
 
     # ###### Build Model #######
     model, model_ema = build_model(cfg, device, phase="train", rank=rank)
@@ -132,6 +132,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
         use_clip_grad=cfg.USE_CLIP_GRAD,
         clip_grad=cfg.CLIP_GRAD_NORM,
         iter_lr_scheduler=iter_lr_scheduler,
+        amp_init_scale=cfg.AMP_INIT_SCALE,
     )
     best_loss = 1e8
     best_epoch = 0
@@ -294,9 +295,7 @@ def main(cfg):
         logger.info(f"Finish Training {message}")
 
         # Prepare config for Test
-        cfg.MODEL.WEIGHT = natsorted(glob.glob(str(output_dir / "models" / "model_best_*.pth")))[
-            -1
-        ]
+        cfg.MODEL.WEIGHT = natsorted(glob.glob(str(output_dir / "models" / "model_best_*.pth")))[-1]
         cfg.GPU.MULTI = False
         cfg.GPU.USE = 0
         Config.dump(cfg, output_dir / "config.yaml")
