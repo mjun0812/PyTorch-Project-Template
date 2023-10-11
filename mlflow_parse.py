@@ -109,6 +109,14 @@ def main():
         table += "\\end{table}"
     print(table)
 
+    table = tabulate(
+        natsorted(table_data, key=lambda x: f"{x['Model']}_{x['Loss']}"),
+        headers="keys",
+        tablefmt="github",
+    )
+    with open(f"./doc/{args.dataset}.md", "w") as f:
+        f.write(table)
+
 
 if __name__ == "__main__":
     main()
