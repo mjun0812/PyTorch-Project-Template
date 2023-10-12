@@ -20,14 +20,17 @@ class Trainer:
         use_clip_grad=True,
         clip_grad=10.0,
         iter_lr_scheduler=None,
-        amp_init_scale=65536,
+        amp_init_scale=False,
     ) -> None:
         super().__init__()
         self.rank = rank
         self.device = device
         self.is_cpu = device.type == "cpu"
         self.use_amp = use_amp
-        self.scaler = torch.cuda.amp.GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
+        if amp_init_scale:
+            self.scaler = torch.cuda.amp.GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
+        else:
+            self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
         self.optimizer = optimizer
         self.iter_lr_scheduler = iter_lr_scheduler
         self.lr_scheduler = lr_scheduler
