@@ -6,7 +6,7 @@ FROM ghcr.io/mjun0812/cuda${CUDA_VERSION}-python${PYTHON}-server:latest
 # 環境変数 Versionなど
 LABEL maintainer="mjun"
 
-ARG POETRY_VERSION="1.56.1"
+ARG POETRY_VERSION="1.6.1"
 ENV POETRY_HOME=/opt/poetry
 ENV PATH=$POETRY_HOME/bin:$PATH
 
