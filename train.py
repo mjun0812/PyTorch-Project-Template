@@ -117,7 +117,13 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
 
     criterion = build_loss(cfg)
     optimizer = build_optimizer(cfg, model)
-    iter_lr_scheduler, lr_scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
+    if cfg.ITER_TRAIN:
+        lr_scheduler = None
+        _, iter_lr_scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
+        cfg.EPOCH = cfg.MAX_ITER // cfg.STEP_ITER
+        cfg.SAVE_INTERVAL = 1
+    else:
+        iter_lr_scheduler, lr_scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
     evaluator = build_evaluator(cfg, phase="train").to(device)
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
