@@ -21,10 +21,8 @@ def build_optimizer(cfg, model):
 
     if hasattr(target_model, "optimizer_dict"):
         parameters = target_model.optimizer_dict
-    elif "WEIGHT_DECAY" in cfg.OPTIMIZER:
-        parameters = param_groups_weight_decay(
-            target_model, weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY
-        )
+    elif cfg.MODEL.get("LR"):
+        parameters = get_param_group(target_model, cfg, lr)
     else:
         parameters = target_model.parameters()
 
@@ -76,3 +74,25 @@ def param_groups_weight_decay(model, weight_decay=1e-5, no_weight_decay_list=())
         {"params": no_decay, "weight_decay": 0.0},
         {"params": decay, "weight_decay": weight_decay},
     ]
+
+
+def get_param_group(model, cfg, base_lr):
+    optimizer_dict = [{"params": [], "lr": base_lr}]
+    keys = []
+    for info in cfg.MODEL.LR:
+        optimizer_dict.append({"params": [], "lr": base_lr / float(info["DIVIDE"])})
+        keys.append(info["KEY"])
+
+    for n, p in model.named_parameters():
+        if not p.requires_grad:
+            continue
+
+        has_key = False
+        for i, k in enumerate(keys):
+            if k in n:
+                optimizer_dict[i + 1]["params"].append(p)
+                has_key = True
+                break
+        if not has_key:
+            optimizer_dict[0]["params"].append(p)
+    return optimizer_dict
