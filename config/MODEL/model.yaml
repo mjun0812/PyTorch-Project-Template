@@ -2,6 +2,7 @@ __BASE__:
   - config/__BASE__/config.yaml
   - config/__BASE__/OPTIMIZER/Momentum.yaml
   - config/__BASE__/LR_SCHEDULER/ReduceLROnPlateau.yaml
+  - config/__BASE__/LOSS/loss.yaml
 
 __DATASET__: config/__BASE__/DATASET/dataset.yaml
 
@@ -19,4 +20,3 @@ MODEL:
   SYNC_BN: False
   TIMM_SYNC_BN: False
   FIND_UNUSED_PARAMETERS: False
-  LOSS: loss

@@ -117,8 +117,14 @@ def build_lr_scheduler(cfg, optimizer, epoch):
         schedulers = [build_lr_scheduler(c, optimizer, epoch)[1] for c in cfg.SCHEDULERS]
         scheduler = ChainedScheduler(schedulers)
     elif lr_scheduler_name == "IterScheduler":
-        _, iter_scheduler = build_lr_scheduler(cfg.ITER_SCHEDULER, optimizer, epoch)
-        _, scheduler = build_lr_scheduler(cfg.EPOCH_SCHEDULER, optimizer, epoch)
+        if cfg.ITER_SCHEDULER:
+            _, iter_scheduler = build_lr_scheduler(cfg.ITER_SCHEDULER, optimizer, epoch)
+        else:
+            iter_scheduler = None
+        if cfg.EPOCH_SCHEDULER:
+            _, scheduler = build_lr_scheduler(cfg.EPOCH_SCHEDULER, optimizer, epoch)
+        else:
+            scheduler = None
 
     logger.info(f"LR Scheduler: {cfg.NAME}")
     return iter_scheduler, scheduler
