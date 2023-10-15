@@ -28,7 +28,9 @@ class Trainer:
         self.is_cpu = device.type == "cpu"
         self.use_amp = use_amp
         if amp_init_scale:
-            self.scaler = torch.cuda.amp.GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
+            self.scaler = torch.cuda.amp.GradScaler(
+                init_scale=amp_init_scale, enabled=self.use_amp
+            )
         else:
             self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
         self.optimizer = optimizer
@@ -115,7 +117,7 @@ class Trainer:
         for k, v in hist_epoch_loss.items():
             hist_epoch_loss[k] = hist_epoch_loss[k] / (len(dataloader) * dataloader.batch_size)
         lr = self.optimizer.param_groups[0]["lr"]
-        if phase == "train":
+        if phase == "train" and self.lr_scheduler:
             self.lr_scheduler.step(epoch=epoch, metric=hist_epoch_loss["total_loss"])
 
         ret = {"epoch_losses": hist_epoch_loss, "lr": lr}
