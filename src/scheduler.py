@@ -7,7 +7,7 @@ from timm.scheduler import CosineLRScheduler
 logger = logging.getLogger()
 
 
-def build_lr_scheduler(cfg, optimizer, epoch):
+def build_lr_scheduler(cfg, optimizer, epoch, num_one_epoch_iters):
     iter_scheduler = None
     lr_scheduler_name = cfg.NAME
     if lr_scheduler_name == "ReduceLROnPlateau":
@@ -114,15 +114,21 @@ def build_lr_scheduler(cfg, optimizer, epoch):
             gamma=cfg.EPOCH_SCHEDULER.GAMMA,
         )
     elif lr_scheduler_name == "ChainedScheduler":
-        schedulers = [build_lr_scheduler(c, optimizer, epoch)[1] for c in cfg.SCHEDULERS]
+        schedulers = [
+            build_lr_scheduler(c, optimizer, epoch, num_one_epoch_iters)[1] for c in cfg.SCHEDULERS
+        ]
         scheduler = ChainedScheduler(schedulers)
     elif lr_scheduler_name == "IterScheduler":
         if cfg.ITER_SCHEDULER:
-            _, iter_scheduler = build_lr_scheduler(cfg.ITER_SCHEDULER, optimizer, epoch)
+            _, iter_scheduler = build_lr_scheduler(
+                cfg.ITER_SCHEDULER, optimizer, epoch * num_one_epoch_iters
+            )
         else:
             iter_scheduler = None
         if cfg.EPOCH_SCHEDULER:
-            _, scheduler = build_lr_scheduler(cfg.EPOCH_SCHEDULER, optimizer, epoch)
+            _, scheduler = build_lr_scheduler(
+                cfg.EPOCH_SCHEDULER, optimizer, epoch, num_one_epoch_iters
+            )
         else:
             scheduler = None
 

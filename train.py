@@ -119,11 +119,15 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
     optimizer = build_optimizer(cfg, model)
     if cfg.ITER_TRAIN:
         lr_scheduler = None
-        _, iter_lr_scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
+        _, iter_lr_scheduler = build_lr_scheduler(
+            cfg.LR_SCHEDULER, optimizer, cfg.EPOCH, len(dataloaders["train"])
+        )
         cfg.EPOCH = cfg.MAX_ITER // cfg.STEP_ITER
         cfg.SAVE_INTERVAL = 1
     else:
-        iter_lr_scheduler, lr_scheduler = build_lr_scheduler(cfg.LR_SCHEDULER, optimizer, cfg.EPOCH)
+        iter_lr_scheduler, lr_scheduler = build_lr_scheduler(
+            cfg.LR_SCHEDULER, optimizer, cfg.EPOCH, len(dataloaders["train"])
+        )
     evaluator = build_evaluator(cfg, phase="train").to(device)
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
@@ -301,7 +305,9 @@ def main(cfg):
         logger.info(f"Finish Training {message}")
 
         # Prepare config for Test
-        cfg.MODEL.WEIGHT = natsorted(glob.glob(str(output_dir / "models" / "model_best_*.pth")))[-1]
+        cfg.MODEL.WEIGHT = natsorted(glob.glob(str(output_dir / "models" / "model_best_*.pth")))[
+            -1
+        ]
         cfg.GPU.MULTI = False
         cfg.GPU.USE = 0
         Config.dump(cfg, output_dir / "config.yaml")
