@@ -121,7 +121,7 @@ def build_lr_scheduler(cfg, optimizer, epoch, num_one_epoch_iters):
     elif lr_scheduler_name == "IterScheduler":
         if cfg.ITER_SCHEDULER:
             _, iter_scheduler = build_lr_scheduler(
-                cfg.ITER_SCHEDULER, optimizer, epoch * num_one_epoch_iters
+                cfg.ITER_SCHEDULER, optimizer, epoch * num_one_epoch_iters, num_one_epoch_iters
             )
         else:
             iter_scheduler = None

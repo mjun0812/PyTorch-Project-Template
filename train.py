@@ -120,7 +120,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
     if cfg.ITER_TRAIN:
         lr_scheduler = None
         _, iter_lr_scheduler = build_lr_scheduler(
-            cfg.LR_SCHEDULER, optimizer, cfg.EPOCH, len(dataloaders["train"])
+            cfg.LR_SCHEDULER, optimizer, cfg.MAX_ITER, len(dataloaders["train"])
         )
         cfg.EPOCH = cfg.MAX_ITER // cfg.STEP_ITER
         cfg.SAVE_INTERVAL = 1
