@@ -9,10 +9,22 @@ GROUP_ID=`id -g`
 GROUP_NAME=`id -gn`
 USER_NAME=$USER
 
+USE_QUEUE="-i"
+
+for OPT in "$@"; do
+    case $OPT in
+        '-q' | '--queue')
+            USE_QUEUE=""
+            shift 1;
+        ;;
+    esac
+done
+
 if type nvcc > /dev/null 2>&1; then
     # Use GPU
     docker run \
-        -it \
+        -t \
+        ${USE_QUEUE} \
         --gpus all \
         --rm \
         --shm-size=128g \
@@ -39,7 +51,8 @@ if type nvcc > /dev/null 2>&1; then
 else
     # CPU
     docker run \
-        -it \
+        -t \
+        ${USE_QUEUE} \
         --rm \
         --shm-size=128g \
         --hostname $(hostname) \
