@@ -93,7 +93,9 @@ class Trainer:
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
                     if self.iter_lr_scheduler:
-                        self.iter_lr_scheduler.step(epoch=i, metric=loss["total_loss"].item())
+                        self.iter_lr_scheduler.step(
+                            epoch=i + epoch * len(dataloader), metric=loss["total_loss"].item()
+                        )
                     self.optimizer.zero_grad(set_to_none=True)
                     if model_ema:
                         model_ema.update(model)
