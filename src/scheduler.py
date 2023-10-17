@@ -94,7 +94,7 @@ def build_lr_scheduler(cfg, optimizer, epoch, num_one_epoch_iters):
             optimizer,
             start_factor=cfg.START_FACTOR,
             end_factor=cfg.END_FACTOR,
-            total_iters=epoch,
+            total_iters=cfg.TOTAL_ITERS,
         )
     elif lr_scheduler_name == "mmdet_1x":
         iter_scheduler = LinearLR(

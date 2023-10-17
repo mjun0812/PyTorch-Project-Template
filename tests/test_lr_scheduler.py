@@ -4,7 +4,6 @@ from pathlib import Path
 import matplotlib
 import torch
 import torch.optim as optim
-import yaml
 from omegaconf import OmegaConf
 
 matplotlib.use("Agg")
@@ -30,7 +29,7 @@ def main():
             cfg["MAX_LR"] = 0.12
         print(cfg)
         optimizer = optim.SGD([torch.zeros(3)], lr=0.12, momentum=0.9, weight_decay=1e-4)
-        iter_scheduler, scheduler = build_lr_scheduler(cfg, optimizer, EPOCH)
+        iter_scheduler, scheduler = build_lr_scheduler(cfg, optimizer, EPOCH, ITER)
 
         print(iter_scheduler, scheduler)
 
@@ -44,7 +43,8 @@ def main():
                         epoch=i + ITER * epoch, metric=0.1 - 0.0001 * (i + ITER * epoch)
                     )
                     lrs.append(optimizer.param_groups[0]["lr"])
-            scheduler.step(epoch=epoch, metric=0.1 - 0.0001 * epoch)
+            if scheduler:
+                scheduler.step(epoch=epoch, metric=0.1 - 0.0001 * epoch)
             lrs.append(optimizer.param_groups[0]["lr"])
         epochs = list(range(len(lrs)))
         print(len(lrs))
