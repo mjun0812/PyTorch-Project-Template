@@ -40,7 +40,9 @@ def main():
             for i in range(ITER):
                 optimizer.step()
                 if iter_scheduler:
-                    iter_scheduler.step(epoch=i, metric=0.1 - 0.0001 * epoch)
+                    iter_scheduler.step(
+                        epoch=i + ITER * epoch, metric=0.1 - 0.0001 * (i + ITER * epoch)
+                    )
                     lrs.append(optimizer.param_groups[0]["lr"])
             scheduler.step(epoch=epoch, metric=0.1 - 0.0001 * epoch)
             lrs.append(optimizer.param_groups[0]["lr"])
