@@ -52,6 +52,8 @@ def main():
         print("No data")
         sys.exit(0)
 
+    os.makedirs("./.tmp", exist_ok=True)
+
     table_data = []
     for run in runs:
         model = run.data.params.get("Model", "")
@@ -61,29 +63,37 @@ def main():
         config = None
         backbone_name = None
         dataset_name = None
-        artifacts = client.list_artifacts(run_id=run.info.run_id)
-        for a in artifacts:
-            if a.path.endswith("config.yaml"):
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    mlflow.artifacts.download_artifacts(
-                        run_id=run.info.run_id, artifact_path=a.path, dst_path=tmpdir
-                    )
-                    with open(os.path.join(tmpdir, "config.yaml"), "r") as f:
-                        config = yaml.safe_load(f)
+        tag = None
 
-                backbone_name = config["MODEL"].get("BACKBONE", None)
-                dataset_name = config["DATASET"].get("NAME", None)
-                break
+        if os.path.isfile(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml"):
+            with open(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml", "r") as f:
+                config = yaml.safe_load(f)
+        else:
+            artifacts = client.list_artifacts(run_id=run.info.run_id)
+            for a in artifacts:
+                if a.path.endswith("config.yaml"):
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        mlflow.artifacts.download_artifacts(
+                            run_id=run.info.run_id, artifact_path=a.path, dst_path=tmpdir
+                        )
+                        with open(os.path.join(tmpdir, "config.yaml"), "r") as f:
+                            config = yaml.safe_load(f)
+                        with open(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml", "w") as f:
+                            yaml.dump(config, f)
+                    break
+
+        if config:
+            backbone_name = config["MODEL"].get("BACKBONE", None)
+            dataset_name = config["DATASET"].get("NAME", None)
+            tag = config.get("TAG", None)
 
         input_size = run.data.params["Input size"]
 
         mlflow_metrics = run.data.metrics
         mean_ap = mlflow_metrics.get("map_test")
-
         mean_ap_50 = mlflow_metrics.get("map_50_test")
         if mean_ap_50 is None:
             mean_ap_50 = mlflow_metrics.get("AP/IoU 0.50_test")
-
         # fps = mlflow_metrics.get("fps_test")
 
         table_data.append(
@@ -96,6 +106,7 @@ def main():
                 "Input size": input_size,
                 "mAP": mean_ap,
                 "mAP 0.5": mean_ap_50,
+                "Tag": tag,
                 # "FPS": fps,
             }
         )
@@ -109,13 +120,13 @@ def main():
         table += "\\end{table}"
     print(table)
 
-    table = tabulate(
-        natsorted(table_data, key=lambda x: f"{x['Model']}_{x['Loss']}"),
-        headers="keys",
-        tablefmt="github",
-    )
-    with open(f"./doc/{args.dataset}.md", "w") as f:
-        f.write(table)
+    # table = tabulate(
+    #     natsorted(table_data, key=lambda x: f"{x['Model']}_{x['Loss']}"),
+    #     headers="keys",
+    #     tablefmt="github",
+    # )
+    # with open(f"./doc/{args.dataset}.md", "w") as f:
+    #     f.write(table)
 
 
 if __name__ == "__main__":
