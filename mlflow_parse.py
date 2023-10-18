@@ -65,7 +65,9 @@ def main():
         dataset_name = None
         tag = None
 
-        if os.path.isfile(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml"):
+        if run.info.status in ["FINISHED", "FAILED"] and os.path.isfile(
+            f"./.tmp/{run.data.tags['mlflow.runName']}.yaml"
+        ):
             with open(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml", "r") as f:
                 config = yaml.safe_load(f)
         else:
