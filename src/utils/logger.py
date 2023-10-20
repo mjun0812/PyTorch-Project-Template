@@ -61,6 +61,7 @@ class Writer:
             "Learning Rate": self.cfg.OPTIMIZER.LR,
             "Epoch": self.cfg.EPOCH,
             "Model": self.cfg.MODEL.NAME,
+            "Backbone": self.cfg.MODEL.get("BACKBONE", None),
             "Dataset": self.cfg.DATASET.NAME,
             "Loss": self.cfg.LOSS.NAME,
             "Input size": self.cfg.MODEL.get("INPUT_SIZE"),
