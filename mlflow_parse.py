@@ -26,6 +26,25 @@ def arg_parse():
     return parser.parse_args()
 
 
+def load_config_from_mlflow(run):
+    client = mlflow.tracking.MlflowClient()
+    artifacts = client.list_artifacts(run_id=run.info.run_id)
+    config = None
+    for a in artifacts:
+        if a.path.endswith("config.yaml"):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                mlflow.artifacts.download_artifacts(
+                    run_id=run.info.run_id, artifact_path=a.path, dst_path=tmpdir
+                )
+                with open(os.path.join(tmpdir, "config.yaml"), "r") as f:
+                    config = yaml.safe_load(f)
+                config["mlflow_status"] = run.info.status
+                with open(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml", "w") as f:
+                    yaml.dump(config, f)
+            break
+    return config
+
+
 def main():
     args = arg_parse()
     load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
@@ -70,19 +89,10 @@ def main():
         ):
             with open(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml", "r") as f:
                 config = yaml.safe_load(f)
+            if config["mlflow_status"] != run.info.status:
+                config = load_config_from_mlflow(run)
         else:
-            artifacts = client.list_artifacts(run_id=run.info.run_id)
-            for a in artifacts:
-                if a.path.endswith("config.yaml"):
-                    with tempfile.TemporaryDirectory() as tmpdir:
-                        mlflow.artifacts.download_artifacts(
-                            run_id=run.info.run_id, artifact_path=a.path, dst_path=tmpdir
-                        )
-                        with open(os.path.join(tmpdir, "config.yaml"), "r") as f:
-                            config = yaml.safe_load(f)
-                        with open(f"./.tmp/{run.data.tags['mlflow.runName']}.yaml", "w") as f:
-                            yaml.dump(config, f)
-                    break
+            config = load_config_from_mlflow(run)
 
         if config:
             backbone_name = config["MODEL"].get("BACKBONE", None)
