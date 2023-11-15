@@ -16,8 +16,8 @@ This repository provided Dockerfile. But you can execute in local environment.
 - Poetry + Docker build environment
 - Multi GPU Training (PyTorch DDP or DP)
 - Mix Precision(`torch.amp`) Training
-- [MLflow](https://mlflow.org) manage experiments
-- [OmegaConf](https://github.com/omry/omegaconf) config managements
+- Used [MLflow](https://mlflow.org) manage experiments
+- Used [OmegaConf](https://github.com/omry/omegaconf) config managements.
 
 ## Install
 
@@ -47,15 +47,15 @@ If `MLFLOW_TRACKING_URI` is blank(""), MLflow dir is saved local directry(`resul
 `USE_MLFLOW` is default `True`.
 
 ```bash
-python train.py config/MODEL/model.yaml --USE_MLFLOW True --EXPERIMENT_NAME "pytorch-experiment"
+python train.py config/MODEL/model.yaml USE_MLFLOW=True EXPERIMENT_NAME="pytorch-experiment"
 ```
 
 ## Usage
 
 ```bash
 ./docker/build.sh # Build Docker Image from ./docker/Dockerfile
-./docker/run.sh python train.py config/MODEL/model.yaml --GPU.USE 1
-./docker/run.sh python test.py result/20220911/config.yaml --GPU.USE 1
+./docker/run.sh python train.py config/MODEL/model.yaml GPU.USE=1
+./docker/run.sh python test.py result/20220911/config.yaml GPU.USE=1
 ```
 
 ### Multi GPU Training
@@ -76,14 +76,14 @@ This setting can change from CLI.
 
 ```bash
 # DDP Single node, 2 GPUs
-./docker/run.sh ./torchrun.sh 2 train.py config/MODEL/model.yaml --GPU.USE '1,2'
+./docker/run.sh ./torchrun.sh 2 train.py config/MODEL/model.yaml GPU.USE='1,2'
 ```
 
 The above is implemented with DDP, but it also works with DP with the following command
 
 ```bash
 # DP
-./docker/run.sh python train.py config/MODEL/model.yaml --GPU.USE "0,1,2,3"
+./docker/run.sh python train.py config/MODEL/model.yaml GPU.USE="0,1,2,3"
 ```
 
 ### Config
