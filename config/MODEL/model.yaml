@@ -12,11 +12,20 @@ EPOCH: 12
 MODEL:
   NAME: Model_Name
   MODEL: Model # Class名
+
+  BACKBONE: resnet50
+  BACKBONE_ARGS:
+    out_indices: [1, 2, 3]
+  IMAGENET_PRE_TRAINED: true
+  IMAGENET_PRE_TRAINED_WEIGHT: ""
+  USE_BACKBONE_FEATURES: [2, 3, 4]
+
   INPUT_SIZE: [224, 224]
-  PRE_TRAINED: True
-  PRE_TRAINED_WEIGHT: result/PreTrain/efficientdet-d0.pth
-  # Load Weight Path
-  WEIGHT: "./"
-  SYNC_BN: False
-  TIMM_SYNC_BN: False
-  FIND_UNUSED_PARAMETERS: False
+
+  PRE_TRAINED: false
+  PRE_TRAINED_WEIGHT: ""
+  WEIGHT: ""
+  SYNC_BN: false
+  FIND_UNUSED_PARAMETERS: false
+  FREEZE_BN: true
+  TIMM_SYNC_BN: false
