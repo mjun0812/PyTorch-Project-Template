@@ -4,14 +4,12 @@ My PyTorch Project Template.
 
 ## Environments
 
-This repository provided Dockerfile. But you can execute in local environment.
-
 - CUDA >= 11.0
 - Python 3.11
 - Poetry
 - PyTorch 2.1.0, != 1.12.0
 
-## Features
+### Features
 
 - Poetry + Docker build environment
 - Multi GPU Training (PyTorch DDP or DP)
@@ -47,6 +45,18 @@ MLFLOW_TRACKING_URI=""
 If `MLFLOW_TRACKING_URI` is blank(""), MLflow dir is saved local directry(`result/mlruns`).  
 `MLFLOW_TRACKING_USERNAME`, `MLFLOW_TRACKING_PASSWORD` is Basic Authentication parameters for remote MLflow Tracing server.  
 `USE_MLFLOW` is default `True`.
+
+## Use this repository as template
+
+```bash
+git clone git@github.com:mjun0812/PyTorch-Project-Template.git [project_name]
+cd [project_name]
+git remote rename origin upstream
+
+# fetch upstream update
+git fetch upstream main
+git merge upstream/main
+```
 
 ## Usage
 
