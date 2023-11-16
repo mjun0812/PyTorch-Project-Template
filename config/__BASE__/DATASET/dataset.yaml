@@ -1,4 +1,5 @@
 NAME: dataset
+TYPE: Dataset
 
 TRANSFORMS:
   TRAIN:

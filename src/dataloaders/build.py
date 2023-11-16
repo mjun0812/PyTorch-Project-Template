@@ -1,5 +1,6 @@
 import logging
 
+import torch
 from kunai import Registry
 from kunai.torch_utils import worker_init_fn
 from torch.utils.data import DataLoader
@@ -42,3 +43,16 @@ def build_dataset(cfg, phase="train", rank=-1):
         dataloader = IterBasedDataloader(dataloader, max_iter, step_iter)
 
     return dataset, dataloader, batched_transform
+
+
+def collate(batch):
+    image, data = list(zip(*batch))
+    image = torch.stack(image)
+
+    keys = list(data[0].keys())
+    output = {k: [] for k in keys}
+    for d in data:
+        for k in keys:
+            output[k].append(d[k])
+
+    return image, output
