@@ -30,6 +30,8 @@ class Writer:
         if self.use_mlflow:
             run_name = os.path.basename(self.output).split("_")
             run_name = "_".join(run_name[0:2] + [self.cfg.MODEL.NAME, self.cfg.DATASET.NAME])
+            if self.cfg.get("TAG"):
+                run_name = f"{run_name}_{self.cfg.TAG}"
             experiment_name = self.cfg.EXPERIMENT_NAME
             self.setup_mlflow(run_name, experiment_name)
             self.log_tag("phase", self.phase.capitalize())
