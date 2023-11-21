@@ -115,7 +115,7 @@ class Writer:
         if self.use_mlflow:
             mlflow.log_artifacts(path)
 
-    def log_result_dir(self, path):
+    def log_result_dir(self, path, ignore_dirs=["models"]):
         """重みファイル(models以下)以外をartifactにする
 
         Args:
@@ -127,10 +127,10 @@ class Writer:
         for p in os.listdir(path):
             target = os.path.join(path, p)
             if os.path.isdir(target):
-                if "models" in target:
-                    continue
-                else:
-                    mlflow.log_artifacts(target)
+                for ignore_dir_name in ignore_dirs:
+                    if ignore_dir_name in target:
+                        continue
+                mlflow.log_artifacts(target)
             else:
                 mlflow.log_artifact(target)
 
