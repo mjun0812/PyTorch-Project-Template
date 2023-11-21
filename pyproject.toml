@@ -31,7 +31,7 @@ torchvision = [
     { url = "https://download.pytorch.org/whl/cu118/torchvision-0.16.0%2Bcu118-cp311-cp311-linux_x86_64.whl", markers = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
 ]
 tqdm = "^4.65.0"
-mlflow = "^2.7.1"
+mlflow = "2.8.1"
 kunai = { git = "https://github.com/mjun0812/kunai" }
 torchinfo = "^1.8.0"
 torchmetrics = "^1.0.1"
