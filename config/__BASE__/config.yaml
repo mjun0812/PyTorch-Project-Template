@@ -37,4 +37,5 @@ OUTPUT: ./result/
 TAG: ""
 
 USE_MLFLOW: True
+MLFLOW_IGNORE_DIRS: ["models"]
 EXPERIMENT_NAME: "pytorch-project-template"

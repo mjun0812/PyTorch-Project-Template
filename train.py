@@ -280,7 +280,7 @@ def main(cfg):
     except (Exception, KeyboardInterrupt) as e:
         if local_rank in [0, -1]:
             error_handle(e, "Train", f"Output: {str(output_dir)}")
-            writer.log_result_dir(output_dir)
+            writer.log_result_dir(output_dir, ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
             writer.close("FAILED")
         sys.exit(1)
 
@@ -312,7 +312,7 @@ def main(cfg):
         cfg.GPU.USE = 0
         Config.dump(cfg, output_dir / "config.yaml")
         writer.log_artifact(cfg.MODEL.WEIGHT)
-        writer.log_result_dir(str(output_dir))
+        writer.log_result_dir(str(output_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
 
         # Test
         logger.info("Start Test")
@@ -332,7 +332,7 @@ def main(cfg):
         post_slack(message=f"Finish Test\n{message}")
         logger.info(f"Finish Test {message}")
         Config.dump(cfg, os.path.join(output_result_dir, "config.yaml"))
-        writer.log_result_dir(str(output_result_dir))
+        writer.log_result_dir(str(output_result_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
         writer.close()
     return result
 

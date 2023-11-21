@@ -105,7 +105,7 @@ def main(cfg):
     # Send Message to Slack
     post_slack(message=f"Finish Test\n{message}")
     logger.info(f"Finish Test {message}")
-    writer.log_result_dir(str(output_dir))
+    writer.log_result_dir(str(output_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
     writer.close()
 
     return result
