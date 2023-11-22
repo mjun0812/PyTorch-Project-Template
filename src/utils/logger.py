@@ -127,9 +127,13 @@ class Writer:
         for p in os.listdir(path):
             target = os.path.join(path, p)
             if os.path.isdir(target):
+                ignore = False
                 for ignore_dir_name in ignore_dirs:
                     if ignore_dir_name in target:
+                        ignore = True
                         continue
+                if ignore:
+                    continue
                 mlflow.log_artifacts(target)
             else:
                 mlflow.log_artifact(target)
