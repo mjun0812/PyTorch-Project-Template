@@ -96,7 +96,7 @@ def main(cfg):
             "host": os.uname()[1],
             "tag": cfg.TAG,
             "model": cfg.MODEL.NAME,
-            "dataset": cfg.DATASET.NAME,
+            "dataset": cfg.TEST_DATASET.NAME,
             "save": str(output_dir),
             "result": f"{result:7.3f}",
         },

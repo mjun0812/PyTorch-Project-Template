@@ -29,7 +29,10 @@ class Writer:
 
         if self.use_mlflow:
             run_name = os.path.basename(self.output).split("_")
-            run_name = "_".join(run_name[0:2] + [self.cfg.MODEL.NAME, self.cfg.DATASET.NAME])
+            run_name = "_".join(
+                run_name[0:2]
+                + [self.cfg.MODEL.NAME, self.cfg.get(f"{self.phase.upper()}_DATASET").NAME]
+            )
             if self.cfg.get("TAG"):
                 run_name = f"{run_name}_{self.cfg.TAG}"
             experiment_name = self.cfg.EXPERIMENT_NAME
@@ -64,7 +67,7 @@ class Writer:
             "Epoch": self.cfg.EPOCH,
             "Model": self.cfg.MODEL.NAME,
             "Backbone": self.cfg.MODEL.get("BACKBONE", None),
-            "Dataset": self.cfg.DATASET.NAME,
+            "Dataset": self.cfg.get(f"{self.phase.upper()}_DATASET").NAME,
             "Loss": self.cfg.LOSS.NAME,
             "Input size": self.cfg.MODEL.get("INPUT_SIZE"),
             "Batch": self.cfg.BATCH,

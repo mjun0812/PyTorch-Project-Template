@@ -1,4 +1,5 @@
 import argparse
+import copy
 import json
 
 from omegaconf import DictConfig, OmegaConf
@@ -31,10 +32,20 @@ class Config:
         cfg = Config.merge_dict(cfg, cfg_cli)
 
         if BASE_DATASET_KEY in cfg:
-            base_cfg_dict = OmegaConf.create(
-                {"DATASET": Config.build_config(cfg.pop(BASE_DATASET_KEY))}
-            )
-            cfg = Config.merge_dict(base_cfg_dict, cfg)
+            cfg_dataset = cfg.pop(BASE_DATASET_KEY)
+            for phase in ["TRAIN", "VAL", "TEST"]:
+                base_cfg_dict = OmegaConf.create(
+                    {f"{phase}_DATASET": Config.build_config(cfg_dataset)}
+                )
+                cfg = Config.merge_dict(base_cfg_dict, cfg)
+
+        for phase in ["TRAIN", "VAL", "TEST"]:
+            key = f"__{phase}_DATASET__"
+            if key in cfg:
+                base_cfg_dict = OmegaConf.create(
+                    {key.replace("__", ""): Config.build_config(cfg.pop(key))}
+                )
+                cfg = Config.merge_dict(base_cfg_dict, cfg)
 
         return cfg
 

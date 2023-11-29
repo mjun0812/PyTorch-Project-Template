@@ -6,7 +6,7 @@ BATCHED_TRANSFORM_REGISTRY = Registry("BATCHED_TRANSFORM")
 
 
 def build_transforms(cfg, phase="train"):
-    cfg = cfg.DATASET.TRANSFORMS
+    cfg = cfg.get(f"{phase.upper()}_DATASET").TRANSFORMS
 
     batched_transform = None
     if phase == "train":
@@ -61,3 +61,37 @@ def build_transforms(cfg, phase="train"):
 #     return torch.tensor(list_obj, dtype=torch.float64), torch.tensor(
 #         label, dtype=torch.float64
 #     )
+
+# class KorniaCompose:
+#     def __init__(self, cfg):
+#         self.transforms = []
+#         self.assing_labels = []
+#         for c in cfg:
+#             if c.args is None:
+#                 transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)()
+#             else:
+#                 args = OmegaConf.to_object(c.args)
+#                 params = {k: v for k, v in args.items()}
+#                 transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)(**params)
+#             self.transforms.append(transform)
+#             self.assing_labels.append(c.assign_label)
+
+#     def __call__(self, img, data):
+#         # Kornia Accept image [0, 1.0]
+#         img = img.float()
+#         label = data["label"].float()
+#         img /= 255
+#         for i, t in enumerate(self.transforms):
+#             img = t(img)
+#             if self.assing_labels[i]:
+#                 label = t(label, t._params)
+#         data["label"] = label.long()
+#         return img, data
+
+#     def __repr__(self):
+#         format_string = self.__class__.__name__ + "("
+#         for t in self.transforms:
+#             format_string += "\n"
+#             format_string += "    {0}".format(t)
+#         format_string += "\n)"
+#         return format_string

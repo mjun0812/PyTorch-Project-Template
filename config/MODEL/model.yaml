@@ -4,7 +4,9 @@ __BASE__:
   - config/__BASE__/LR_SCHEDULER/ReduceLROnPlateau.yaml
   - config/__BASE__/LOSS/loss.yaml
 
-__DATASET__: config/__BASE__/DATASET/dataset.yaml
+__TRAIN_DATASET__: config/__BASE__/DATASET/dataset.yaml
+__VAL_DATASET__: config/__BASE__/DATASET/dataset.yaml
+__TEST_DATASET__: config/__BASE__/DATASET/dataset.yaml
 
 EPOCH: 12
 

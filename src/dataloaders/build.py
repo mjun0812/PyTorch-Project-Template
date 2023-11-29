@@ -17,8 +17,9 @@ logger = logging.getLogger()
 
 def build_dataset(cfg, phase="train", rank=-1):
     transforms, batched_transform = build_transforms(cfg, phase=phase)
-    dataset = DATASET_REGISTRY.get(cfg.DATASET.TYPE)(cfg, transforms, phase=phase)
-    logger.info(f"{phase.capitalize()} Dataset sample num: {len(dataset)}")
+    cfg_dataset = cfg.get(f"{phase.upper()}_DATASET")
+    dataset = DATASET_REGISTRY.get(cfg_dataset.TYPE)(cfg, transforms, phase=phase)
+    logger.info(f"{phase.capitalize()} {cfg_dataset.NAME} Dataset sample num: {len(dataset)}")
     logger.info(f"{phase.capitalize()} transform: {transforms}")
     if batched_transform is not None:
         logger.info(f"{phase.capitalize()} batched transform: {batched_transform}")

@@ -236,11 +236,11 @@ def main(cfg):
 
     if local_rank in [0, -1]:
         # make Output dir
-        prefix = f"{cfg.MODEL.NAME}_{cfg.DATASET.NAME}"
+        prefix = f"{cfg.MODEL.NAME}_{cfg.TRAIN_DATASET.NAME}"
         prefix += f"{'_' + cfg.TAG if cfg.TAG else ''}"
         output_dir = Path(
             make_output_dirs(
-                os.path.join(cfg.OUTPUT, cfg.DATASET.NAME),
+                os.path.join(cfg.OUTPUT, cfg.TRAIN_DATASET.NAME),
                 prefix=prefix,
                 child_dirs=["figs", "models"],
             )
@@ -294,7 +294,7 @@ def main(cfg):
             "host": os.uname()[1],
             "tag": cfg.TAG,
             "model": cfg.MODEL.NAME,
-            "dataset": cfg.DATASET.NAME,
+            "dataset": cfg.TRAIN_DATASET.NAME,
             "Train save": str(output_dir),
             "Val Loss": f"{result:7.3f}",
             "Test Cmd": f"python test.py {str(output_dir / 'config.yaml')}",
