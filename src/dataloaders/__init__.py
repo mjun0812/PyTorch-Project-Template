@@ -1,4 +1,7 @@
 # flake8: noqa
+import src.dataloaders as mod
 
+from ..utils import import_submodules
 from .build import build_dataset
-from .dataloader import Dataset
+
+import_submodules(mod)

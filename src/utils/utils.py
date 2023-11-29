@@ -1,8 +1,10 @@
 import datetime
+import importlib
 import json
 import logging
 import os
 import traceback
+from pathlib import Path
 
 import kunai
 import matplotlib
@@ -118,3 +120,10 @@ class JsonEncoder(json.JSONEncoder):
                 return obj.cpu().tolist()
         else:
             return super(JsonEncoder, self).default(obj)
+
+
+def import_submodules(module):
+    return [
+        importlib.import_module(f"{module.__name__}.{f.stem}")
+        for f in Path(module.__file__).parent.glob("[a-zA-Z0-9]*.py")
+    ]
