@@ -96,7 +96,7 @@ def main():
 
         if config:
             backbone_name = config["MODEL"].get("BACKBONE", None)
-            dataset_name = config["DATASET"].get("NAME", None)
+            dataset_name = config["TRAIN_DATASET"].get("NAME", None)
             tag = config.get("TAG", None)
 
         input_size = run.data.params["Input size"]
