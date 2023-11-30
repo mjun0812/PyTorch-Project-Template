@@ -2,6 +2,7 @@ import sys
 
 import cv2
 import numpy as np
+import torch
 import torchvision.transforms.functional as TF
 
 sys.path.append("./")
@@ -14,7 +15,7 @@ rightkeys = (83, 109, 100, 65363, 2555904)
 
 @Config.main
 def main(cfg):
-    phase = "train"
+    phase = cfg.get("PHASE", "train")
     cfg.BATCH = 1
     cfg.CPU = True
     data = build_dataset(cfg, phase)
@@ -48,6 +49,13 @@ def main(cfg):
                     2,
                     cv2.LINE_AA,
                 )
+        if "label" in data and data["label"].dim() > 3:
+            mask = TF.to_pil_image(data["label"].squeeze().type(torch.uint8))
+            palette = data["color_palette"][0]
+            mask.putpalette(list(palette))
+            mask = np.array(mask.convert("RGB"), dtype=np.uint8)
+            mask = cv2.cvtColor(mask, cv2.COLOR_RGB2BGR)
+            cv2.imshow("Mask", mask)
 
         cv2.imshow("Image", image)
 
