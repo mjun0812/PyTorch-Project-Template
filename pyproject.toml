@@ -90,3 +90,6 @@ line-length = 99
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+exclude = ["dataset", "result", "model_zoo"]
