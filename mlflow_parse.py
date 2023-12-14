@@ -23,6 +23,9 @@ def arg_parse():
         choices=["simple", "plain", "html", "latex", "latex_row", "github"],
     )
     parser.add_argument("--local", help="use localhost", action="store_true", default=False)
+    parser.add_argument(
+        "--running", "-r", help="show running experiments", action="store_true", default=False
+    )
     return parser.parse_args()
 
 
