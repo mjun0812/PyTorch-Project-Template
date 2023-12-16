@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .build import LOSS_REGISTRY  # noqa
 
@@ -11,4 +10,4 @@ class BaseLoss(nn.Module):
         self.cfg = cfg
 
     def forward(self, x):
-        return {"total_loss": F.mse_loss(x)}
+        return {"total_loss": x.mean()}

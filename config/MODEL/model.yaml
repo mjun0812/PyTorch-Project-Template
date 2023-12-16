@@ -13,7 +13,7 @@ EPOCH: 12
 # MODEL Param
 MODEL:
   NAME: Model_Name
-  MODEL: Model # Class名
+  MODEL: BaseModel # Class名
 
   BACKBONE: resnet50
   BACKBONE_ARGS:

@@ -1,3 +1,4 @@
+import torch
 from torch.utils.data import Dataset
 
 from .build import DATASET_REGISTRY
@@ -9,9 +10,10 @@ class Dataset(Dataset):
         self.cfg = cfg
         self.transforms = transforms
         self.phase = phase
+        self.images = torch.zeros((16, 3, 224, 224))
 
     def __len__(self):
-        return 0
+        return len(self.images)
 
     def __getitem__(self, idx):
-        return idx
+        return self.images[idx], None
