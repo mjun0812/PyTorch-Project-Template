@@ -16,19 +16,19 @@ requests = "^2.31.0"
 tabulate = "^0.9.0"
 torch = [
     # M1 Mac
-    { url = "https://download.pytorch.org/whl/cpu/torch-2.1.0-cp311-none-macosx_11_0_arm64.whl", markers = "sys_platform == 'darwin'" },
+    { url = "https://download.pytorch.org/whl/cpu/torch-2.1.2-cp311-none-macosx_11_0_arm64.whl", markers = "sys_platform == 'darwin'" },
     # Docker on M1 Mac
-    { url = "https://download.pytorch.org/whl/cpu/torch-2.1.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'" },
+    { url = "https://download.pytorch.org/whl/cpu/torch-2.1.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'" },
     # Linux
-    { url = "https://download.pytorch.org/whl/cu118/torch-2.1.0%2Bcu118-cp311-cp311-linux_x86_64.whl", markers = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
+    { url = "https://download.pytorch.org/whl/cu118/torch-2.1.2%2Bcu118-cp311-cp311-linux_x86_64.whl", markers = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
 ]
 torchvision = [
     # M1 Mac
-    { url = "https://download.pytorch.org/whl/cpu/torchvision-0.16.0-cp311-cp311-macosx_11_0_arm64.whl", markers = "sys_platform == 'darwin'" },
+    { url = "https://download.pytorch.org/whl/cpu/torchvision-0.16.2-cp311-cp311-macosx_11_0_arm64.whl", markers = "sys_platform == 'darwin'" },
     # Docker on M1 Mac
-    { url = "https://download.pytorch.org/whl/torchvision-0.16.0-cp311-cp311-linux_aarch64.whl", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'" },
+    { url = "https://download.pytorch.org/whl/torchvision-0.16.2-cp311-cp311-linux_aarch64.whl", markers = "sys_platform == 'linux' and platform_machine == 'aarch64'" },
     # Linux
-    { url = "https://download.pytorch.org/whl/cu118/torchvision-0.16.0%2Bcu118-cp311-cp311-linux_x86_64.whl", markers = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
+    { url = "https://download.pytorch.org/whl/cu118/torchvision-0.16.2%2Bcu118-cp311-cp311-linux_x86_64.whl", markers = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
 ]
 tqdm = "^4.65.0"
 mlflow = "2.8.1"

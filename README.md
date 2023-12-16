@@ -13,10 +13,11 @@ PyTorchのProjectテンプレートです．
 
 ## Environments
 
-- CUDA >= 11.0
+- CUDA 11.8
 - Python 3.11
 - Poetry
-- PyTorch 2.1.0, != 1.12.0
+- PyTorch 2.1.2
+- TorchVision 0.16.2
 
 ## Install
 
