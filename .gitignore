@@ -283,12 +283,12 @@ tags
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
 
 ### VisualStudioCode ###
-.vscode/*
-.vscode/settings.json
-.vscode/tasks.json
-.vscode/launch.json
-.vscode/extensions.json
-*.code-workspace
+# .vscode/*
+# .vscode/settings.json
+# .vscode/tasks.json
+# .vscode/launch.json
+# .vscode/extensions.json
+# *.code-workspace
 
 # Local History for Visual Studio Code
 .history/
@@ -327,7 +327,6 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,linux,vim,emacs,visualstudiocode,python,venv,virtualenv,jupyternotebooks
 
 .python-version
-.vscode/settings.json
 
 outputs
 *.pth

@@ -1,0 +1,7 @@
+{
+    "search.exclude": {
+        "**/dataset": true,
+        "**/model_zoo": true,
+        "**/result": true
+    }
+}
