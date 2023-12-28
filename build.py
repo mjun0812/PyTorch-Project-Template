@@ -53,7 +53,7 @@ setup(
     version="1.0",
     author="Junya Morioka",
     description="C++ Ops",
-    install_requires=["torch", "timm"],
+    install_requires=["torch"],
     packages=find_packages(
         exclude=("config", "tests", "script", "dataset", "model_zoo", "notebook")
     ),
