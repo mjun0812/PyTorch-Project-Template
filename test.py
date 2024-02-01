@@ -43,7 +43,7 @@ def do_test(cfg, output_dir, device, writer: Writer):
 
     evaluator = build_evaluator(cfg, phase="train").to(device)
 
-    tester = Tester(cfg, device, model, dataloader, batched_transform, evaluator)
+    tester = Tester(cfg, device, model, dataloader, batched_transform, evaluator, use_amp=cfg.AMP)
     results = tester.do_test()
 
     inference_speed = results["inference_speed"]

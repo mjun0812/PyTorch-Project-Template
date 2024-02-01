@@ -13,6 +13,7 @@ class Tester:
         dataloader,
         batched_transform,
         evaluator,
+        use_amp,
     ):
         self.cfg = cfg
         self.device = device
@@ -21,6 +22,8 @@ class Tester:
         self.dataloader = dataloader
         self.batched_transform = batched_transform
         self.evaluator = evaluator
+        self.use_amp = use_amp
+        self.is_cpu = device.type == "cpu"
 
     def do_test(self):
         progress_bar = tqdm(
@@ -40,9 +43,14 @@ class Tester:
                 if self.batched_transform:
                     image, data = self.batched_transform(image, data)
 
-                t = time_synchronized()
-                output = self.model(image, data)
-                inference_times.append(time_synchronized() - t)
+                with torch.autocast(
+                    device_type="cuda" if not self.is_cpu else "cpu",
+                    enabled=self.use_amp,
+                    dtype=torch.float16,
+                ):
+                    t = time_synchronized()
+                    output = self.model(image, data)
+                    inference_times.append(time_synchronized() - t)
 
                 self.evaluator.update(*self.generate_input_evaluator(output, data))
 
