@@ -1,7 +1,7 @@
 ARG CUDA_VERSION
 ARG PYTHON
 
-FROM ghcr.io/mjun0812/cuda${CUDA_VERSION}-python${PYTHON}-server:latest
+FROM ghcr.io/mjun0812/cuda${CUDA_VERSION}-python${PYTHON}-runtime-server:latest
 
 # 環境変数 Versionなど
 LABEL maintainer="mjun"

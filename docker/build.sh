@@ -34,11 +34,11 @@ for OPT in "$@"; do
     esac
 done
 
-docker pull ghcr.io/mjun0812/cuda${CUDA_VERSION//./}-python${PYTHON//./}-server
+docker pull ghcr.io/mjun0812/cuda${CUDA_VERSION}-python${PYTHON}-runtime-server
 
 docker build \
-    --build-arg PYTHON=${PYTHON//./} \
-    --build-arg CUDA_VERSION=${CUDA_VERSION//./} \
+    --build-arg PYTHON=${PYTHON} \
+    --build-arg CUDA_VERSION=${CUDA_VERSION} \
     -t "${USER}/${IMAGE_NAME}-server:latest" \
     -f docker/Dockerfile .
 
