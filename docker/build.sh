@@ -7,7 +7,7 @@ IMAGE_NAME=$(basename $(pwd))
 IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 
 PYTHON="3.11"
-CUDA_VERSION="11.8.0"
+CUDA_VERSION="12.1.1"
 
 DESCRIPTION=$(cat <<< "CUDA + Python Docker
 同階層にpoetry, requirements.txtを置くと自動でパッケージがインストールされます．
