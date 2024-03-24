@@ -34,7 +34,7 @@ for OPT in "$@"; do
     esac
 done
 
-docker pull ghcr.io/mjun0812/cuda${CUDA_VERSION}-python${PYTHON}-runtime-server
+docker pull ghcr.io/mjun0812/cuda${CUDA_VERSION//./}-python${PYTHON//./}-runtime-server
 
 docker build \
     --build-arg PYTHON=${PYTHON} \
