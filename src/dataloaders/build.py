@@ -15,10 +15,12 @@ DATASET_REGISTRY = Registry("DATASET")
 logger = logging.getLogger()
 
 
-def build_dataset(cfg, phase="train", rank=-1):
+def build_dataset(cfg, phase="train", rank=-1, cache_size_gb=None):
     transforms, batched_transform = build_transforms(cfg, phase=phase)
     cfg_dataset = cfg.get(f"{phase.upper()}_DATASET")
-    dataset = DATASET_REGISTRY.get(cfg_dataset.TYPE)(cfg, transforms, phase=phase)
+    dataset = DATASET_REGISTRY.get(cfg_dataset.TYPE)(
+        cfg, transforms, phase=phase, cache_size_gb=cache_size_gb
+    )
     logger.info(f"{phase.capitalize()} {cfg_dataset.NAME} Dataset sample num: {len(dataset)}")
     logger.info(f"{phase.capitalize()} transform: {transforms}")
     if batched_transform is not None:
