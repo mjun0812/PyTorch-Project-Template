@@ -3,6 +3,7 @@
 from .config import Config
 from .evaluator import build_evaluator
 from .logger import Writer
+from .tensor_cache import BYTES_PER_GIB, TensorCache, get_shm_size
 from .torch_utils import adjust_learning_rate, is_distributed, reduce_tensor
 from .utils import (
     JsonEncoder,

@@ -26,10 +26,12 @@ from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
 from src.trainer import Trainer
 from src.utils import (
+    BYTES_PER_GIB,
     Config,
     Writer,
     build_evaluator,
     error_handle,
+    get_shm_size,
     make_result_dirs,
     post_slack,
 )
@@ -111,7 +113,10 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
     datasets, dataloaders, batched_transform = {}, {}, {}
     for phase in ["train", "val"]:
         datasets[phase], dataloaders[phase], batched_transform[phase] = build_dataset(
-            cfg, phase=phase, rank=rank
+            cfg,
+            phase=phase,
+            rank=rank,
+            cache_size_gb=int(get_shm_size() / BYTES_PER_GIB) if phase == "train" else None,
         )
     logger.info("Complete Loading Dataset")
 
