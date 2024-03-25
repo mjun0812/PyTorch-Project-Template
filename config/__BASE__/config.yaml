@@ -19,6 +19,7 @@ GPU:
 CPU: False
 # Dataloader worker
 NUM_WORKER: 4
+USE_RAM_CACHE: True
 
 # Training Options
 CUDNN: True

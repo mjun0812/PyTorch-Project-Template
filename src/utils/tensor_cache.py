@@ -13,7 +13,7 @@ class TensorCache:
         self.cache = self.manager.dict()
 
         self.current_cache_size = Value("d", 0)
-        self.max_cache_size = min(size_limit_gb, get_shm_size() / BYTES_PER_GIB) * 0.7
+        self.max_cache_size = min(size_limit_gb, get_shm_size() / BYTES_PER_GIB) * 0.5
 
     def __contains__(self, key: str):
         return key in self.cache

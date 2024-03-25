@@ -112,11 +112,11 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, write
     logger.info("Loading Dataset...")
     datasets, dataloaders, batched_transform = {}, {}, {}
     for phase in ["train", "val"]:
+        cache = None
+        if phase == "train" and cfg.USE_RAM_CACHE:
+            cache = int(get_shm_size() / BYTES_PER_GIB)
         datasets[phase], dataloaders[phase], batched_transform[phase] = build_dataset(
-            cfg,
-            phase=phase,
-            rank=rank,
-            cache_size_gb=int(get_shm_size() / BYTES_PER_GIB) if phase == "train" else None,
+            cfg, phase=phase, rank=rank, cache_size_gb=cache
         )
     logger.info("Complete Loading Dataset")
 
