@@ -1,6 +1,73 @@
+import os
+
 import torch
 from torch import distributed as dist
+from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel
+
+
+def set_device(
+    global_gpu_index,
+    rank=-1,
+    is_cpu=False,
+    use_cudnn=True,
+    cudnn_deterministic=False,
+    pci_device_order=True,
+    verbose=True,
+):
+    """Set use GPU or CPU Device
+
+    set using GPU or CPU Device(instead of CUDA_VISIBLE_DEVICES).
+    set also CUDNN.
+
+    Args:
+        global_gpu_index (int): using gpu number in all gpu.
+        rank (int): process rank
+        is_cpu (bool, optional): use cpu or not. Defaults to False.
+        pci_device_order (bool, optional): . Defaults to True.
+
+    Returns:
+        torch.device: use device object.
+    """
+
+    if not is_cpu:
+        if pci_device_order:
+            os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(global_gpu_index)
+
+        # print using GPU Info
+        if verbose:
+            cuda_info(int(os.environ["CUDA_VISIBLE_DEVICES"].split(",")[0]))
+            print(f"Using GPU is CUDA:{global_gpu_index}")
+
+        if use_cudnn and cudnn.is_available():
+            cudnn.benchmark = True
+            cudnn.deterministic = cudnn_deterministic  # 乱数固定のため
+            if verbose:
+                print("Use CUDNN")
+        if rank == -1:
+            rank = 0
+        device = torch.device(rank)
+        torch.cuda.set_device(rank)
+    else:
+        device = torch.device("cpu")
+        if verbose:
+            print("Use CPU")
+
+    return device
+
+
+def cuda_info(global_cuda_index=0, logger=None):
+    """show using GPU Info
+
+    Args:
+        global_cuda_index (int, optional): using GPU number in all GPU number. Defaults to 0.
+    """
+    print = logger.info if logger is not None else print  # noqa
+
+    for i in range(torch.cuda.device_count()):
+        info = torch.cuda.get_device_properties(i)
+        print(f"CUDA:{i + global_cuda_index} {info.name}, {info.total_memory / 1024 ** 2}MB")
 
 
 def is_distributed():
@@ -32,9 +99,7 @@ def reduce_tensor(tensor, n=1):
 
 
 def adjust_learning_rate(base_lr, batch_size):
-    world_size = 1
-    if is_distributed():
-        world_size = dist.get_world_size()
+    world_size = get_world_size()
     return base_lr * batch_size * world_size
 
 

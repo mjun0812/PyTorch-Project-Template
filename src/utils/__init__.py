@@ -7,9 +7,11 @@ from .tensor_cache import BYTES_PER_GIB, TensorCache, get_shm_size
 from .torch_utils import (
     adjust_learning_rate,
     check_model_parallel,
+    cuda_info,
     is_distributed,
     load_model_weight,
     reduce_tensor,
+    set_device,
 )
 from .utils import (
     JsonEncoder,

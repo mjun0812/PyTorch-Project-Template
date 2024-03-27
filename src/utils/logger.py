@@ -99,7 +99,7 @@ class Logger:
         if isinstance(metric, Tensor):
             metric = metric.cpu().item()
 
-        self.logger.info(f"{self.phase} {name}: {metric}")
+        self.logger.info(f"{self.phase.capitalize()} {name}: {metric}")
         if self.use_mlflow:
             mlflow.log_metric(f"{name}_{self.phase}", metric, step)
 
@@ -109,7 +109,7 @@ class Logger:
             if isinstance(value, Tensor):
                 value = value.cpu().item()
 
-            self.logger.info(f"{self.phase} {name}: {value}")
+            self.logger.info(f"{self.phase.capitalize()} {name}: {value}")
 
             if isinstance(value, (int, float)):
                 # Log value history

@@ -4,7 +4,6 @@ import pprint
 from pathlib import Path
 
 import torch
-from kunai.torch_utils import set_device
 
 from src.dataloaders import build_dataset
 from src.models import build_model
@@ -18,6 +17,7 @@ from src.utils import (
     load_model_weight,
     make_result_dirs,
     post_slack,
+    set_device,
 )
 
 

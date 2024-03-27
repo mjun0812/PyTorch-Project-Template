@@ -7,7 +7,7 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from kunai.torch_utils import fix_seed, save_model, save_model_info, set_device
+from kunai.torch_utils import fix_seed, save_model, save_model_info
 from natsort import natsorted
 from torch.distributed.elastic.multiprocessing.errors import record
 
@@ -26,6 +26,7 @@ from src.utils import (
     make_output_dirs,
     make_result_dirs,
     post_slack,
+    set_device,
 )
 
 from test import do_test  # isort: skip
@@ -43,7 +44,6 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
         save_model_info(str(output_dir), model)
         # save initial model
         save_model(model, save_model_path / "model_init_0.pth")
-        logger.log_artifacts(output_dir)
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
@@ -88,9 +88,10 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
 
     logger.info("Start Training")
     for epoch in range(cfg.EPOCH):
+        logger.phase = "train"
         logger.info(f"Start Epoch {epoch+1}")
         logger.log_metric("Epoch", epoch + 1, epoch + 1)
-        logger.phase = "train"
+        logger.log_artifacts(output_dir)
 
         if rank != -1:
             dataloaders[phase].sampler.set_epoch(epoch)
