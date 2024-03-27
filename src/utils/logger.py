@@ -186,7 +186,7 @@ class Logger:
                 labels.append(f"{metric}_{k}")
                 data.append(v)
             fig = self.plot_graph(metric, labels, data)
-            fig_path = os.path.join(self.output, f"{metric}.png".replace(" ", "_"))
+            fig_path = os.path.join(self.output_dir, f"{metric}.png".replace(" ", "_"))
             fig.savefig(fig_path)
             plt.close()
 
