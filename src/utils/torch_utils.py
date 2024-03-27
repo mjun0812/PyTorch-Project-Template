@@ -63,11 +63,14 @@ def cuda_info(global_cuda_index=0, logger=None):
     Args:
         global_cuda_index (int, optional): using GPU number in all GPU number. Defaults to 0.
     """
-    print = logger.info if logger is not None else print  # noqa
 
     for i in range(torch.cuda.device_count()):
         info = torch.cuda.get_device_properties(i)
-        print(f"CUDA:{i + global_cuda_index} {info.name}, {info.total_memory / 1024 ** 2}MB")
+        infostr = f"CUDA:{i + global_cuda_index} {info.name}, {info.total_memory / 1024 ** 2}MB"
+        if logger is not None:
+            logger.info(infostr)
+        else:
+            print(infostr)
 
 
 def is_distributed():
