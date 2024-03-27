@@ -41,7 +41,7 @@ class Logger:
 
         for h in logger.handlers[1:]:
             logger.removeHandler(h)
-        default_handler = self.logger.handlers[0]
+        default_handler = logger.handlers[0]
         default_handler.setFormatter(logging.Formatter(log_format))
         default_handler.setLevel(level.upper())
 
