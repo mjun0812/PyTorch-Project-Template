@@ -24,9 +24,9 @@ from src.utils import (
 def do_test(cfg, output_dir, device, logger: Logger):
     logger.info("Loading Dataset...")
     cfg.BATCH = 1
-    _, dataloader, batched_transform = build_dataset(cfg, phase="test")
+    _, dataloader, batched_transform = build_dataset(cfg, phase="test", logger=logger)
 
-    model, _ = build_model(cfg, device, phase="test")
+    model, _ = build_model(cfg, device, phase="test", logger=logger)
     load_model_weight(cfg.MODEL.WEIGHT, model, logger)
     model.eval()
     model.requires_grad_(False)

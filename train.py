@@ -37,7 +37,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
     fix_seed(cfg.SEED + rank)
 
     # ###### Build Model #######
-    model, model_ema = build_model(cfg, device, phase="train", rank=rank)
+    model, model_ema = build_model(cfg, device, phase="train", rank=rank, logger=logger)
     if rank in [-1, 0]:
         save_model_path = output_dir / "models"
         # Model構造を出力
@@ -50,7 +50,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
     datasets, dataloaders, batched_transform = {}, {}, {}
     for phase in ["train", "val"]:
         datasets[phase], dataloaders[phase], batched_transform[phase] = build_dataset(
-            cfg, phase=phase, rank=rank
+            cfg, phase=phase, rank=rank, logger=logger
         )
     logger.info("Complete Loading Dataset")
 
