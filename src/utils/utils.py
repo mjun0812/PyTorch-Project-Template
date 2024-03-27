@@ -3,6 +3,8 @@ import importlib
 import json
 import logging
 import os
+import subprocess
+import sys
 import traceback
 from pathlib import Path
 
@@ -18,6 +20,78 @@ import matplotlib.font_manager as font_manager  # noqa
 import matplotlib.pyplot as plt  # noqa
 
 logger = logging.getLogger()
+
+
+def get_git_hash():
+    """gitハッシュを取得する
+
+    Returns:
+        string: Gitのハッシュ値
+    """
+    cmd = "git rev-parse --short HEAD"
+    try:
+        git_hash = (
+            subprocess.check_output(cmd.split(), stderr=subprocess.STDOUT).strip().decode("utf-8")
+        )
+    except Exception:
+        git_hash = "Not found git repository"
+    return git_hash
+
+
+def get_cmd():
+    """実行コマンドを取得する
+    Returns:
+        string: 実行コマンド
+
+    Examples:
+        get_cmd()
+        -> python hoge.py --huga
+    """
+    cmd = "python " + " ".join(sys.argv)
+    return cmd
+
+
+def make_output_dirs(output_base_path: str, prefix="", child_dirs=None) -> str:
+    """mkdir YYYYMMDD_HHmmSS (+ _prefix)
+
+    Args:
+        output_base_path (str): make output dir path.
+        prefix (str, optional): add prefix mkdir. Defaults to "".
+        child_dirs ([type], optional): mkdir child dir list. Defaults to None.
+
+    Returns:
+        str: YYYYMMDD_HHmmSS
+
+    Examples:
+    ```python
+    out = make_output_dirs("./result", prefix="MODEL", child_dirs=["models", "figs"])
+
+    ./result/21010812_120000
+    ├── models
+    └── figs
+    ```
+    """
+    today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    if prefix:
+        prefix = "_" + prefix
+    output_path = os.path.join(output_base_path, f"{today}{prefix}")
+    os.makedirs(output_path, exist_ok=True)
+    if child_dirs:
+        for d in child_dirs:
+            os.makedirs(os.path.join(output_path, d), exist_ok=True)
+    return output_path
+
+
+def make_result_dirs(weight_path, prefix=""):
+    weight_name, _ = os.path.splitext(os.path.basename(weight_path))
+    today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    if prefix:
+        prefix = "_" + prefix
+    dir_name = f"{today}_{weight_name}{prefix}"
+    output_dir = os.path.dirname(os.path.dirname(weight_path))
+    output_dir = os.path.join(output_dir, "runs", dir_name)
+    os.makedirs(output_dir, exist_ok=True)
+    return output_dir
 
 
 def plot_graph(title, labels, data, output_dir):
@@ -80,18 +154,6 @@ def post_slack(channel="#通知", username="通知", message=""):
     token = os.getenv("SLACK_TOKEN")
     if token:
         kunai.utils.post_slack(token, channel, username, message)
-
-
-def make_result_dirs(weight_path, prefix=""):
-    weight_name, _ = os.path.splitext(os.path.basename(weight_path))
-    today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    if prefix:
-        prefix = "_" + prefix
-    dir_name = f"{today}_{weight_name}{prefix}"
-    output_dir = os.path.dirname(os.path.dirname(weight_path))
-    output_dir = os.path.join(output_dir, "runs", dir_name)
-    os.makedirs(output_dir, exist_ok=True)
-    return output_dir
 
 
 def error_handle(e, phase, message):

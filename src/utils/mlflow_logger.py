@@ -1,44 +1,56 @@
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
 
 import matplotlib
 import mlflow
 import numpy as np
 from dotenv import load_dotenv
+from torch import Tensor
+
+from .utils import get_cmd, get_git_hash
 
 matplotlib.use("Agg")
 import matplotlib.font_manager as font_manager  # noqa
 import matplotlib.pyplot as plt  # noqa
-from torch import Tensor
 
-# Get root logger
-logger = logging.getLogger()
 load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
 load_dotenv()
 
 
-class Writer:
-    def __init__(self, cfg, output: str, phase: str) -> None:
-        self.cfg = cfg
-        self.output = output
-        self.histories = {}
+class Logger:
+    def __init__(self, output_dir: str, log_path: str, phase: str, level="INFO") -> None:
+        self.output_dir = output_dir
+        self.histories = defaultdict(dict)
         self.last_epoch = 0
-        self.use_mlflow = self.cfg.USE_MLFLOW
+        self.use_mlflow = False
         self.phase = phase
+        self.level = level  # INFO, DEBUG, WARNING, ERROR, CRITICAL
 
-        if self.use_mlflow:
-            run_name = os.path.basename(self.output).split("_")
-            run_name = "_".join(
-                run_name[0:2]
-                + [self.cfg.MODEL.NAME, self.cfg.get(f"{self.phase.upper()}_DATASET").NAME]
-            )
-            if self.cfg.get("TAG"):
-                run_name = f"{run_name}_{self.cfg.TAG}"
-            experiment_name = self.cfg.EXPERIMENT_NAME
-            self.setup_mlflow(run_name, experiment_name)
-            self.log_tag("phase", self.phase.capitalize())
-            self.log_hydra_config()
+        self.logger = self.setup_logger(log_path, level)
+
+        self.logger.info(f"Command: {get_cmd()}")
+        self.logger.info(f"Git Hash: {get_git_hash()}")
+        self.logger.info(f"Output dir: {str(output_dir)}")
+
+    def setup_logger(self, log_path: str = None, level="INFO"):
+        logger = logging.getLogger()
+        logger.setLevel(level.upper())
+        log_format = "[%(asctime)s][%(levelname)s] %(message)s"
+
+        for h in logger.handlers[1:]:
+            logger.removeHandler(h)
+        default_handler = self.logger.handlers[0]
+        default_handler.setFormatter(logging.Formatter(log_format))
+        default_handler.setLevel(level.upper())
+
+        if log_path:
+            file_handler = logging.FileHandler(log_path, "a")
+            file_handler.setFormatter(logging.Formatter(log_format))
+            file_handler.setLevel(level.upper())
+            logger.addHandler(file_handler)
+        return logger
 
     def setup_mlflow(self, run_name, experiment_name):
         mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
@@ -52,57 +64,68 @@ class Writer:
             # 当該Experimentが存在するとき、IDを取得
             experiment_id = experiment.experiment_id
 
-        self.run = mlflow.start_run(experiment_id=experiment_id, run_name=run_name, description="")
+        mlflow_run = mlflow.start_run(
+            experiment_id=experiment_id, run_name=run_name, description=""
+        )
 
-        logger.info(
+        self.logger.info(
             f"Start MLflow Tracking: experiment_name={experiment_name} "
             f"run_name={run_name} experiment_id: {experiment_id} run_id: {self.run.info.run_id}"
         )
 
-    def log_hydra_config(self):
-        parameters = {
-            "Optimizer": self.cfg.OPTIMIZER.NAME,
-            "LR scheduler": self.cfg.LR_SCHEDULER.NAME,
-            "Learning Rate": self.cfg.OPTIMIZER.LR,
-            "Epoch": self.cfg.EPOCH,
-            "Model": self.cfg.MODEL.NAME,
-            "Backbone": self.cfg.MODEL.get("BACKBONE", None),
-            "Train_Dataset": self.cfg.TRAIN_DATASET.NAME,
-            "Val_Dataset": self.cfg.VAL_DATASET.NAME,
-            "Test_Dataset": self.cfg.TEST_DATASET.NAME,
-            "Loss": self.cfg.LOSS.NAME,
-            "Input size": self.cfg.MODEL.get("INPUT_SIZE"),
-            "Batch": self.cfg.BATCH,
-            "GPU Ids": self.cfg.GPU.USE,
-            "hostname": os.uname()[1],
-        }
-        mlflow.log_params(parameters)
+        self.use_mlflow = True
+        self.log_params({"output_dir": self.output_dir})
+        return mlflow_run
 
-    def log_tag(self, key, value):
-        if self.use_mlflow:
-            mlflow.set_tag(key, value)
+    def info(self, message):
+        self.logger.info(message)
+
+    def warning(self, message):
+        self.logger.warning(message)
+
+    def error(self, message):
+        self.logger.error(message)
+
+    def critical(self, message):
+        self.logger.critical(message)
+
+    def debug(self, message):
+        self.logger.debug(message)
 
     def log_metric(self, name, metric, step):
+        if isinstance(metric, Tensor):
+            metric = metric.cpu().item()
+
+        self.logger.info(f"{self.phase} {name}: {metric:.4f}")
         if self.use_mlflow:
             mlflow.log_metric(f"{name}_{self.phase}", metric, step)
 
     def log_metrics(self, metrics: dict, step: int):
-        self.last_epoch = step
         mlflow_metrics = {}
         for name, value in metrics.items():
             if isinstance(value, Tensor):
                 value = value.cpu().item()
-            if isinstance(value, (int, float)):
-                if self.use_mlflow:
-                    mlflow_metrics[f"{name}_{self.phase}"] = value
 
+            self.logger.info(f"{self.phase} {name}: {value:.4f}")
+
+            if isinstance(value, (int, float)):
                 # Log value history
-                if name not in self.histories:
-                    self.histories[name] = {}
                 if self.phase not in self.histories[name]:
                     self.histories[name][self.phase] = []
                 self.histories[name][self.phase].append(value)
-        mlflow.log_metrics(mlflow_metrics, step)
+
+                mlflow_metrics[f"{name}_{self.phase}"] = value
+
+        if self.use_mlflow:
+            mlflow.log_metrics(mlflow_metrics, step)
+
+    def log_params(self, parameters: dict):
+        if self.use_mlflow:
+            mlflow.log_params(parameters)
+
+    def log_tag(self, key, value):
+        if self.use_mlflow:
+            mlflow.set_tag(key, value)
 
     def log_figure(self, fig, path):
         if self.use_mlflow:

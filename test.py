@@ -1,12 +1,10 @@
 import json
-import logging
 import os
 import pprint
 from pathlib import Path
 
 import torch
 from kunai.torch_utils import set_device
-from kunai.utils import get_cmd, get_git_hash, setup_logger
 
 from src.dataloaders import build_dataset
 from src.models import build_model
@@ -14,31 +12,24 @@ from src.tester import Tester
 from src.utils import (
     Config,
     JsonEncoder,
-    Writer,
+    Logger,
     build_evaluator,
+    get_cmd,
+    load_model_weight,
     make_result_dirs,
     post_slack,
 )
 
-# Get root logger
-logger = logging.getLogger()
 
-
-def do_test(cfg, output_dir, device, writer: Writer):
+def do_test(cfg, output_dir, device, logger: Logger):
     logger.info("Loading Dataset...")
     cfg.BATCH = 1
     _, dataloader, batched_transform = build_dataset(cfg, phase="test")
 
     model, _ = build_model(cfg, device, phase="test")
-    check_point = torch.load(cfg.MODEL.WEIGHT, map_location=device)
-    # for torch.compile model
-    state_dict = {}
-    for k, v in check_point.items():
-        state_dict[k.replace("_orig_mod.", "").replace("module.", "")] = v
-    model.load_state_dict(state_dict)
-    model.requires_grad_(False)
+    load_model_weight(cfg.MODEL.WEIGHT, model, logger)
     model.eval()
-    logger.info(f"Load model weight {cfg.MODEL.WEIGHT}")
+    model.requires_grad_(False)
     logger.info("Complete load model")
 
     evaluator = build_evaluator(cfg, phase="train").to(device)
@@ -64,7 +55,7 @@ def do_test(cfg, output_dir, device, writer: Writer):
         logger.info(f"{name}: {value}")
         if isinstance(value, torch.Tensor) and value.dim() == 0:
             metrics[name] = value.item()
-    writer.log_metrics(metrics, None)
+    logger.log_metrics(metrics, None)
     with open(os.path.join(output_dir, "result.json"), "w") as f:
         json.dump(metrics, f, indent=2, cls=JsonEncoder)
 
@@ -76,20 +67,15 @@ def main(cfg):
 
     output_dir = Path(make_result_dirs(cfg.MODEL.WEIGHT))
 
-    setup_logger(output_dir / "test.log")
+    Config.dump(cfg, output_dir / "config.yaml")
+    logger = Logger(str(output_dir), str(output_dir / "test.log"), "test")
     logger.info("\n" + Config.pretty_text(cfg))
-    logger.info(f"Command: {get_cmd()}")
-    logger.info(f"Make output_dir at {str(output_dir)}")
-    logger.info(f"Git Hash: {get_git_hash()}")
+    logger.log_artifact(output_dir.parents[1] / "cmd_histry.log")
+    logger.log_artifact(output_dir / "config.yaml")
     with open(output_dir.parents[1] / "cmd_histry.log", "a") as f:
         print(get_cmd(), file=f)
-    Config.dump(cfg, output_dir / "config.yaml")
 
-    writer = Writer(cfg, output_dir, "test")
-    writer.log_artifact(output_dir.parents[1] / "cmd_histry.log")
-    writer.log_artifact(output_dir / "config.yaml")
-
-    result = do_test(cfg, output_dir, device, writer)
+    result = do_test(cfg, output_dir, device, logger)
 
     message = pprint.pformat(
         {
@@ -105,8 +91,8 @@ def main(cfg):
     # Send Message to Slack
     post_slack(message=f"Finish Test\n{message}")
     logger.info(f"Finish Test {message}")
-    writer.log_result_dir(str(output_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
-    writer.close()
+    logger.log_result_dir(str(output_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
+    logger.close()
 
     return result
 

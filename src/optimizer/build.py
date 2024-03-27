@@ -1,15 +1,11 @@
-import logging
-
 import torch.optim as optim
 from kunai.torch_utils import check_model_parallel
 
 from ..utils import adjust_learning_rate
 from .lion import Lion
 
-logger = logging.getLogger()
 
-
-def build_optimizer(cfg, model):
+def build_optimizer(cfg, model, logger=None):
     optimizer_name = cfg.OPTIMIZER.NAME
     lr = cfg.OPTIMIZER.LR
     if cfg.ADJUST_LR:
@@ -51,9 +47,11 @@ def build_optimizer(cfg, model):
         optimizer = optim.SGD(parameters, lr=lr)
     elif optimizer_name == "Lion":
         optimizer = Lion(parameters, lr=lr, weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY)
-    logger.info(f"Optimizer: {optimizer_name}")
-    logger.info(f"Optimizer Group: {optimizer}")
-    logger.info(f"Learning Rate: {lr}")
+
+    if logger is not None:
+        logger.info(f"Optimizer: {optimizer_name}")
+        logger.info(f"Optimizer Group: {optimizer}")
+        logger.info(f"Learning Rate: {lr}")
     return optimizer
 
 

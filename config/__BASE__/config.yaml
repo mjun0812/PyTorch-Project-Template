@@ -37,6 +37,7 @@ ADJUST_LR: False
 OUTPUT: ./result/
 TAG: ""
 
+# MLflow
 USE_MLFLOW: True
 MLFLOW_IGNORE_DIRS: ["models"]
-EXPERIMENT_NAME: "pytorch-project-template"
+MLFLOW_EXPERIMENT_NAME: "pytorch-project-template"

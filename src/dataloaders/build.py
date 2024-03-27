@@ -1,5 +1,3 @@
-import logging
-
 import torch
 from kunai import Registry
 from kunai.torch_utils import worker_init_fn
@@ -7,24 +5,29 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from ..transform import build_transforms
+from ..utils import BYTES_PER_GIB, get_shm_size
 from .iteratable_dataloader import IterBasedDataloader
 
 DATASET_REGISTRY = Registry("DATASET")
 
-# Get root logger
-logger = logging.getLogger()
 
-
-def build_dataset(cfg, phase="train", rank=-1, cache_size_gb=None):
-    transforms, batched_transform = build_transforms(cfg, phase=phase)
+def build_dataset(cfg, phase="train", rank=-1, logger=None):
     cfg_dataset = cfg.get(f"{phase.upper()}_DATASET")
+
+    transforms, batched_transform = build_transforms(cfg, phase=phase)
+
+    cache = None
+    if phase == "train" and cfg.USE_RAM_CACHE:
+        cache = int(get_shm_size() / BYTES_PER_GIB)
     dataset = DATASET_REGISTRY.get(cfg_dataset.TYPE)(
-        cfg, transforms, phase=phase, cache_size_gb=cache_size_gb
+        cfg, transforms, phase=phase, cache_size_gb=cache
     )
-    logger.info(f"{phase.capitalize()} {cfg_dataset.NAME} Dataset sample num: {len(dataset)}")
-    logger.info(f"{phase.capitalize()} transform: {transforms}")
-    if batched_transform is not None:
-        logger.info(f"{phase.capitalize()} batched transform: {batched_transform}")
+
+    if logger is not None:
+        logger.info(f"{phase.capitalize()} {cfg_dataset.NAME} Dataset sample num: {len(dataset)}")
+        logger.info(f"{phase.capitalize()} transform: {transforms}")
+        if batched_transform is not None:
+            logger.info(f"{phase.capitalize()} batched transform: {batched_transform}")
 
     common_kwargs = {
         "pin_memory": True,

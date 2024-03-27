@@ -1,13 +1,10 @@
-import logging
 import math
 
 import torch.optim as optim
 from timm.scheduler import CosineLRScheduler
 
-logger = logging.getLogger()
 
-
-def build_lr_scheduler(cfg, optimizer, epoch, num_one_epoch_iters):
+def build_lr_scheduler(cfg, optimizer, epoch, num_one_epoch_iters, logger=None):
     iter_scheduler = None
     lr_scheduler_name = cfg.NAME
     if lr_scheduler_name == "ReduceLROnPlateau":
@@ -132,7 +129,8 @@ def build_lr_scheduler(cfg, optimizer, epoch, num_one_epoch_iters):
         else:
             scheduler = None
 
-    logger.info(f"LR Scheduler: {cfg.NAME}")
+    if logger is not None:
+        logger.info(f"LR Scheduler: {cfg.NAME}")
     return iter_scheduler, scheduler
 
 
