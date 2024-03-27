@@ -2495,8 +2495,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
     {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.23.5", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
 ]
 
 [[package]]
@@ -2561,8 +2561,8 @@ files = [
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.23.2,<2", markers = "python_version == \"3.11\""},
     {version = ">=1.26.0,<2", markers = "python_version >= \"3.12\""},
+    {version = ">=1.23.2,<2", markers = "python_version == \"3.11\""},
 ]
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
@@ -2918,6 +2918,17 @@ files = [
 [package.extras]
 plugins = ["importlib-metadata"]
 windows-terminal = ["colorama (>=0.4.6)"]
+
+[[package]]
+name = "pynvml"
+version = "11.5.0"
+description = "Python Bindings for the NVIDIA Management Library"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "pynvml-11.5.0-py3-none-any.whl", hash = "sha256:5cce014ac01b098d08f06178f86c37be409b80b2e903a5a03ce15eed60f55e25"},
+    {file = "pynvml-11.5.0.tar.gz", hash = "sha256:d027b21b95b1088b9fc278117f9f61b7c67f8e33a787e9f83f735f0f71ac32d0"},
+]
 
 [[package]]
 name = "pyparsing"
@@ -4415,4 +4426,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "800f363bef832e661e7d999724fb0deca1b8434b9c78b42e203411accf8d6d97"
+content-hash = "13ab13160cca0a1555b8b5cbf6c31cb8fefb9439e117ced7ce5cbc5d0af252b4"

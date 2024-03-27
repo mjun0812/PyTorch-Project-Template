@@ -59,6 +59,7 @@ class Logger:
     def setup_mlflow(self, run_name, experiment_name):
         mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
         mlflow.set_tracking_uri(mlflow_uri)
+        mlflow.enable_system_metrics_logging()
 
         experiment = mlflow.get_experiment_by_name(experiment_name)
         if experiment is None:
