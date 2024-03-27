@@ -2,7 +2,7 @@
 
 from .config import Config
 from .evaluator import build_evaluator
-from .mlflow_logger import Logger
+from .logger import Logger
 from .tensor_cache import BYTES_PER_GIB, TensorCache, get_shm_size
 from .torch_utils import (
     adjust_learning_rate,
