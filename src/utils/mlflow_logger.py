@@ -39,11 +39,15 @@ class Logger:
         logger.setLevel(level.upper())
         log_format = "[%(asctime)s][%(levelname)s] %(message)s"
 
-        for h in logger.handlers[1:]:
-            logger.removeHandler(h)
-        default_handler = logger.handlers[0]
-        default_handler.setFormatter(logging.Formatter(log_format))
-        default_handler.setLevel(level.upper())
+        # 既存のハンドラを削除
+        while logger.hasHandlers():
+            logger.removeHandler(logger.handlers[0])
+
+        # コンソール出力用のハンドラを設定
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter(log_format))
+        console_handler.setLevel(level.upper())
+        logger.addHandler(console_handler)
 
         if log_path:
             file_handler = logging.FileHandler(log_path, "a")
@@ -68,12 +72,11 @@ class Logger:
             experiment_id=experiment_id, run_name=run_name, description=""
         )
 
+        self.use_mlflow = True
         self.logger.info(
             f"Start MLflow Tracking: experiment_name={experiment_name} "
-            f"run_name={run_name} experiment_id: {experiment_id} run_id: {self.run.info.run_id}"
+            f"run_name={run_name} experiment_id: {experiment_id} run_id: {mlflow_run.info.run_id}"
         )
-
-        self.use_mlflow = True
         self.log_params({"output_dir": self.output_dir})
         return mlflow_run
 
@@ -96,7 +99,7 @@ class Logger:
         if isinstance(metric, Tensor):
             metric = metric.cpu().item()
 
-        self.logger.info(f"{self.phase} {name}: {metric:.4f}")
+        self.logger.info(f"{self.phase} {name}: {metric}")
         if self.use_mlflow:
             mlflow.log_metric(f"{name}_{self.phase}", metric, step)
 
@@ -106,7 +109,7 @@ class Logger:
             if isinstance(value, Tensor):
                 value = value.cpu().item()
 
-            self.logger.info(f"{self.phase} {name}: {value:.4f}")
+            self.logger.info(f"{self.phase} {name}: {value}")
 
             if isinstance(value, (int, float)):
                 # Log value history
