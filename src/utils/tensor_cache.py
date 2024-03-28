@@ -1,7 +1,7 @@
 import os
-from multiprocessing import Manager, Value
 
 import torch
+from torch.multiprocessing import Manager, Value
 
 BYTES_PER_GIB = 1024**3
 
