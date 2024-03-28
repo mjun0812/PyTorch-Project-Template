@@ -8,6 +8,7 @@ from .torch_utils import (
     adjust_learning_rate,
     check_model_parallel,
     cuda_info,
+    get_world_size,
     is_distributed,
     load_model_weight,
     reduce_tensor,
