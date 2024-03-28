@@ -109,10 +109,11 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
         result["epoch_losses"]["Loss"] = result["epoch_losses"].pop("total_loss")
         logger.log_metrics(result["epoch_losses"], epoch + 1)
         logger.log_metric("Learning Rate", result["lr"], epoch + 1)
-        logger.log_artifact(os.path.join(output_dir, "train.log"))
-        if (epoch + 1) % cfg.SAVE_INTERVAL == 0 and rank in [-1, 0]:
-            # Save Model Weight
-            save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
+        if rank in [-1, 0]:
+            logger.log_artifact(os.path.join(output_dir, "train.log"))
+            if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
+                # Save Model Weight
+                save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
 
         if (epoch + 1) % cfg.VAL_INTERVAL == 0:
             result = trainer.do_one_epoch(
