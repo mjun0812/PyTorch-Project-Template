@@ -184,6 +184,25 @@ def main(cfg):
         # Execute CLI command
         with open(output_dir / "cmd_histry.log", "a") as f:
             print(get_cmd(), file=f)
+
+        logger.log_params(
+            {
+                "Optimizer": cfg.OPTIMIZER.NAME,
+                "LR scheduler": cfg.LR_SCHEDULER.NAME,
+                "Learning Rate": cfg.OPTIMIZER.LR,
+                "Epoch": cfg.EPOCH,
+                "Model": cfg.MODEL.NAME,
+                "Backbone": cfg.MODEL.get("BACKBONE", None),
+                "Input size": cfg.MODEL.get("INPUT_SIZE"),
+                "Train_Dataset": cfg.TRAIN_DATASET.NAME,
+                "Val_Dataset": cfg.VAL_DATASET.NAME,
+                "Test_Dataset": cfg.TEST_DATASET.NAME,
+                "Loss": cfg.LOSS.NAME,
+                "Batch": cfg.BATCH,
+                "GPU Ids": cfg.GPU.USE,
+                "hostname": os.uname()[1],
+            }
+        )
     else:
         output_dir = None
         logger = Logger(None, None, "train", "ERROR")
