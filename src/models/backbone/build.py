@@ -4,11 +4,7 @@ from kunai import Registry
 from torchvision.models._utils import IntermediateLayerGetter
 
 from ..layers import FrozenBatchNorm2d
-
-try:
-    import internimage
-except ImportError:
-    print("ImportError: internimage")
+from .internimage import create_model as create_internimage_model
 
 BACKBONE_REGISTRY = Registry("BACKBONE")
 
@@ -45,7 +41,7 @@ def build_backbone(cfg):
         )
         backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
     elif model_name.startswith("internimage"):
-        backbone = internimage.create_model(
+        backbone = create_internimage_model(
             model_name,
             features_only=True,
             pretrained=cfg.MODEL.get("IMAGENET_PRE_TRAINED", True),
