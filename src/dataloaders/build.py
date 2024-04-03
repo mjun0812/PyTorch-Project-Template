@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from ..transform import build_transforms
-from ..utils import BYTES_PER_GIB, get_shm_size, get_world_size
+from ..utils import BYTES_PER_GIB, TensorCache, get_shm_size
 from .iteratable_dataloader import IterBasedDataloader
 
 DATASET_REGISTRY = Registry("DATASET")
@@ -18,10 +18,11 @@ def build_dataset(cfg, phase="train", rank=-1, logger=None):
 
     cache = None
     if phase == "train" and cfg.USE_RAM_CACHE:
-        cache = int(get_shm_size() / BYTES_PER_GIB) / 8 * get_world_size()
-    dataset = DATASET_REGISTRY.get(cfg_dataset.TYPE)(
-        cfg, transforms, phase=phase, cache_size_gb=cache
-    )
+        cache_size_gb = int(get_shm_size() / BYTES_PER_GIB) / 8
+        cache = TensorCache(size_limit_gb=cache_size_gb)
+        if logger is not None:
+            logger.info(f"Use RAM Cache: {cache_size_gb}GB")
+    dataset = DATASET_REGISTRY.get(cfg_dataset.TYPE)(cfg, transforms, phase=phase, cache=cache)
 
     if logger is not None:
         logger.info(f"{phase.capitalize()} {cfg_dataset.NAME} Dataset sample num: {len(dataset)}")

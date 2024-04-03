@@ -11,7 +11,7 @@ ENV POETRY_HOME=/opt/poetry
 ENV PATH=$POETRY_HOME/bin:$PATH
 
 # pip install from requirements.txt
-COPY ./poetry.* ./pyproject.toml* ./
-RUN poetry install --no-interaction --no-ansi --no-root
 RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=${POETRY_VERSION} python - \
     && poetry config virtualenvs.create false
+COPY ./poetry.* ./pyproject.toml* ./
+RUN poetry install --no-interaction --no-ansi --no-root
