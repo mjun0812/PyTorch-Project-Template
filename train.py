@@ -91,7 +91,6 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
         logger.phase = "train"
         logger.info(f"Start Epoch {epoch+1}")
         logger.log_metric("Epoch", epoch + 1, epoch + 1)
-        logger.log_artifacts(output_dir)
 
         if rank != -1:
             dataloaders[phase].sampler.set_epoch(epoch)
