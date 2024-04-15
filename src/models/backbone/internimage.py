@@ -4,7 +4,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as checkpoint
-import torch_cpp as opsm
 
 try:
     from timm.layers import DropPath, trunc_normal_
@@ -860,6 +859,8 @@ class InternImage(nn.Module):
             post_norm_block_ids = (
                 level2_post_norm_block_ids if level2_post_norm and (i == 2) else None
             )  # for InternImage-H/G
+            import torch_cpp as opsm
+
             level = InternImageBlock(
                 core_op=getattr(opsm, core_op),
                 channels=int(channels * 2**i),
@@ -956,6 +957,8 @@ class InternImage(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def _init_deform_weights(self, m):
+        import torch_cpp as opsm
+
         if isinstance(m, getattr(opsm, self.core_op)):
             m._reset_parameters()
 
