@@ -83,6 +83,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
         clip_grad=cfg.CLIP_GRAD_NORM,
         iter_lr_scheduler=iter_lr_scheduler,
         amp_init_scale=cfg.AMP_INIT_SCALE,
+        amp_dtype=cfg.AMP_DTYPE,
     )
     best_loss = 1e8
     best_epoch = 0

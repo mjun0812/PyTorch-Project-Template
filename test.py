@@ -38,7 +38,16 @@ def do_test(cfg, output_dir, device, logger: Logger):
         logger.info("Using Mixed Precision with AMP")
         logger.info(f"AMP dtype: {cfg.AMP_DTYPE}")
 
-    tester = Tester(cfg, device, model, dataloader, batched_transform, evaluator, use_amp=cfg.AMP)
+    tester = Tester(
+        cfg,
+        device,
+        model,
+        dataloader,
+        batched_transform,
+        evaluator,
+        use_amp=cfg.AMP,
+        amp_dtype=cfg.AMP_DTYPE,
+    )
     results = tester.do_test()
 
     inference_speed = results["inference_speed"]
