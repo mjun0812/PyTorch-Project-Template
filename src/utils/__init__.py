@@ -5,6 +5,7 @@ from .evaluator import build_evaluator
 from .logger import Logger
 from .tensor_cache import BYTES_PER_GIB, TensorCache, get_shm_size
 from .torch_utils import (
+    TORCH_DTYPE,
     adjust_learning_rate,
     check_model_parallel,
     cuda_info,

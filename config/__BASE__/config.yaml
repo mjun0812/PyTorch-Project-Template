@@ -24,7 +24,8 @@ USE_RAM_CACHE: False
 # Training Options
 CUDNN: True
 AMP: False
-AMP_INIT_SCALE: False
+AMP_INIT_SCALE: null
+AMP_DTYPE: "fp16"
 MODEL_EMA: False
 MODEL_EMA_DECAY: 0.99
 USE_CLIP_GRAD: True

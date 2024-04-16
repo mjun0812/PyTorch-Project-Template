@@ -3,6 +3,8 @@ import torch
 from kunai.torch_utils import time_synchronized
 from tqdm import tqdm
 
+from .utils import TORCH_DTYPE
+
 
 class Tester:
     def __init__(
@@ -14,6 +16,7 @@ class Tester:
         batched_transform,
         evaluator,
         use_amp,
+        amp_dtype="fp32",
     ):
         self.cfg = cfg
         self.device = device
@@ -23,6 +26,7 @@ class Tester:
         self.batched_transform = batched_transform
         self.evaluator = evaluator
         self.use_amp = use_amp
+        self.amp_dtype = TORCH_DTYPE[amp_dtype] if use_amp else torch.float32
         self.is_cpu = device.type == "cpu"
 
     def do_test(self):
@@ -46,7 +50,7 @@ class Tester:
                 with torch.autocast(
                     device_type="cuda" if not self.is_cpu else "cpu",
                     enabled=self.use_amp,
-                    dtype=torch.float16,
+                    dtype=self.amp_dtype,
                 ):
                     t = time_synchronized()
                     output = self.model(image, data)

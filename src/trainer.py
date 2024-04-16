@@ -5,7 +5,7 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from .utils import reduce_tensor
+from .utils import TORCH_DTYPE, reduce_tensor
 
 
 class Trainer:
@@ -21,12 +21,14 @@ class Trainer:
         clip_grad=10.0,
         iter_lr_scheduler=None,
         amp_init_scale=False,
+        amp_dtype="fp16",
     ) -> None:
         super().__init__()
         self.rank = rank
         self.device = device
         self.is_cpu = device.type == "cpu"
         self.use_amp = use_amp
+        self.amp_dtype = TORCH_DTYPE[amp_dtype] if use_amp else torch.float32
         if amp_init_scale:
             self.scaler = torch.cuda.amp.GradScaler(
                 init_scale=amp_init_scale, enabled=self.use_amp
@@ -79,7 +81,7 @@ class Trainer:
                 with torch.autocast(
                     device_type="cuda" if not self.is_cpu else "cpu",
                     enabled=self.use_amp,
-                    dtype=torch.float16,
+                    dtype=self.amp_dtype,
                 ):
                     output = model(image, data)
                     loss = criterion(output, data)
