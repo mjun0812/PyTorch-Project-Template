@@ -70,6 +70,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
     evaluator = build_evaluator(cfg, phase="train").to(device)
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
+        logger.info(f"AMP dtype: {cfg.AMP_DTYPE}")
 
     trainer = Trainer(
         rank=rank,

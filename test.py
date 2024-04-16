@@ -34,6 +34,10 @@ def do_test(cfg, output_dir, device, logger: Logger):
 
     evaluator = build_evaluator(cfg, phase="train").to(device)
 
+    if cfg.AMP:
+        logger.info("Using Mixed Precision with AMP")
+        logger.info(f"AMP dtype: {cfg.AMP_DTYPE}")
+
     tester = Tester(cfg, device, model, dataloader, batched_transform, evaluator, use_amp=cfg.AMP)
     results = tester.do_test()
 
