@@ -8,9 +8,9 @@ import sys
 import traceback
 from pathlib import Path
 
-import kunai
 import matplotlib
 import numpy as np
+import requests
 import torch
 import torch.distributed as dist
 from dotenv import load_dotenv
@@ -153,7 +153,32 @@ def post_slack(channel="#通知", username="通知", message=""):
     load_dotenv()
     token = os.getenv("SLACK_TOKEN")
     if token:
-        kunai.utils.post_slack(token, channel, username, message)
+        _post_slack(token, channel, username, message)
+
+
+def _post_slack(token, channel="#通知", username="通知", message=""):
+    """slackにメッセージを送る. send slack message
+
+    Args:
+        token (str): Slack Token
+        channel (str, optional): メッセージを送る通知先. Defaults to "#通知".
+        username (str, optional): メッセージを送るユーザーの名前. Defaults to "通知".
+        message (str, optional): send message. Defaults to "".
+
+    Returns:
+        int: http status code
+    """
+    response = requests.post(
+        "https://slack.com/api/chat.postMessage",
+        headers={"Content-Type": "application/json"},
+        params={
+            "token": token,
+            "channel": channel,
+            "text": message,
+            "username": username,
+        },
+    )
+    return response.status_code
 
 
 def error_handle(e, phase, message):

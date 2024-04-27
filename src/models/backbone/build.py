@@ -1,8 +1,8 @@
 import timm
 import torchvision
-from kunai import Registry
 from torchvision.models._utils import IntermediateLayerGetter
 
+from ...utils import Registry
 from ..layers import FrozenBatchNorm2d
 from .internimage import create_model as create_internimage_model
 

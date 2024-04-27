@@ -1,7 +1,6 @@
 import torch.optim as optim
-from kunai.torch_utils import check_model_parallel
 
-from ..utils import adjust_learning_rate
+from ..utils import adjust_learning_rate, check_model_parallel
 from .lion import Lion
 
 

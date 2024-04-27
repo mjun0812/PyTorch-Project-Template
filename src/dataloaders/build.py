@@ -1,11 +1,9 @@
 import torch
-from kunai import Registry
-from kunai.torch_utils import worker_init_fn
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from ..transform import build_transforms
-from ..utils import BYTES_PER_GIB, TensorCache, get_shm_size
+from ..utils import BYTES_PER_GIB, Registry, TensorCache, get_shm_size, worker_init_fn
 from .iteratable_dataloader import IterBasedDataloader
 
 DATASET_REGISTRY = Registry("DATASET")

@@ -1,9 +1,71 @@
+import logging
 import os
+import random
+import time
 
+import numpy as np
 import torch
 from torch import distributed as dist
 from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel
+from torchinfo import summary
+
+TORCH_DTYPE = {
+    "fp32": torch.float32,
+    "fp64": torch.float64,
+    "fp16": torch.float16,
+    "bf16": torch.bfloat16,
+    "int8": torch.int8,
+    "int16": torch.int16,
+    "int32": torch.int32,
+    "int64": torch.int64,
+}
+
+
+def worker_init_fn(worker_id):
+    """Reset numpy random seed in PyTorch Dataloader
+
+    Args:
+        worker_id (int): random seed value
+    """
+    # random
+    # random.seed(random.getstate()[1][0] + worker_id)
+    # Numpy
+    np.random.seed(np.random.get_state()[1][0] + worker_id)
+    # torch.manual_seed(np.random.get_state()[1][0] + worker_id + 1)
+    # torch.cuda.manual_seed_all(np.random.get_state()[1][0] + worker_id)
+
+
+def fix_seed(seed) -> int:
+    """fix seed on random, numpy, torch module
+
+    Args:
+        seed (int): seed parameter
+
+    Returns:
+        int: seed parameter
+    """
+    # random
+    random.seed(seed)
+    # Numpy
+    np.random.seed(seed)
+    # Pytorch
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    return seed
+
+
+def time_synchronized() -> time:
+    """return time at synhronized CUDA and CPU.
+       CUDAとCPUの計算が非同期なため，同期してから時間計算する．
+
+    Returns:
+        time: 関数呼び出し時の時刻
+    """
+    # pytorch-accurate time
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    return time.time()
 
 
 def set_device(
@@ -157,13 +219,48 @@ def load_model_weight(weight_path, model, logger=None):
         logger.info(f"Unexpected model key: {unexpexted}")
 
 
-TORCH_DTYPE = {
-    "fp32": torch.float32,
-    "fp64": torch.float64,
-    "fp16": torch.float16,
-    "bf16": torch.bfloat16,
-    "int8": torch.int8,
-    "int16": torch.int16,
-    "int32": torch.int32,
-    "int64": torch.int64,
-}
+def save_model(model, file_path):
+    """Save PyTorch Model
+    PyTorchのモデルを保存する
+    Parallelにも対応
+
+    Args:
+        model (torch.nn.Module): モデルオブジェクト
+        file_path (str): 保存先
+    """
+
+    if check_model_parallel(model):
+        model = model.module
+    torch.save(model.state_dict(), file_path)
+    logging.info("Saving model at %s", file_path)
+
+
+def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=""):
+    """Output PyTorch Model Summary to log.
+
+    Args:
+        output_dir (string): output log dir
+        model (torch.nn.Module): PyTorch Model Class
+        input_size (List): input tensor size
+        input_data (List[Tensor]): input data
+        prefix (str, optional): log file prefix output_dir/model_summary_{prefix}.log. Defaults to "".
+    """
+
+    if prefix:
+        prefix = "_" + prefix
+    if check_model_parallel(model):
+        model = model.module
+
+    device = next(model.parameters()).device
+
+    if input_size is None:
+        model_summary = str(summary(model, input_data=input_data, device=device, verbose=0))
+    elif input_data is None:
+        model_summary = str(summary(model, input_size=input_size, device=device, verbose=0))
+    else:
+        model_summary = str(summary(model, device=device, verbose=0))
+
+    # Model Summary
+    with open(os.path.join(output_dir, f"model_summary{prefix}.log"), "a") as f:
+        print(model, file=f)
+        print(model_summary, file=f)

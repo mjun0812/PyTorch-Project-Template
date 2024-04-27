@@ -1,4 +1,4 @@
-from kunai import Registry
+from ..utils import Registry
 
 LOSS_REGISTRY = Registry("LOSS")
 

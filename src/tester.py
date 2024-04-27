@@ -1,9 +1,8 @@
 import numpy as np
 import torch
-from kunai.torch_utils import time_synchronized
 from tqdm import tqdm
 
-from .utils import TORCH_DTYPE
+from .utils import TORCH_DTYPE, time_synchronized
 
 
 class Tester:

@@ -1,5 +1,6 @@
-from kunai import Registry
 from torchvision import transforms
+
+from ..utils import Registry
 
 TRANSFORM_REGISTRY = Registry("TRANSFORM")
 BATCHED_TRANSFORM_REGISTRY = Registry("BATCHED_TRANSFORM")

@@ -7,7 +7,6 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from kunai.torch_utils import fix_seed, save_model, save_model_info
 from natsort import natsorted
 from torch.distributed.elastic.multiprocessing.errors import record
 
@@ -22,10 +21,13 @@ from src.utils import (
     Logger,
     build_evaluator,
     error_handle,
+    fix_seed,
     get_cmd,
     make_output_dirs,
     make_result_dirs,
     post_slack,
+    save_model,
+    save_model_info,
     set_device,
 )
 

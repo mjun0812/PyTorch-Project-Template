@@ -1,10 +1,9 @@
 import torch
 import torch._dynamo as dynamo  # noqa
-from kunai import Registry
 from timm.utils import ModelEmaV2
 from torch.nn.parallel import DistributedDataParallel
 
-from ..utils import load_model_weight
+from ..utils import Registry, load_model_weight
 
 try:
     from timm.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
