@@ -30,6 +30,7 @@ RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.l
     gosu \
     ninja-build \
     curl \
+    libgl1-mesa-dev \
     # ロケールを日本語UTF-8に設定
     # これによりDocker環境下で日本語入力が可能となる
     && locale-gen ja_JP.UTF-8 \
