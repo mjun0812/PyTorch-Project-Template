@@ -1,0 +1,13 @@
+set -o ignoreeof
+
+export PATH="$HOME/.local/bin:$PATH"
+export HISTSIZE=10000
+export SAVEHIST=10000
+
+alias ls='ls --color=auto'
+
+autoload -Uz compinit
+compinit
+
+zstyle ':completion:*' matcher-list '' 'm:{a-z}={A-Z}' 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=* l:|=*'
+zstyle ':completion:*' menu select=2

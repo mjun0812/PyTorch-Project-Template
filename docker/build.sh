@@ -6,7 +6,6 @@ IMAGE_NAME=$(basename $(pwd))
 # to lowercase
 IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 
-PYTHON="3.11"
 CUDA_VERSION="12.1.1"
 
 DESCRIPTION=$(cat <<< "CUDA + Python Docker
@@ -23,10 +22,6 @@ for OPT in "$@"; do
             echo "$DESCRIPTION"
             exit 0;
         ;;
-        '-p' | '--python')
-            PYTHON="$2"
-            shift 2
-        ;;
         '-c' | '--cuda')
             CUDA_VERSION="$2"
             shift 2
@@ -34,11 +29,9 @@ for OPT in "$@"; do
     esac
 done
 
-docker pull ghcr.io/mjun0812/cuda${CUDA_VERSION//./}-python${PYTHON//./}-runtime-server
+docker pull nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04
 
 docker build \
-    --build-arg PYTHON=${PYTHON//./} \
-    --build-arg CUDA_VERSION=${CUDA_VERSION//./} \
+    --build-arg BASE_IMAGE=${BASE_IMAGE} \
     -t "${USER}/${IMAGE_NAME}-server:latest" \
     -f docker/Dockerfile .
-

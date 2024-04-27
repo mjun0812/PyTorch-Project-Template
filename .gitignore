@@ -326,8 +326,6 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,linux,vim,emacs,visualstudiocode,python,venv,virtualenv,jupyternotebooks
 
-.python-version
-
 outputs
 *.pth
 *.pt
