@@ -31,7 +31,9 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = []
+dev-dependencies = [
+    "ruff>=0.4.2",
+]
 
 [[tool.rye.sources]]
 name = "pytorch"

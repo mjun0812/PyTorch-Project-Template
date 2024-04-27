@@ -252,9 +252,7 @@ def main(cfg):
         logger.info(f"Finish Training {message}")
 
         # Prepare config for Test
-        cfg.MODEL.WEIGHT = natsorted(glob.glob(str(output_dir / "models" / "model_best_*.pth")))[
-            -1
-        ]
+        cfg.MODEL.WEIGHT = natsorted(glob.glob(str(output_dir / "models" / "model_best_*.pth")))[-1]
         cfg.GPU.MULTI = False
         cfg.GPU.USE = 0
         Config.dump(cfg, output_dir / "config.yaml")

@@ -186,6 +186,7 @@ requests==2.28.1
     # via docker
     # via huggingface-hub
     # via mlflow
+ruff==0.4.2
 safetensors==0.4.3
     # via timm
 scikit-learn==1.4.2

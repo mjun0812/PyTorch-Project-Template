@@ -29,7 +29,8 @@ for OPT in "$@"; do
     esac
 done
 
-docker pull nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04
+BASE_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04"
+docker pull ${BASE_IMAGE}
 
 docker build \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
