@@ -38,12 +38,6 @@ dev-dependencies = [
 [[tool.rye.sources]]
 name = "pytorch"
 url = "https://download.pytorch.org/whl/cu121"
-type = "find-links"
-
-[[tool.rye.sources]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-type = "find-links"
 
 [tool.hatch.metadata]
 allow-direct-references = true
