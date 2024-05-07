@@ -180,7 +180,7 @@ def main(cfg):
         # Logging
         logger = Logger(str(output_dir), str(output_dir / "train.log"), "train", "INFO")
         if cfg.USE_MLFLOW:
-            logger.setup_mlflow(f"{output_dir.name}_{prefix}", cfg.MLFLOW_EXPERIMENT_NAME)
+            logger.setup_mlflow(output_dir.name, cfg.MLFLOW_EXPERIMENT_NAME)
 
         # Save config
         Config.dump(cfg, output_dir / "config.yaml")
