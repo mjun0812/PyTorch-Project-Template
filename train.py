@@ -184,9 +184,6 @@ def main(cfg):
 
         # Save config
         Config.dump(cfg, output_dir / "config.yaml")
-        # Execute CLI command
-        with open(output_dir / "cmd_histry.log", "a") as f:
-            print(get_cmd(), file=f)
 
         logger.log_params(
             {
