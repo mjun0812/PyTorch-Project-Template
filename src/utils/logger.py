@@ -34,7 +34,7 @@ class Logger:
         self.logger.info(f"Git Hash: {get_git_hash()}")
         self.logger.info(f"Output dir: {str(output_dir)}")
         if self.output_dir is not None:
-            with open(output_dir / "cmd_histry.log", "a") as f:
+            with open(Path(output_dir) / "cmd_histry.log", "a") as f:
                 print(get_cmd(), file=f)  # Execute CLI command history
 
     def setup_logger(self, log_path: str = None, level="INFO"):
