@@ -60,16 +60,24 @@ def main():
     mlflow.set_tracking_uri(mlflow_uri)
 
     with open("config/__BASE__/config.yaml", "r") as f:
-        experiment_name = yaml.safe_load(f)["EXPERIMENT_NAME"]
+        experiment_name = yaml.safe_load(f)["MLFLOW_EXPERIMENT_NAME"]
     print(f"Experiment: {experiment_name}")
 
     client = mlflow.tracking.MlflowClient()
     experiment_id = client.get_experiment_by_name(experiment_name).experiment_id
 
-    runs = client.search_runs(
-        experiment_ids=experiment_id,
-        filter_string=f"params.Dataset LIKE '%{args.dataset}%'" if args.dataset != "all" else "",
-    )
+    if args.dataset == "all":
+        runs = client.search_runs(experiment_ids=experiment_id)
+    else:
+        runs = []
+        query = [
+            f"params.Train_Dataset LIKE '%{args.dataset}%'"
+            f"params.Test_Dataset LIKE '%{args.dataset}%'",
+            f"params.Dataset LIKE '%{args.dataset}%'",
+        ]
+        for q in query:
+            runs += client.search_runs(experiment_ids=experiment_id, filter_string=q)
+
     if len(runs) == 0:
         print("No data")
         sys.exit(0)
