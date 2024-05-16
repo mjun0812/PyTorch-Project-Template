@@ -4,7 +4,7 @@ PyTorchのProjectテンプレートです．
 
 ## Features
 
-- Poetry + Dockerで環境構築
+- Rye + Dockerで環境構築
 - PyTorchのDistributed Data Parallel(DDP)とData ParallelによるマルチGPU Training
 - `torch.amp`を使った混合精度学習(FP16, FP32)
 - `torch.compile`に対応
@@ -13,34 +13,24 @@ PyTorchのProjectテンプレートです．
 
 ## Environments
 
-- CUDA 11.8
 - Python 3.11
-- Poetry
-- PyTorch 2.1.2
-- TorchVision 0.16.2
+- CUDA 12.1
+- PyTorch
+- TorchVision
 
 ## Install
 
 環境構築はDockerで行います．  
-Dockerコンテナにデータセットと実験結果を保存する`result`ディレクトリをマウントするため，  
-先にディレクトリを作成するか，シンボリックリンクを作成しておきます．
+Dockerコンテナにデータセットディレクトリをマウントするため，先にディレクトリを作成するか，シンボリックリンクを作成しておきます．
 
 ```bash
 ln -sfv [datasets_dir] ./dataset
-mkdir result
 ```
 
-次に，Dockerイメージをビルドします．  
-ビルドスクリプトが用意されています．
+次に，Dockerイメージをビルドします．ビルドスクリプトが用意されています．
 
 ```bash
 ./docker/build.sh
-```
-
-実行時は，以下のようにShell Scriptの後に実行するコマンドを続けます．
-
-```bash
-./docker/run.sh python train.py ...
 ```
 
 ### Optional: MLflow
@@ -125,15 +115,6 @@ Dockerコンテナ内でコマンドを実行します．
 ./docker/run.sh python test.py result/20220911/config.yaml GPU.USE=1
 ```
 
-### Train
-
-学習を行う場合は，`train.py`を使います．このスクリプトでは，学習が終わった後に評価も一緒に行われます．
-`train.py`では`config/MODEL`以下のyamlファイルを指定します．
-
-```bash
-./docker/run.sh python train.py config/MODEL/ResNet.yaml
-```
-
 yaml内のConfigの値をCLIから変更することもできます．以下のように，`.`で連結して，`=`で値を指定してください．
 
 ```yaml
@@ -145,12 +126,21 @@ GPU:
 ./docker/run.sh python train.py config/MODEL/ResNet.yaml GPU.USE=2
 ```
 
-複数GPUを用いた学習を行う場合は，実行するコマンドの`python`を消して，
-前に`./torchrun.sh [GPU数]`を入れ，`GPU.USE="[0,1]"`のように，Configの値を変更します．
-この時，GPUのIDの順番は`nvidia-smi`コマンドで並ぶGPUの順番になっています．
+### Train
+
+学習を行う場合は，`train.py`を使います．このスクリプトでは，学習が終わった後にテストも一緒に行われます．
+`train.py`では`config`以下のyamlファイルを指定します．
 
 ```bash
-./docker/run.sh ./torchrun.sh 4 train.py config/MODEL/ResNet.yaml GPU.USE="[0,1,2,3]"
+./docker/run.sh python train.py config/MODEL/ResNet.yaml
+```
+
+複数GPUを用いた学習を行う場合は，実行するコマンドの`python`を消して，
+前に`./torchrun.sh [GPU数]`を入れ，`GPU.USE="0,1"`のように，Configの値を変更します．
+この時，GPUのIDの順番は`nvidia-smi`コマンドで並ぶPCIeの順番になっています．
+
+```bash
+./docker/run.sh ./torchrun.sh 4 train.py config/MODEL/ResNet.yaml GPU.USE="0,1,2,3"
 ```
 
 学習結果は`result/[Dataset名]/[日付]_[モデル]_[データセット]_[タグ]`以下のディレクトリに保存されます．
@@ -277,52 +267,6 @@ TRAIN_DATASET:
           img_scale: [224, 224]
       - name: NormalizeImage
         args: null
-VAL_DATASET:
-  NAME: dataset_name
-  ROOT: ./dataset/ImageNet/
-
-  TRANSFORMS:
-    TRAIN:
-      - name: Resizer
-        args:
-          img_scale: [224, 224]
-      - name: NormalizeImage
-        args: null
-    VAL:
-      - name: Resizer
-        args:
-          img_scale: [224, 224]
-      - name: NormalizeImage
-        args: null
-    TEST:
-      - name: Resizer
-        args:
-          img_scale: [224, 224]
-      - name: NormalizeImage
-        args: null
-TEST_DATASET:
-  NAME: dataset_name
-  ROOT: ./dataset/ImageNet/
-
-  TRANSFORMS:
-    TRAIN:
-      - name: Resizer
-        args:
-          img_scale: [224, 224]
-      - name: NormalizeImage
-        args: null
-    VAL:
-      - name: Resizer
-        args:
-          img_scale: [224, 224]
-      - name: NormalizeImage
-        args: null
-    TEST:
-      - name: Resizer
-        args:
-          img_scale: [224, 224]
-      - name: NormalizeImage
-        args: null
 ```
 
 ## よく使うConfigの値
@@ -351,7 +295,7 @@ mlflowの結果をデータセットでフィルタして表で表示できま�
 mlflowのWebUIで削除した実験を，`result`以下からも削除するためのスクリプトです．  
 このスクリプトではディレクトリのパスを表示するだけなので，`xargs`と組み合わせて削除してください．
 
-### `tests`
+## テスト
 
 `tests`ディレクトリ以下は，実装が正しく行われているかをチェックするために使用します．
 
@@ -405,86 +349,4 @@ dataloaderをイテレーションして，どのくらいの時間がかかる�
 
 ```bash
 ./docker/run.sh python tests/test_transform.py config/MODEL/model.yaml PHASE=val
-```
-
-## Structure
-
-```bash
-./
-├── config
-│   ├── MODEL
-│   │   └── model.yaml
-│   └── __BASE__
-│       ├── DATASET
-│       ├── LOSS
-│       ├── LR_SCHEDULER
-│       ├── OPTIMIZER
-│       └── config.yaml
-├── doc
-│   └── lr_scheduler
-├── docker
-│   ├── Dockerfile
-│   ├── build.sh
-│   └── run.sh
-├── etc
-│   └── Times_New_Roman.ttf
-├── notebook
-├── result
-├── script
-│   ├── json_parse.py
-│   ├── log_parse.py
-│   └── rewrite_config.py
-├── src
-│   ├── dataloaders
-│   │   ├── __init__.py
-│   │   ├── build.py
-│   │   ├── dataloader.py
-│   │   └── iteratable_dataloader.py
-│   ├── losses
-│   │   ├── __init__.py
-│   │   ├── build.py
-│   │   └── loss.py
-│   ├── models
-│   │   ├── backbone
-│   │   ├── layers
-│   │   ├── __init__.py
-│   │   ├── build.py
-│   │   └── model.py
-│   ├── optimizer
-│   │   ├── __init__.py
-│   │   ├── build.py
-│   │   └── lion.py
-│   ├── transform
-│   │   ├── __init__.py
-│   │   └── build.py
-│   ├── utils
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── evaluator.py
-│   │   ├── logger.py
-│   │   ├── torch_utils.py
-│   │   └── utils.py
-│   ├── sampler.py
-│   ├── scheduler.py
-│   ├── tester.py
-│   └── trainer.py
-├── tests
-│   ├── test_all_model.py
-│   ├── test_config.py
-│   ├── test_dataloader.py
-│   ├── test_lr_scheduler.py
-│   ├── test_model.py
-│   └── test_transform.py
-├── README.ja
-├── README.md
-├── clean_result.py
-├── dataset -> ../dataset
-├── mlflow_parse.py
-├── model_zoo -> /home/mjun/model_zoo
-├── poetry.lock
-├── pyproject.toml
-├── template.env
-├── test.py
-├── torchrun.sh
-└── train.py
 ```

@@ -29,6 +29,8 @@ for OPT in "$@"; do
     esac
 done
 
+mkdir -p result
+
 BASE_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04"
 docker pull ${BASE_IMAGE}
 

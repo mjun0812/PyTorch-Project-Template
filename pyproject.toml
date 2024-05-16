@@ -42,4 +42,50 @@ type = "index"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pytorch_project_template"]
+packages = ["src"]
+
+[tool.pyright]
+exclude = ["dataset", "result"]
+
+[tool.ruff]
+exclude = [".git", ".ruff_cache", ".venv", ".vscode", "dataset", "result"]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # flake8
+    "D", # pydocstyle
+    "I", # isort
+]
+ignore = [
+    "G004",   # `logging-f-string` : loggingでf-stringを使いたいので無視する
+    "COM812",
+    "COM819",
+    "D100",
+    "D203",
+    "D213",
+    "D300",
+    "D212",
+    "D400",
+    "D415",
+    "E111",
+    "E114",
+    "E117",
+    "ISC001",
+    "ISC002",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "W191",
+    "B007",
+    "B905",
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
