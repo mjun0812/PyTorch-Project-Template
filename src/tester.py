@@ -54,7 +54,8 @@ class Tester:
                     output = self.model(data)
                     inference_times.append(time_synchronized() - t)
 
-                self.evaluator.update(*self.generate_input_evaluator(output, data))
+                if self.evaluator is not None:
+                    self.evaluator.update(*self.generate_input_evaluator(output, data))
 
                 for k, v in output.items():
                     if isinstance(v, torch.Tensor):

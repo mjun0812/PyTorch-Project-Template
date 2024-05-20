@@ -22,34 +22,35 @@ torch.use_deterministic_algorithms = True
 
 @Config.main
 def main(cfg):
+    phase = cfg.get("PHASE", "train")
+    print(f"Phase: {phase}")
     logger = logging.getLogger()
     logging.basicConfig(format="[%(levelname)s] %(message)s", level=logging.INFO)
     logger.setLevel(logging.INFO)
     default_handler = logger.handlers[0]
     default_handler.setLevel(logging.INFO)
 
-    phase = "train"
     cfg.BATCH = 1
-    cfg.CPU = True
-    cfg.GPU.USE = ""
     cfg.MODEL.PRE_TRAINED = False
-    os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-    model, _ = build_model(cfg, device=torch.device("cpu"), phase="train")
+    model, _ = build_model(cfg, device=torch.device("cpu"), phase=phase)
     criterion = build_loss(cfg)
     print(model)
 
     _, dataloader, batched_transforms = build_dataset(cfg, phase)
     print("Loading dataset Complete")
 
-    image, data = next(iter(dataloader))
+    data = next(iter(dataloader))
     if batched_transforms:
-        image, data = batched_transforms(image, data)
+        data = batched_transforms(data)
+    image = data["image"][0]
     print(image.shape)
 
-    y = model(image, data)
-    loss = criterion(y, data)
-    print(loss)
+    y = model(data)
+    print(y)
+    if phase != "test":
+        loss = criterion(y, data)
+        print(loss)
 
 
 if __name__ == "__main__":

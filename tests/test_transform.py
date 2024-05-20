@@ -16,17 +16,16 @@ rightkeys = (83, 109, 100, 65363, 2555904)
 @Config.main
 def main(cfg):
     phase = cfg.get("PHASE", "train")
+    print(f"Phase: {phase}")
     cfg.BATCH = 1
-    cfg.CPU = True
     data = build_dataset(cfg, phase)
     _, dataloader, batched_transforms = data
     print("Loading dataset Complete")
 
     for _, data in enumerate(dataloader):
-        image, data = data
         if batched_transforms:
-            image, _ = batched_transforms(image, data)
-
+            data = batched_transforms(data)
+        image = data["image"][0]
         print(image.shape)
 
         image = TF.normalize(
