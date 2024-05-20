@@ -37,14 +37,13 @@ class Tester:
         targets = []
         inference_times = []
 
-        for i, (image, data) in progress_bar:
+        for i, data in progress_bar:
             with torch.no_grad():
-                image = image.to(self.device).float()
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
                         data[k] = v.to(self.device, non_blocking=True)
                 if self.batched_transform:
-                    image, data = self.batched_transform(image, data)
+                    data = self.batched_transform(data)
 
                 with torch.autocast(
                     device_type="cuda" if not self.is_cpu else "cpu",
@@ -52,7 +51,7 @@ class Tester:
                     dtype=self.amp_dtype,
                 ):
                     t = time_synchronized()
-                    output = self.model(image, data)
+                    output = self.model(data)
                     inference_times.append(time_synchronized() - t)
 
                 self.evaluator.update(*self.generate_input_evaluator(output, data))

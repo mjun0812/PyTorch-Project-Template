@@ -12,5 +12,5 @@ class BaseModel(nn.Module):
         self.phase = phase
         self.backbone, _ = build_backbone(self.cfg)
 
-    def forward(self, x, data=None):
-        return self.backbone(x)[0]
+    def forward(self, x):
+        return self.backbone(x["image"])[0]

@@ -23,7 +23,7 @@ def build_model(cfg, device, phase="train", rank=-1, logger=None):
         model: Torch.model
     """
     model_name = cfg.MODEL.MODEL
-    model = MODEL_REGISTRY.get(model_name)(cfg)
+    model = MODEL_REGISTRY.get(model_name)(cfg, phase=phase)
     model = model.to(device)
 
     model_ema = None

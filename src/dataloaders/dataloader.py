@@ -16,4 +16,4 @@ class Dataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        return self.images[idx], None
+        return {"image": self.images[idx], "data": torch.tensor([0])}

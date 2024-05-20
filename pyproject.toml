@@ -57,7 +57,6 @@ select = [
     "E", # pycodestyle errors
     "W", # pycodestyle warnings
     "F", # flake8
-    "D", # pydocstyle
     "I", # isort
 ]
 ignore = [

@@ -30,9 +30,7 @@ class Trainer:
         self.use_amp = use_amp
         self.amp_dtype = TORCH_DTYPE[amp_dtype] if use_amp else torch.float32
         if amp_init_scale:
-            self.scaler = torch.cuda.amp.GradScaler(
-                init_scale=amp_init_scale, enabled=self.use_amp
-            )
+            self.scaler = torch.cuda.amp.GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
         else:
             self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
         self.optimizer = optimizer
@@ -67,15 +65,14 @@ class Trainer:
         else:
             model.phase = phase
 
-        for i, (image, data) in progress_bar:
+        for i, data in progress_bar:
             with torch.set_grad_enabled(phase == "train"):
                 # ####### Prepare Input Data #######
-                image = image.to(self.device, non_blocking=True).float()
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
                         data[k] = v.to(self.device, non_blocking=True)
                 if batched_transform:
-                    image, data = batched_transform(image, data)
+                    data = batched_transform(data)
 
                 # ####### Forward #######
                 with torch.autocast(
@@ -83,7 +80,7 @@ class Trainer:
                     enabled=self.use_amp,
                     dtype=self.amp_dtype,
                 ):
-                    output = model(image, data)
+                    output = model(data)
                     loss = criterion(output, data)
 
                 # ####### Backward #######
@@ -108,7 +105,7 @@ class Trainer:
                     if self.rank != -1:
                         loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
                     hist_epoch_loss[key] = (
-                        hist_epoch_loss.get(key, 0.0) + loss[key].item() * image.shape[0]
+                        hist_epoch_loss.get(key, 0.0) + loss[key].item() * dataloader.batch_size
                     )
                 if self.rank in [-1, 0]:
                     lr = self.optimizer.param_groups[0]["lr"]

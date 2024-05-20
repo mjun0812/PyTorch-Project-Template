@@ -51,13 +51,12 @@ def build_dataset(cfg, phase="train", rank=-1, logger=None):
 
 
 def collate(batch):
-    image, data = list(zip(*batch))
-    image = torch.stack(image)
-
-    keys = list(data[0].keys())
+    keys = list(batch[0].keys())
     output = {k: [] for k in keys}
-    for d in data:
+    for b in batch:
         for k in keys:
-            output[k].append(d[k])
-
-    return image, output
+            output[k].append(b[k])
+    for k in keys:
+        if torch.is_tensor(output[k][0]):
+            output[k] = torch.stack(output[k], dim=0)
+    return output
