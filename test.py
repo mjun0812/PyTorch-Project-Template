@@ -23,7 +23,6 @@ from src.utils import (
 
 def do_test(cfg, output_dir, device, logger: Logger):
     logger.info("Loading Dataset...")
-    cfg.BATCH = 1
     _, dataloader, batched_transform = build_dataset(cfg, phase="test", logger=logger)
 
     model, _ = build_model(cfg, device, phase="test", logger=logger)
@@ -32,7 +31,9 @@ def do_test(cfg, output_dir, device, logger: Logger):
     model.requires_grad_(False)
     logger.info("Complete load model")
 
-    evaluator = build_evaluator(cfg, phase="train").to(device)
+    evaluator = build_evaluator(cfg, phase="train")
+    if evaluator is not None:
+        evaluator = evaluator.to(device)
 
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
