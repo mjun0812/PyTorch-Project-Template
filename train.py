@@ -22,7 +22,6 @@ from src.utils import (
     build_evaluator,
     error_handle,
     fix_seed,
-    get_cmd,
     make_output_dirs,
     make_result_dirs,
     post_slack,

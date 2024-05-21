@@ -58,7 +58,9 @@ def do_test(cfg, output_dir, device, logger: Logger):
 
     tester.save_results(output_dir, results["outputs"], results["targets"])
 
-    metrics = evaluator.compute()
+    metrics = {}
+    if evaluator is not None:
+        metrics = evaluator.compute()
     metrics.update(
         {
             "Speed/s": inference_speed,

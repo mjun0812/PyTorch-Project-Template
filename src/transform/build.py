@@ -1,3 +1,4 @@
+from omegaconf import OmegaConf
 from torchvision import transforms
 
 from ..utils import Registry
@@ -31,68 +32,55 @@ def build_transforms(cfg, phase="train"):
 
 
 # Use below Compose when using transforms has multi input.
-# class Compose:
-#     def __init__(self, transforms: list):
-#         self.transforms = transforms
+class MultiCompose:
+    def __init__(self, transforms: list):
+        self.transforms = transforms
 
-#     def __call__(self, img, mask, annotations, camera_matrix):
-#         for t in self.transforms:
-#             img, mask, annotations = t(img, mask, annotations)
-#         return img, mask, annotations
+    def __call__(self, img, data):
+        for t in self.transforms:
+            img, data = t(img, data)
+        return img, data
 
-#     def __repr__(self):
-#         format_string = self.__class__.__name__ + "("
-#         for t in self.transforms:
-#             format_string += "\n"
-#             format_string += "    {0}".format(t)
-#         format_string += "\n)"
-#         return format_string
+    def __repr__(self):
+        format_string = self.__class__.__name__ + "("
+        for t in self.transforms:
+            format_string += "\n"
+            format_string += "    {0}".format(t)
+        format_string += "\n)"
+        return format_string
 
-# @TRANSFORM_REGISTRY.register()
-# def list_to_tensor(list_obj, label):
-#     """リストをtensorにキャストするだけ
 
-#     Args:
-#         list_obj (list): List Object ex. sequence
-#         label (list): label
+class KorniaCompose:
+    def __init__(self, cfg):
+        self.transforms = []
+        self.assing_labels = []
+        for c in cfg:
+            if c.args is None:
+                transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)()
+            else:
+                args = OmegaConf.to_object(c.args)
+                params = {k: v for k, v in args.items()}
+                transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)(**params)
+            self.transforms.append(transform)
+            self.assing_labels.append(c.assign_label)
 
-#     Returns:
-#         Tensor: sequence, label
-#     """
-#     return torch.tensor(list_obj, dtype=torch.float64), torch.tensor(
-#         label, dtype=torch.float64
-#     )
+    def __call__(self, data):
+        # Kornia Accept image [0, 1.0]
+        img = data["image"].float()
+        img /= 255
+        label = data["label"].float()
+        for i, t in enumerate(self.transforms):
+            img = t(img)
+            if self.assing_labels[i]:
+                label = t(label, t._params)
+        data["image"] = img
+        data["label"] = label.long()
+        return data
 
-# class KorniaCompose:
-#     def __init__(self, cfg):
-#         self.transforms = []
-#         self.assing_labels = []
-#         for c in cfg:
-#             if c.args is None:
-#                 transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)()
-#             else:
-#                 args = OmegaConf.to_object(c.args)
-#                 params = {k: v for k, v in args.items()}
-#                 transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)(**params)
-#             self.transforms.append(transform)
-#             self.assing_labels.append(c.assign_label)
-
-#     def __call__(self, img, data):
-#         # Kornia Accept image [0, 1.0]
-#         img = img.float()
-#         label = data["label"].float()
-#         img /= 255
-#         for i, t in enumerate(self.transforms):
-#             img = t(img)
-#             if self.assing_labels[i]:
-#                 label = t(label, t._params)
-#         data["label"] = label.long()
-#         return img, data
-
-#     def __repr__(self):
-#         format_string = self.__class__.__name__ + "("
-#         for t in self.transforms:
-#             format_string += "\n"
-#             format_string += "    {0}".format(t)
-#         format_string += "\n)"
-#         return format_string
+    def __repr__(self):
+        format_string = self.__class__.__name__ + "("
+        for t in self.transforms:
+            format_string += "\n"
+            format_string += "    {0}".format(t)
+        format_string += "\n)"
+        return format_string
