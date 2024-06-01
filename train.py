@@ -1,4 +1,3 @@
-import glob
 import os
 import pprint
 import sys
@@ -7,7 +6,6 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from natsort import natsorted
 from torch.distributed.elastic.multiprocessing.errors import record
 
 from src.dataloaders import build_dataset
