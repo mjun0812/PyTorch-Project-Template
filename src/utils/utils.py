@@ -214,3 +214,17 @@ def import_submodules(module):
         importlib.import_module(f"{module.__name__}.{f.stem}")
         for f in Path(module.__file__).parent.glob("[a-zA-Z0-9]*.py")
     ]
+
+
+def create_symlink(target, dst):
+    """
+    シンボリックリンクを作成します。
+
+    Args:
+        target (str): シンボリックリンクのターゲットとなるファイルまたはディレクトリのパス。
+        dst (str): シンボリックリンクの作成先のパス。
+    """
+    relative_target = os.path.relpath(target, os.path.dirname(dst))
+    if os.path.islink(dst):
+        os.unlink(dst)
+    os.symlink(relative_target, dst)

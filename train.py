@@ -20,6 +20,7 @@ from src.utils import (
     Config,
     Logger,
     build_evaluator,
+    create_symlink,
     error_handle,
     fix_seed,
     make_output_dirs,
@@ -135,7 +136,10 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
             logger.log_metric("Learning Rate", result["lr"], epoch + 1)
 
             if result["epoch_losses"]["Loss"] < best_loss and rank in [-1, 0]:
-                save_model(model, save_model_path / f"model_best_{epoch+1}.pth")
+                output_path = save_model_path / f"model_epoch_{epoch+1}.pth"
+                if not output_path.exists():
+                    save_model(model, output_path)
+                create_symlink(str(output_path), str(save_model_path / "model_best.pth"))
                 best_loss = result["epoch_losses"]["Loss"]
                 best_epoch = epoch + 1
                 logger.info(f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}")
@@ -146,8 +150,11 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
             logger.log_history_figure()
         except Exception:
             logger.error(f"Cannot draw graph. {traceback.format_exc()}")
-        save_model(model, save_model_path / f"model_final_{cfg.EPOCH}.pth")
-        logger.log_artifact(save_model_path / f"model_final_{cfg.EPOCH}.pth")
+        output_path = save_model_path / f"model_epoch_{epoch+1}.pth"
+        if not output_path.exists():
+            save_model(model, output_path)
+        create_symlink(str(output_path), str(save_model_path / "model_final.pth"))
+        logger.log_artifact(save_model_path / "model_final.pth")
     return best_loss
 
 

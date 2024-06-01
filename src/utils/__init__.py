@@ -31,5 +31,6 @@ from .utils import (
     plot_graph,
     plot_multi_graph,
     post_slack,
+    create_symlink,
 )
 from .registry import Registry
