@@ -50,7 +50,7 @@ RUN curl -sSf https://rye.astral.sh/get | RYE_NO_AUTO_INSTALL=1 RYE_INSTALL_OPTI
 
 # Required for rye
 COPY ./pyproject.toml ./requirements* ./README.md ./
-RUN rye pin $(PYTHON) && \
+RUN rye pin $PYTHON && \
     rye sync
 
 ENV PATH="/.venv/bin:$PATH"

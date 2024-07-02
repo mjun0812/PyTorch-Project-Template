@@ -6,6 +6,7 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:.
 alembic==1.13.1
@@ -31,11 +32,14 @@ cycler==0.12.1
     # via matplotlib
 docker==7.0.0
     # via mlflow
+einops==0.8.0
+    # via pytorch-project-template
 entrypoints==0.4
     # via mlflow
 filelock==3.13.1
     # via huggingface-hub
     # via torch
+    # via triton
 flask==3.0.3
     # via mlflow
 fonttools==4.51.0
@@ -54,6 +58,8 @@ graphql-core==3.2.3
     # via graphql-relay
 graphql-relay==3.2.0
     # via graphene
+greenlet==3.0.3
+    # via sqlalchemy
 gunicorn==21.2.0
     # via mlflow
 huggingface-hub==0.22.2
@@ -108,6 +114,34 @@ numpy==1.26.3
     # via scipy
     # via torchmetrics
     # via torchvision
+nvidia-cublas-cu12==12.1.3.1
+    # via nvidia-cudnn-cu12
+    # via nvidia-cusolver-cu12
+    # via torch
+nvidia-cuda-cupti-cu12==12.1.105
+    # via torch
+nvidia-cuda-nvrtc-cu12==12.1.105
+    # via torch
+nvidia-cuda-runtime-cu12==12.1.105
+    # via torch
+nvidia-cudnn-cu12==8.9.2.26
+    # via torch
+nvidia-cufft-cu12==11.0.2.54
+    # via torch
+nvidia-curand-cu12==10.3.2.106
+    # via torch
+nvidia-cusolver-cu12==11.4.5.107
+    # via torch
+nvidia-cusparse-cu12==12.1.0.106
+    # via nvidia-cusolver-cu12
+    # via torch
+nvidia-nccl-cu12==2.19.3
+    # via torch
+nvidia-nvjitlink-cu12==12.1.105
+    # via nvidia-cusolver-cu12
+    # via nvidia-cusparse-cu12
+nvidia-nvtx-cu12==12.1.105
+    # via torch
 omegaconf==2.3.0
     # via pytorch-project-template
 opencv-python==4.9.0.80
@@ -183,22 +217,27 @@ threadpoolctl==3.4.0
     # via scikit-learn
 timm==0.9.16
     # via pytorch-project-template
-torch==2.2.1
+torch==2.2.1+cu121
     # via kornia
     # via pytorch-project-template
     # via timm
+    # via torch-cpp
     # via torchmetrics
     # via torchvision
+torch-cpp @ https://github.com/mjun0812/torch_cpp/raw/main/dist/torch_cpp-1.0.0+torch221cu121-cp311-cp311-linux_x86_64.whl
+    # via pytorch-project-template
 torchinfo==1.8.0
     # via pytorch-project-template
 torchmetrics==1.0.3
     # via pytorch-project-template
-torchvision==0.17.1
+torchvision==0.17.1+cu121
     # via pytorch-project-template
     # via timm
 tqdm==4.64.1
     # via huggingface-hub
     # via pytorch-project-template
+triton==2.2.0
+    # via torch
 typing-extensions==4.9.0
     # via alembic
     # via huggingface-hub
