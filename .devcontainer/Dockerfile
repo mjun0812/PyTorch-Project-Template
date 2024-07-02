@@ -1,6 +1,8 @@
 FROM --platform=linux/amd64 mcr.microsoft.com/devcontainers/base:ubuntu-22.04
 LABEL maintainer="mjun"
 
+ARG PYTHON="3.11"
+
 # gitをインストールするときに必要 tzdataをinstallされてしまうため
 ENV DEBIAN_FRONTEND=noninteractive
 # ロケールを日本語UTF-8に設定
@@ -45,7 +47,7 @@ RUN curl -sSf https://rye-up.com/get | RYE_NO_AUTO_INSTALL=1 RYE_INSTALL_OPTION=
 
 # Required for rye
 COPY ./.python-version ./pyproject.toml ./requirements* ./README.md ./
-RUN rye pin "$(cat .python-version)" && \
+RUN rye pin $(PYTHON) && \
     rye sync
 
 ENV PATH="/.venv/bin:$PATH"

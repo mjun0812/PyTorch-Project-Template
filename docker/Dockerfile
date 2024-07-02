@@ -4,6 +4,8 @@ ARG BASE_IMAGE
 FROM $BASE_IMAGE
 LABEL maintainer="mjun"
 
+ARG PYTHON="3.11"
+
 # gitをインストールするときに必要 tzdataをinstallされてしまうため
 ENV DEBIAN_FRONTEND=noninteractive
 # ロケールを日本語UTF-8に設定
@@ -47,8 +49,8 @@ RUN curl -sSf https://rye.astral.sh/get | RYE_NO_AUTO_INSTALL=1 RYE_INSTALL_OPTI
     rye config --set-bool behavior.use-uv=true
 
 # Required for rye
-COPY ./.python-version ./pyproject.toml ./requirements* ./README.md ./
-RUN rye pin "$(cat .python-version)" && \
+COPY ./pyproject.toml ./requirements* ./README.md ./
+RUN rye pin $(PYTHON) && \
     rye sync
 
 ENV PATH="/.venv/bin:$PATH"

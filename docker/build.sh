@@ -6,6 +6,7 @@ IMAGE_NAME=$(basename $(pwd))
 # to lowercase
 IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 
+PYTHON="3.11"
 CUDA_VERSION="12.1.1"
 
 DESCRIPTION=$(cat <<< "CUDA + Python Docker
@@ -36,5 +37,6 @@ docker pull ${BASE_IMAGE}
 
 docker build \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
+    --build-arg PYTHON=${PYTHON} \
     -t "${USER}/${IMAGE_NAME}-server:latest" \
     -f docker/Dockerfile .
