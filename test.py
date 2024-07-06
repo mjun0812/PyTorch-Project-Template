@@ -53,7 +53,7 @@ def do_test(cfg, output_dir, device, logger: Logger):
 
     inference_speed = results["inference_speed"]
     logger.info(
-        f"Average Inferance Speed: {inference_speed:.5f}s, " f"{(1.0 / inference_speed):.2f}fps"
+        f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
     )
 
     tester.save_results(output_dir, results["outputs"], results["targets"])
@@ -85,6 +85,8 @@ def main(cfg):
 
     Config.dump(cfg, output_dir / "config.yaml")
     logger = Logger(str(output_dir), str(output_dir / "test.log"), "test")
+    if cfg.USE_MLFLOW:
+        logger.setup_mlflow(str(output_dir.parents[1].name), cfg.MLFLOW_EXPERIMENT_NAME)
     logger.info("\n" + Config.pretty_text(cfg))
     logger.log_artifact(output_dir.parents[1] / "cmd_histry.log")
     logger.log_artifact(output_dir / "config.yaml")
