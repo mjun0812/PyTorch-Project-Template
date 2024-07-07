@@ -33,6 +33,7 @@ build-backend = "hatchling.build"
 [tool.rye]
 managed = true
 dev-dependencies = ["ruff>=0.4.2"]
+virtual = true
 
 [[tool.rye.sources]]
 name = "torch"

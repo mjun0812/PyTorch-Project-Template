@@ -7,8 +7,8 @@
 #   all-features: false
 #   with-sources: false
 #   generate-hashes: false
+#   universal: false
 
--e file:.
 alembic==1.13.1
     # via mlflow
 aniso8601==9.0.1
@@ -33,7 +33,6 @@ cycler==0.12.1
 docker==7.0.0
     # via mlflow
 einops==0.8.0
-    # via pytorch-project-template
 entrypoints==0.4
     # via mlflow
 filelock==3.13.1
@@ -79,7 +78,6 @@ joblib==1.4.0
 kiwisolver==1.4.5
     # via matplotlib
 kornia==0.7.2
-    # via pytorch-project-template
 kornia-rs==0.1.3
     # via kornia
 lightning-utilities==0.11.2
@@ -94,13 +92,10 @@ markupsafe==2.1.5
     # via werkzeug
 matplotlib==3.8.4
     # via mlflow
-    # via pytorch-project-template
 mlflow==2.12.1
-    # via pytorch-project-template
 mpmath==1.3.0
     # via sympy
 natsort==8.4.0
-    # via pytorch-project-template
 networkx==3.2.1
     # via torch
 numpy==1.26.3
@@ -143,9 +138,7 @@ nvidia-nvjitlink-cu12==12.1.105
 nvidia-nvtx-cu12==12.1.105
     # via torch
 omegaconf==2.3.0
-    # via pytorch-project-template
 opencv-python==4.9.0.80
-    # via pytorch-project-template
 packaging==22.0
     # via docker
     # via gunicorn
@@ -163,18 +156,15 @@ pillow==10.2.0
 protobuf==5.26.1
     # via mlflow
 psutil==5.9.8
-    # via pytorch-project-template
 pyarrow==15.0.2
     # via mlflow
 pynvml==11.5.0
-    # via pytorch-project-template
 pyparsing==3.1.2
     # via matplotlib
 python-dateutil==2.9.0.post0
     # via matplotlib
     # via pandas
 python-dotenv==1.0.1
-    # via pytorch-project-template
 pytz==2024.1
     # via mlflow
     # via pandas
@@ -212,30 +202,22 @@ sqlparse==0.5.0
 sympy==1.12
     # via torch
 tabulate==0.9.0
-    # via pytorch-project-template
 threadpoolctl==3.4.0
     # via scikit-learn
 timm==0.9.16
-    # via pytorch-project-template
 torch==2.2.1+cu121
     # via kornia
-    # via pytorch-project-template
     # via timm
     # via torch-cpp
     # via torchmetrics
     # via torchvision
 torch-cpp @ https://github.com/mjun0812/torch_cpp/raw/main/dist/torch_cpp-1.0.0+torch221cu121-cp311-cp311-linux_x86_64.whl
-    # via pytorch-project-template
 torchinfo==1.8.0
-    # via pytorch-project-template
 torchmetrics==1.0.3
-    # via pytorch-project-template
 torchvision==0.17.1+cu121
-    # via pytorch-project-template
     # via timm
 tqdm==4.64.1
     # via huggingface-hub
-    # via pytorch-project-template
 triton==2.2.0
     # via torch
 typing-extensions==4.9.0

@@ -2,7 +2,10 @@
 	"name": "DevContainer",
 	"build": {
 		"context": "..",
-		"dockerfile": "Dockerfile"
+		"dockerfile": "Dockerfile",
+		"args": {
+			"PYTHON": "3.11"
+		}
 	},
 	"customizations": {
 		"vscode": {
@@ -13,7 +16,8 @@
 				"ms-python.python",
 				"njpwerner.autodocstring",
 				"shardulm94.trailing-spaces",
-				"yzhang.markdown-all-in-one"
+				"yzhang.markdown-all-in-one",
+				"tamasfe.even-better-toml"
 			],
 			"settings": {
 				"python.defaultInterpreterPath": "/opt/rye/shims/python",
