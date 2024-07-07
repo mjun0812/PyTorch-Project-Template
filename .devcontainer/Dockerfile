@@ -48,6 +48,7 @@ RUN curl -sSf https://rye.astral.sh/get | RYE_NO_AUTO_INSTALL=1 RYE_TOOLCHAIN_VE
 # Required for rye
 COPY ./pyproject.toml ./requirements* ./README.md ./
 RUN rye pin $PYTHON && \
-    rye sync
+    rye sync && \
+    rm -rf /root/.cache/uv
 
 ENV PATH="/.venv/bin:$PATH"

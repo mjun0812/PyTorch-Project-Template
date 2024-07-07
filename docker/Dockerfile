@@ -9,8 +9,8 @@ ARG PYTHON="3.11"
 # gitをインストールするときに必要 tzdataをinstallされてしまうため
 ENV DEBIAN_FRONTEND=noninteractive
 # ロケールを日本語UTF-8に設定
-ENV LANG ja_JP.UTF-8
-ENV TZ Asia/Tokyo
+ENV LANG=ja_JP.UTF-8
+ENV TZ=Asia/Tokyo
 # 標準出力・標準エラーのストリームのバッファリングを行わない
 ENV PYTHONUNBUFFERED=1
 # rye setting
@@ -51,7 +51,8 @@ RUN curl -sSf https://rye.astral.sh/get | RYE_NO_AUTO_INSTALL=1 RYE_TOOLCHAIN_VE
 # Required for rye
 COPY ./pyproject.toml ./requirements* ./README.md ./
 RUN rye pin $PYTHON && \
-    rye sync
+    rye sync && \
+    rm -rf /root/.cache/uv
 
 ENV PATH="/.venv/bin:$PATH"
 COPY --chmod=755 ./docker/entrypoint.sh /usr/local/bin/entrypoint.sh
