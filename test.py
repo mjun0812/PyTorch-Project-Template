@@ -87,29 +87,12 @@ def main(cfg):
     logger = Logger(str(output_dir), str(output_dir / "test.log"), "test")
     if cfg.USE_MLFLOW:
         logger.setup_mlflow(str(output_dir.parents[1].name), cfg.MLFLOW_EXPERIMENT_NAME)
+        logger.log_config(cfg, cfg.MLFLOW_LOG_CONGIG_PARAMS)
     logger.info("\n" + Config.pretty_text(cfg))
     logger.log_artifact(output_dir.parents[1] / "cmd_histry.log")
     logger.log_artifact(output_dir / "config.yaml")
     with open(output_dir.parents[1] / "cmd_histry.log", "a") as f:
         print(get_cmd(), file=f)
-    logger.log_params(
-        {
-            "Optimizer": cfg.OPTIMIZER.NAME,
-            "LR scheduler": cfg.LR_SCHEDULER.NAME,
-            "Learning Rate": cfg.OPTIMIZER.LR,
-            "Epoch": cfg.EPOCH,
-            "Model": cfg.MODEL.NAME,
-            "Backbone": cfg.MODEL.get("BACKBONE", None),
-            "Input size": cfg.MODEL.get("INPUT_SIZE"),
-            "Train_Dataset": cfg.TRAIN_DATASET.NAME,
-            "Val_Dataset": cfg.VAL_DATASET.NAME,
-            "Test_Dataset": cfg.TEST_DATASET.NAME,
-            "Loss": cfg.LOSS.NAME,
-            "Batch": cfg.BATCH,
-            "GPU Ids": cfg.GPU.USE,
-            "hostname": os.uname()[1],
-        }
-    )
 
     result = do_test(cfg, output_dir, device, logger)
 

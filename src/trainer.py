@@ -46,7 +46,6 @@ class Trainer:
         phase: Literal["train", "val"],
         epoch: int,
         model: torch.nn.Module,
-        criterion,
         dataloader: DataLoader,
         batched_transform,
         evaluator=None,
@@ -81,7 +80,7 @@ class Trainer:
                     dtype=self.amp_dtype,
                 ):
                     output = model(data)
-                    loss = criterion(output, data)
+                loss = output["loss"]
 
                 # ####### Backward #######
                 if phase == "train":

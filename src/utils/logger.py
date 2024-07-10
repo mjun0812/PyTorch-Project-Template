@@ -81,7 +81,7 @@ class Logger:
             f"Start MLflow Tracking: experiment_name={experiment_name} "
             f"run_name={run_name} experiment_id: {experiment_id} run_id: {mlflow_run.info.run_id}"
         )
-        self.log_params({"output_dir": self.output_dir})
+        self.log_params({"output_dir": self.output_dir, "hostname": os.uname()[1]})
         return mlflow_run
 
     def info(self, message):
@@ -215,6 +215,12 @@ class Logger:
             ax.plot(d, label=label)
         ax.legend()
         return fig
+
+    def log_config(self, cfg, params):
+        log_params = {}
+        for p in params:
+            log_params[p["name"]] = eval(p["value"])
+        self.log_params(log_params)
 
     def close(self, status="FINISHED"):
         if self.use_mlflow:

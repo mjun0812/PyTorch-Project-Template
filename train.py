@@ -9,7 +9,6 @@ import torch.distributed as dist
 from torch.distributed.elastic.multiprocessing.errors import record
 
 from src.dataloaders import build_dataset
-from src.losses import build_loss
 from src.models import build_model
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
@@ -54,8 +53,10 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
         )
     logger.info("Complete Loading Dataset")
 
-    criterion = build_loss(cfg)
+    # ####### Build Optimizer #######
     optimizer = build_optimizer(cfg, model, logger)
+
+    # ####### Build LR Scheduler #######
     if cfg.ITER_TRAIN:
         lr_scheduler = None
         _, iter_lr_scheduler = build_lr_scheduler(
@@ -67,6 +68,7 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
         iter_lr_scheduler, lr_scheduler = build_lr_scheduler(
             cfg.LR_SCHEDULER, optimizer, cfg.EPOCH, len(dataloaders["train"]), logger=logger
         )
+
     evaluator = build_evaluator(cfg, phase="train").to(device)
     if cfg.AMP:
         logger.info("Using Mixed Precision with AMP")
@@ -101,7 +103,6 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
             phase="train",
             epoch=epoch,
             model=model,
-            criterion=criterion,
             dataloader=dataloaders["train"],
             batched_transform=batched_transform["train"],
             model_ema=model_ema,
@@ -121,7 +122,6 @@ def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logge
                 phase="val",
                 epoch=epoch,
                 model=model,
-                criterion=criterion,
                 dataloader=dataloaders["val"],
                 batched_transform=batched_transform["val"],
                 evaluator=evaluator,
@@ -185,28 +185,10 @@ def main(cfg):
         logger = Logger(str(output_dir), str(output_dir / "train.log"), "train", "INFO")
         if cfg.USE_MLFLOW:
             logger.setup_mlflow(output_dir.name, cfg.MLFLOW_EXPERIMENT_NAME)
+            logger.log_config(cfg, cfg.MLFLOW_LOG_CONGIG_PARAMS)
 
         # Save config
         Config.dump(cfg, output_dir / "config.yaml")
-
-        logger.log_params(
-            {
-                "Optimizer": cfg.OPTIMIZER.NAME,
-                "LR scheduler": cfg.LR_SCHEDULER.NAME,
-                "Learning Rate": cfg.OPTIMIZER.LR,
-                "Epoch": cfg.EPOCH,
-                "Model": cfg.MODEL.NAME,
-                "Backbone": cfg.MODEL.get("BACKBONE", None),
-                "Input size": cfg.MODEL.get("INPUT_SIZE"),
-                "Train_Dataset": cfg.TRAIN_DATASET.NAME,
-                "Val_Dataset": cfg.VAL_DATASET.NAME,
-                "Test_Dataset": cfg.TEST_DATASET.NAME,
-                "Loss": cfg.LOSS.NAME,
-                "Batch": cfg.BATCH,
-                "GPU Ids": cfg.GPU.USE,
-                "hostname": os.uname()[1],
-            }
-        )
     else:
         output_dir = None
         logger = Logger(None, None, "train", "ERROR")

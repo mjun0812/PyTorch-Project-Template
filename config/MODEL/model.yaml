@@ -2,7 +2,6 @@ __BASE__:
   - config/__BASE__/config.yaml
   - config/__BASE__/OPTIMIZER/Momentum.yaml
   - config/__BASE__/LR_SCHEDULER/ReduceLROnPlateau.yaml
-  - config/__BASE__/LOSS/loss.yaml
 
 __TRAIN_DATASET__: config/__BASE__/DATASET/dataset.yaml
 __VAL_DATASET__: config/__BASE__/DATASET/dataset.yaml
@@ -31,3 +30,6 @@ MODEL:
   FIND_UNUSED_PARAMETERS: false
   FREEZE_BN: true
   TIMM_SYNC_BN: false
+
+LOSS:
+  NAME: BaseLoss

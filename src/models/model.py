@@ -10,7 +10,29 @@ class BaseModel(nn.Module):
         super().__init__()
         self.cfg = cfg
         self.phase = phase
-        self.backbone, _ = build_backbone(self.cfg)
 
-    def forward(self, x):
-        return self.backbone(x["image"])[0]
+        self.loss = None
+        if self.phase in ["train", "val"]:
+            self.loss = self.build_loss(self.cfg)
+
+    def train_forward(self, data):
+        raise NotImplementedError
+
+    def val_forward(self, data):
+        raise NotImplementedError
+
+    def test_forward(self, data):
+        raise NotImplementedError
+
+    def build_loss(self, cfg):
+        from ..losses import build_loss
+
+        return build_loss(cfg)
+
+    def forward(self, data):
+        if self.phase == "train":
+            return self.train_forward(data)
+        elif self.phase == "val":
+            return self.val_forward(data)
+        else:
+            return self.test_forward(data)
