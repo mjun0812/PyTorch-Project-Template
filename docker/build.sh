@@ -32,10 +32,11 @@ done
 
 mkdir -p result
 
+BUILDER_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu22.04"
 BASE_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04"
-docker pull ${BASE_IMAGE}
 
 docker build \
+    --build-arg BUILDER_IMAGE=${BUILDER_IMAGE} \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
     --build-arg PYTHON=${PYTHON} \
     -t "${USER}/${IMAGE_NAME}-server:latest" \

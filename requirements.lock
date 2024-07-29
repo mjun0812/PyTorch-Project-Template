@@ -6,8 +6,6 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
-#   generate-hashes: false
-#   universal: false
 
 alembic==1.13.1
     # via mlflow
@@ -186,7 +184,7 @@ scikit-learn==1.4.2
 scipy==1.13.0
     # via mlflow
     # via scikit-learn
-setuptools==69.5.1
+setuptools==70.0.0
     # via lightning-utilities
 six==1.16.0
     # via python-dateutil
@@ -210,7 +208,7 @@ torch==2.2.1+cu121
     # via torch-cpp
     # via torchmetrics
     # via torchvision
-torch-cpp @ https://github.com/mjun0812/torch_cpp/raw/main/dist/torch_cpp-1.0.0+torch221cu121-cp311-cp311-linux_x86_64.whl
+torch-cpp @ https://github.com/mjun0812/torch_cpp/releases/download/v1.0.5/torch_cpp-1.0.5+torch221cu122-cp311-cp311-linux_x86_64.whl
 torchinfo==1.8.0
 torchmetrics==1.0.3
 torchvision==0.17.1+cu121
