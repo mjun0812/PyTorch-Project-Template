@@ -26,6 +26,13 @@ if type nvcc > /dev/null 2>&1; then
     GPU_OPTION="--gpus all"
 fi
 
+SYMLINK_MOUNTS=""
+# datasetディレクトリ以下のシンボリックリンクを探し、リンク先をマウントする
+for symlink in $(find "$(pwd)/dataset" -type l); do
+    target=$(dirname "$symlink")/$(readlink "$symlink")
+    [ -e "$target" ] && SYMLINK_MOUNTS+=" -v $target:$target"
+done
+
 docker run \
     -t \
     $USE_QUEUE \
@@ -41,13 +48,14 @@ docker run \
     --env USER_ID=$USER_ID \
     --env GROUP_NAME=$GROUP_NAME \
     --env GROUP_ID=$GROUP_ID \
-    --volume $HOME/.Xauthority:$HOME/.Xauthority:rw \
-    --volume /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    --volume $HOME/.cache:$HOME/.cache \
-    --volume "$(pwd):$(pwd)" \
-    --volume "$(pwd)/dataset:$(pwd)/dataset" \
-    --volume "$(pwd)/result:$(pwd)/result" \
-    --volume "$(pwd)/model_zoo:$(pwd)/model_zoo" \
+    -v $HOME/.Xauthority:$HOME/.Xauthority:rw \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    -v $HOME/.cache:$HOME/.cache \
+    -v "$(pwd):$(pwd)" \
+    -v "$(pwd)/dataset:$(pwd)/dataset" \
+    -v "$(pwd)/result:$(pwd)/result" \
+    -v "$(pwd)/model_zoo:$(pwd)/model_zoo" \
+    $SYMLINK_MOUNTS \
     --workdir $(pwd) \
     --name "${IMAGE_NAME}-$(date '+%s')" \
     "${USER}/${IMAGE_NAME}-server:latest" \
