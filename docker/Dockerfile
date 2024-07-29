@@ -4,14 +4,13 @@ ARG BUILDER_IMAGE="nvcr.io/nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04"
 ARG BASE_IMAGE="nvcr.io/nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04"
 
 FROM $BUILDER_IMAGE AS builder
-LABEL maintainer="mjun"
 
 ARG PYTHON
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONDONTWRITEBYTECODE=1
 # rye setting
 ENV RYE_HOME="/opt/rye"
-ENV PATH="$RYE_HOME/shims:$PATH"
+ENV PATH="/.venv/bin:$RYE_HOME/shims:$PATH"
 
 # apt packageのミラー先を日本に変更して高速化
 # --no-install-recommends: 依存を最小限にしてinstall
@@ -26,7 +25,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     curl \
     libgl1-mesa-dev
 
-RUN curl -sSf https://rye.astral.sh/get | RYE_NO_AUTO_INSTALL=1 RYE_TOOLCHAIN_VERSION=$PYTHON RYE_INSTALL_OPTION="--yes" bash && \
+RUN curl -sSf https://rye.astral.sh/get | RYE_TOOLCHAIN_VERSION=$PYTHON RYE_INSTALL_OPTION="--yes" bash && \
     rye config --set-bool behavior.global-python=true && \
     rye config --set-bool behavior.use-uv=true
 
@@ -45,9 +44,8 @@ COPY --from=builder /.venv /.venv
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=ja_JP.UTF-8
 ENV TZ=Asia/Tokyo
-ENV PATH="/.venv/bin:$PATH"
 ENV RYE_HOME="/opt/rye"
-ENV PATH="$RYE_HOME/shims:$PATH"
+ENV PATH="/.venv/bin:$RYE_HOME/shims:$PATH"
 # 標準出力・標準エラーのストリームのバッファリングを行わない
 ENV PYTHONUNBUFFERED=1
 # .pycファイルを生成しない
@@ -65,8 +63,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     sudo \
     gosu \
     vim \
-    gosu \
-    ninja-build \
     curl \
     libgl1-mesa-dev
 

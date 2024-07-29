@@ -329,6 +329,10 @@ $RECYCLE.BIN/
 outputs
 *.pth
 *.pt
-result/*
-result
 .tmp
+
+result
+result/*
+
+dataset/*
+!dataset/.gitkeep
