@@ -98,20 +98,20 @@ class Trainer:
                     if model_ema:
                         model_ema.update(model)
 
-                if evaluator:
-                    evaluator.update(*self.generate_input_evaluator(output, data))
-                for key in loss.keys():
-                    if self.rank != -1:
-                        loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
-                    hist_epoch_loss[key] = (
-                        hist_epoch_loss.get(key, 0.0) + loss[key].item() * dataloader.batch_size
-                    )
-                if self.rank in [-1, 0]:
-                    lr = self.optimizer.param_groups[0]["lr"]
-                    description = f"Epoch: {epoch + 1:3}/{self.epochs:3}. LR: {lr:.4e}"
-                    for k, v in loss.items():
-                        description += f" {k.capitalize()}: {v.item():8.4f}"
-                    progress_bar.set_description(description)
+            if evaluator:
+                evaluator.update(*self.generate_input_evaluator(output, data))
+            for key in loss.keys():
+                if self.rank != -1:
+                    loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
+                hist_epoch_loss[key] = (
+                    hist_epoch_loss.get(key, 0.0) + loss[key].item() * dataloader.batch_size
+                )
+            if self.rank in [-1, 0]:
+                lr = self.optimizer.param_groups[0]["lr"]
+                description = f"Epoch: {epoch + 1:3}/{self.epochs:3}. LR: {lr:.4e}"
+                for k, v in loss.items():
+                    description += f" {k.capitalize()}: {v.item():8.4f}"
+                progress_bar.set_description(description)
 
         # Finish Epoch Process below
         for k, v in hist_epoch_loss.items():

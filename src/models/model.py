@@ -1,6 +1,5 @@
 import torch.nn as nn
 
-from .backbone import build_backbone
 from .build import MODEL_REGISTRY  # noqa
 
 
@@ -15,6 +14,11 @@ class BaseModel(nn.Module):
         if self.phase in ["train", "val"]:
             self.loss = self.build_loss(self.cfg)
 
+    def build_loss(self, cfg):
+        from ..losses import build_loss
+
+        return build_loss(cfg)
+
     def train_forward(self, data):
         raise NotImplementedError
 
@@ -23,11 +27,6 @@ class BaseModel(nn.Module):
 
     def test_forward(self, data):
         raise NotImplementedError
-
-    def build_loss(self, cfg):
-        from ..losses import build_loss
-
-        return build_loss(cfg)
 
     def forward(self, data):
         if self.phase == "train":

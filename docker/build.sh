@@ -2,9 +2,6 @@
 
 cd $(dirname $0)
 cd ../
-IMAGE_NAME=$(basename $(pwd))
-# to lowercase
-IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 
 PYTHON="3.11"
 CUDA_VERSION="12.1.1"
@@ -16,7 +13,6 @@ Option:
     -p, --python: python version. default to $PYTHON 
     -c, --cuda:   CUDA Version. default to $CUDA_VERSION"
 )
-
 for OPT in "$@"; do
     case $OPT in
         '-h' | '--help')
@@ -30,10 +26,12 @@ for OPT in "$@"; do
     esac
 done
 
-mkdir -p result
-
+IMAGE_NAME=$(basename $(pwd))
+IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 BUILDER_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu22.04"
 BASE_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04"
+
+mkdir -p result
 
 docker build \
     --build-arg BUILDER_IMAGE=${BUILDER_IMAGE} \

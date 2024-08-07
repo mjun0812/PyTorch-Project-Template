@@ -2,13 +2,13 @@
 
 cd $(dirname $0)
 cd ../
+
 IMAGE_NAME=$(basename $(pwd))
 IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
 USER_ID=`id -u`
 GROUP_ID=`id -g`
 GROUP_NAME=`id -gn`
 USER_NAME=$USER
-
 USE_QUEUE="-i"
 
 for OPT in "$@"; do
@@ -26,8 +26,8 @@ if type nvcc > /dev/null 2>&1; then
     GPU_OPTION="--gpus all"
 fi
 
-SYMLINK_MOUNTS=""
 # datasetディレクトリ以下のシンボリックリンクを探し、リンク先をマウントする
+SYMLINK_MOUNTS=""
 for symlink in $(find "$(pwd)/dataset" -type l); do
     target=$(dirname "$symlink")/$(readlink "$symlink")
     [ -e "$target" ] && SYMLINK_MOUNTS+=" -v $target:$target"
