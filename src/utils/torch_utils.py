@@ -1,10 +1,12 @@
-import logging
 import os
 import random
 import time
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import torch
+from loguru import logger
 from torch import distributed as dist
 from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel
@@ -22,7 +24,7 @@ TORCH_DTYPE = {
 }
 
 
-def worker_init_fn(worker_id):
+def worker_init_fn(worker_id: int):
     """Reset numpy random seed in PyTorch Dataloader
 
     Args:
@@ -36,7 +38,7 @@ def worker_init_fn(worker_id):
     # torch.cuda.manual_seed_all(np.random.get_state()[1][0] + worker_id)
 
 
-def fix_seed(seed) -> int:
+def fix_seed(seed: int) -> int:
     """fix seed on random, numpy, torch module
 
     Args:
@@ -76,7 +78,7 @@ def set_device(
     cudnn_deterministic=False,
     pci_device_order=True,
     verbose=True,
-):
+) -> torch.device:
     """Set use GPU or CPU Device
 
     set using GPU or CPU Device(instead of CUDA_VISIBLE_DEVICES).
@@ -141,13 +143,21 @@ def is_distributed():
     return False
 
 
-def get_world_size():
+def is_main_process() -> bool:
+    return not is_distributed() or dist.get_rank() == 0
+
+
+def get_local_rank() -> int:
+    return int(os.environ.get("LOCAL_RANK", -1))
+
+
+def get_world_size() -> int:
     if not is_distributed():
         return 1
     return dist.get_world_size()
 
 
-def reduce_tensor(tensor, n=1):
+def reduce_tensor(tensor, n=1) -> torch.Tensor:
     """分散学習時に，指定したtensorを各プロセスから集めて総和を取る
 
     Args:
@@ -163,12 +173,7 @@ def reduce_tensor(tensor, n=1):
     return rt / n
 
 
-def adjust_learning_rate(base_lr, batch_size):
-    world_size = get_world_size()
-    return base_lr * batch_size * world_size
-
-
-def check_model_parallel(model) -> bool:
+def check_model_parallel(model: torch.nn.Module) -> bool:
     """check model is parallel or single
 
     Args:
@@ -180,7 +185,7 @@ def check_model_parallel(model) -> bool:
     return isinstance(model, torch.nn.DataParallel) or isinstance(model, DistributedDataParallel)
 
 
-def load_model_weight(weight_path, model, logger=None):
+def load_model_weight(weight_path: str, model: torch.nn.Module):
     """Load PreTrained or Continued Model
 
     Args:
@@ -212,27 +217,29 @@ def load_model_weight(weight_path, model, logger=None):
 
     missing, unexpexted = model.load_state_dict(checkpoint_state_dict, strict=False)
 
-    if logger:
-        logger.info(f"Load model weight from {weight_path}")
-        logger.info(f"Missing model key: {missing}")
-        logger.info(f"Unmatch model key: {unmatch}")
-        logger.info(f"Unexpected model key: {unexpexted}")
+    logger.info(f"Load model weight from {weight_path}")
+    logger.info(f"Missing model key: {missing}")
+    logger.info(f"Unmatch model key: {unmatch}")
+    logger.info(f"Unexpected model key: {unexpexted}")
 
 
-def save_model(model, file_path):
-    """Save PyTorch Model
-    PyTorchのモデルを保存する
-    Parallelにも対応
-
-    Args:
-        model (torch.nn.Module): モデルオブジェクト
-        file_path (str): 保存先
-    """
-
+def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
     if check_model_parallel(model):
         model = model.module
-    torch.save(model.state_dict(), file_path)
-    logging.info("Saving model at %s", file_path)
+    torch.save(model.state_dict(), str(file_path))
+    logger.info(f"Saving model at {str(file_path)}")
+
+
+def save_optimizer(optimizer: torch.optim.Optimizer, file_path: Union[str, Path]):
+    torch.save(optimizer.state_dict(), str(file_path))
+    logger.info(f"Saving optimizer at {str(file_path)}")
+
+
+def save_lr_scheduler(
+    lr_scheduler: torch.optim.lr_scheduler._LRScheduler, file_path: Union[str, Path]
+):
+    torch.save(lr_scheduler.state_dict(), str(file_path))
+    logger.info(f"Saving lr_scheduler at {str(file_path)}")
 
 
 def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=""):

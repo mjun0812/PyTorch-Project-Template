@@ -7,7 +7,7 @@ import torch
 
 sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
-from src.utils.config import Config  # noqa
+from config.manager import ConfigManager  # noqa
 
 
 class TimeCompose:
@@ -29,7 +29,7 @@ class TimeCompose:
         return format_string
 
 
-@Config.main
+@ConfigManager.argparse
 def main(cfg):
     dataset, dataloader, batched_transforms = build_dataset(cfg, "train")
     dataloader.dataset.transform = TimeCompose(dataset.transform.transforms)

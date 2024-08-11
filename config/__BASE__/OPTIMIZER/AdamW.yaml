@@ -1,3 +1,7 @@
-NAME: AdamW
-LR: 1e-3
-WEIGHT_DECAY: 1e-4
+name: AdamW
+optimizer: AdamW
+lr: 1e-3
+args:
+  weight_decay: 1e-4
+group: null
+checkpoint: null

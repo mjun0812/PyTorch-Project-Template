@@ -1,0 +1,7 @@
+train: null
+val:
+  - name: DummyEvaluator
+    args: null
+test:
+  - name: DummyEvaluator
+    args: null

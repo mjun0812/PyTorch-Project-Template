@@ -1,12 +1,8 @@
 # flake8: noqa
 
-from .config import Config
-from .evaluator import build_evaluator
 from .logger import Logger
-from .tensor_cache import BYTES_PER_GIB, TensorCache, get_shm_size
 from .torch_utils import (
     TORCH_DTYPE,
-    adjust_learning_rate,
     check_model_parallel,
     cuda_info,
     get_world_size,
@@ -19,10 +15,13 @@ from .torch_utils import (
     save_model_info,
     time_synchronized,
     worker_init_fn,
+    is_main_process,
+    get_local_rank,
+    save_lr_scheduler,
+    save_optimizer,
 )
 from .utils import (
     JsonEncoder,
-    error_handle,
     get_cmd,
     get_git_hash,
     import_submodules,

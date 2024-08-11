@@ -1,12 +1,14 @@
-NAME: CosineAnnealingWarmupReduceRestarts
-# T_0を周期とするコサインカーブで減衰して、
-# あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
-# 局所最適を脱出してもっと良いパラメータを探索します
-# 高いLRに戻すときに，前回のLRにgammmaの値をかけて低くします．
-# https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup
-FIRST_CYCLE_STEPS: 10
-CYCLE_MULT: 2
-MAX_LR: 1e-3
-MIN_LR: 1e-6
-GAMMA: 0.5
-WARMUP_STEPS: 5
+name: CosineAnnealingWarmupReduceRestarts
+scheduler: CosineAnnealingWarmupReduceRestarts
+args:
+  # T_0を周期とするコサインカーブで減衰して、
+  # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
+  # 局所最適を脱出してもっと良いパラメータを探索します
+  # 高いLRに戻すときに，前回のLRにgammmaの値をかけて低くします．
+  # https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup
+  first_cycle_steps: 10
+  cycle_mult: 2
+  max_lr: 1e-3
+  min_lr: 1e-6
+  gamma: 0.5
+  warmup_steps: 5

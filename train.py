@@ -1,268 +1,286 @@
 import os
-import pprint
 import sys
 import traceback
 from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from torch.distributed.elastic.multiprocessing.errors import record
 
+from src.config import ConfigManager, ExperimentConfig
 from src.dataloaders import build_dataset
+from src.evaluator import build_evaluator
 from src.models import build_model
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
 from src.trainer import Trainer
 from src.utils import (
-    Config,
     Logger,
-    build_evaluator,
     create_symlink,
-    error_handle,
     fix_seed,
+    is_distributed,
+    is_main_process,
+    load_model_weight,
     make_output_dirs,
     make_result_dirs,
     post_slack,
     save_model,
     save_model_info,
+    save_optimizer,
     set_device,
 )
 
 from test import do_test  # isort: skip
 
 
-@record
-def do_train(rank: int, cfg: dict, device: torch.device, output_dir: Path, logger: Logger):
-    fix_seed(cfg.SEED + rank)
+def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger):
+    fix_seed(cfg.seed + int(os.environ.get("LOCAL_RANK", -1)))
 
     # ###### Build Model #######
-    model, model_ema = build_model(cfg, device, phase="train", rank=rank, logger=logger)
-    if rank in [-1, 0]:
-        save_model_path = output_dir / "models"
+    logger.info("Building Model...")
+    model, model_ema = build_model(cfg, device, "train")
+    if is_main_process():
         # Model構造を出力
         save_model_info(str(output_dir), model)
         # save initial model
-        save_model(model, save_model_path / "model_init_0.pth")
+        save_model(model, output_dir / "models/model_init_0.pth")
+    logger.info("Complete Build Model")
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
     datasets, dataloaders, batched_transform = {}, {}, {}
     for phase in ["train", "val"]:
         datasets[phase], dataloaders[phase], batched_transform[phase] = build_dataset(
-            cfg, phase=phase, rank=rank, logger=logger
+            cfg, phase=phase
         )
-    logger.info("Complete Loading Dataset")
+    logger.info("Complete Load Dataset")
 
     # ####### Build Optimizer #######
-    optimizer = build_optimizer(cfg, model, logger)
+    logger.info("Building Optimizer...")
+    optimizer = build_optimizer(cfg, model)
+    logger.info("Complete Build Optimizer")
 
     # ####### Build LR Scheduler #######
-    if cfg.ITER_TRAIN:
-        lr_scheduler = None
-        _, iter_lr_scheduler = build_lr_scheduler(
-            cfg.LR_SCHEDULER, optimizer, cfg.MAX_ITER, len(dataloaders["train"]), logger=logger
-        )
-        cfg.EPOCH = cfg.MAX_ITER // cfg.STEP_ITER
-        cfg.SAVE_INTERVAL = 1
-    else:
-        iter_lr_scheduler, lr_scheduler = build_lr_scheduler(
-            cfg.LR_SCHEDULER, optimizer, cfg.EPOCH, len(dataloaders["train"]), logger=logger
-        )
+    logger.info("Building LR Scheduler...")
+    if cfg.use_iter_loop:
+        cfg.epoch = cfg.max_iter // cfg.step_iter
+        if cfg.max_iter % cfg.step_iter != 0:
+            cfg.epoch += 1
+        cfg.save_interval = 1
+        cfg.val_interval = 1
+    iter_lr_scheduler, lr_scheduler = build_lr_scheduler(cfg, optimizer)
+    logger.info("Complete Build LR Scheduler")
 
-    evaluator = build_evaluator(cfg, phase="train").to(device)
-    if cfg.AMP:
-        logger.info("Using Mixed Precision with AMP")
-        logger.info(f"AMP dtype: {cfg.AMP_DTYPE}")
+    # ####### Build Evaluator #######
+    logger.info("Building Evaluator...")
+    evaluators = {}
+    for phase in ["train", "val"]:
+        evaluators[phase] = build_evaluator(cfg, phase)
+    logger.info("Complete Build Evaluator")
 
-    trainer = Trainer(
-        rank=rank,
-        epochs=cfg.EPOCH,
-        device=device,
-        use_amp=cfg.AMP,
-        optimizer=optimizer,
-        lr_scheduler=lr_scheduler,
-        use_clip_grad=cfg.USE_CLIP_GRAD,
-        clip_grad=cfg.CLIP_GRAD_NORM,
-        iter_lr_scheduler=iter_lr_scheduler,
-        amp_init_scale=cfg.AMP_INIT_SCALE,
-        amp_dtype=cfg.AMP_DTYPE,
-    )
+    start_epoch = 0
     best_loss = 1e8
     best_epoch = 0
+    # ####### Resume Training #######
+    if cfg.last_epoch > 0:
+        logger.info(f"Resume Training from Epoch {cfg.last_epoch}")
+        start_epoch = cfg.last_epoch - 1
+        best_epoch = start_epoch
+        load_model_weight(cfg.model.trained_weight, model)
+        if model_ema:
+            model_ema.load_state_dict(model.state_dict())
+        optimizer.load_state_dict(torch.load(cfg.optimizer.checkpoint, map_location=device))
+        logger.info(f"Load model weight from {cfg.model.trained_weight}")
+        logger.info(f"Load optimizer weight from {cfg.optimizer.checkpoint}")
+        logger.info("Complete Load Model Weight")
+
+    trainer = Trainer(
+        epochs=cfg.epoch,
+        device=device,
+        datasets=datasets,
+        dataloaders=dataloaders,
+        batched_transforms=batched_transform,
+        optimizer=optimizer,
+        lr_scheduler=lr_scheduler,
+        evaluators=evaluators,
+        use_clip_grad=cfg.use_clip_grad,
+        clip_grad=cfg.clip_grad_norm,
+        iter_lr_scheduler=iter_lr_scheduler,
+        use_amp=cfg.use_amp,
+        amp_init_scale=cfg.amp_init_scale,
+        amp_dtype=cfg.amp_dtype,
+    )
 
     logger.info("Start Training")
-    for epoch in range(cfg.EPOCH):
+    for epoch in range(start_epoch, cfg.epoch):
         logger.phase = "train"
         logger.info(f"Start Epoch {epoch+1}")
         logger.log_metric("Epoch", epoch + 1, epoch + 1)
 
-        if rank != -1:
-            dataloaders[phase].sampler.set_epoch(epoch)
-
-        result = trainer.do_one_epoch(
-            phase="train",
-            epoch=epoch,
-            model=model,
-            dataloader=dataloaders["train"],
-            batched_transform=batched_transform["train"],
-            model_ema=model_ema,
-        )
-        logger.info(trainer.build_epoch_log("train", epoch, **result))
-        result["epoch_losses"]["Loss"] = result["epoch_losses"].pop("total_loss")
-        logger.log_metrics(result["epoch_losses"], epoch + 1)
-        logger.log_metric("Learning Rate", result["lr"], epoch + 1)
-        if rank in [-1, 0]:
-            logger.log_artifact(os.path.join(output_dir, "train.log"))
-            if (epoch + 1) % cfg.SAVE_INTERVAL == 0:
+        result = trainer.do_one_epoch(phase="train", epoch=epoch, model=model, model_ema=model_ema)
+        logger.log_metrics(result.epoch_losses, epoch + 1, "train")
+        logger.log_metric("Learning Rate", result.lr, epoch + 1, "train")
+        if is_main_process():
+            logger.log_artifact(output_dir / "train.log")
+            if (epoch + 1) % cfg.save_interval == 0:
                 # Save Model Weight
-                save_model(model, save_model_path / f"model_epoch_{epoch+1}.pth")
+                weight_path = output_dir / f"models/model_epoch_{epoch+1}.pth"
+                optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
+                save_model(model, weight_path)
+                save_optimizer(optimizer, optimizer_path)
+                cfg.model.trained_weight = str(weight_path)
+                cfg.optimizer.checkpoint = str(optimizer_path)
+        cfg.last_epoch = epoch + 1
 
-        if (epoch + 1) % cfg.VAL_INTERVAL == 0:
-            result = trainer.do_one_epoch(
-                phase="val",
-                epoch=epoch,
-                model=model,
-                dataloader=dataloaders["val"],
-                batched_transform=batched_transform["val"],
-                evaluator=evaluator,
-            )
-            logger.phase = "val"
-            logger.info(trainer.build_epoch_log("val", epoch, **result))
-            result["epoch_losses"]["Loss"] = result["epoch_losses"].pop("total_loss")
-            logger.log_metrics(result["epoch_losses"], epoch + 1)
-            logger.log_metrics(result["metrics"], epoch + 1)
-            logger.log_metric("Learning Rate", result["lr"], epoch + 1)
+        if (epoch + 1) % cfg.val_interval == 0:
+            result = trainer.do_one_epoch(phase="val", epoch=epoch, model=model)
+            logger.log_metrics(result.epoch_losses, epoch + 1, "val")
+            logger.log_metrics(result.metrics, epoch + 1, "val")
+            logger.log_metric("Learning Rate", result.lr, epoch + 1, "val")
 
-            if result["epoch_losses"]["Loss"] < best_loss and rank in [-1, 0]:
-                output_path = save_model_path / f"model_epoch_{epoch+1}.pth"
-                if not output_path.exists():
-                    save_model(model, output_path)
-                create_symlink(str(output_path), str(save_model_path / "model_best.pth"))
-                best_loss = result["epoch_losses"]["Loss"]
+            if is_main_process() and result.epoch_losses["total_loss"] < best_loss:
+                weight_path = output_dir / f"models/model_epoch_{epoch+1}.pth"
+                if not weight_path.exists():
+                    save_model(model, weight_path)
+                create_symlink(weight_path, output_dir / "models/model_best.pth")
+                best_loss = result.epoch_losses["total_loss"]
                 best_epoch = epoch + 1
                 logger.info(f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}")
 
     # Finish Training Process below
-    if rank in [-1, 0]:
+    if is_main_process():
         try:
             logger.log_history_figure()
         except Exception:
             logger.error(f"Cannot draw graph. {traceback.format_exc()}")
-        output_path = save_model_path / f"model_epoch_{epoch+1}.pth"
-        if not output_path.exists():
-            save_model(model, output_path)
-        create_symlink(str(output_path), str(save_model_path / "model_final.pth"))
-        logger.log_artifact(save_model_path / "model_final.pth")
-    return best_loss
+        weight_path = output_dir / f"models/model_epoch_{epoch+1}.pth"
+        optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
+        if not weight_path.exists():
+            save_model(model, weight_path)
+        if not optimizer_path.exists():
+            save_optimizer(optimizer, optimizer_path)
+        create_symlink(weight_path, output_dir / "models/model_final.pth")
+        create_symlink(optimizer_path, output_dir / "optimizers/optimizer_final.pth")
+        cfg.model.trained_weight = str(weight_path)
+        cfg.optimizer.checkpoint = str(optimizer_path)
+        logger.log_artifact(output_dir / "models/model_final.pth")
 
 
-@Config.main
-def main(cfg):
+@ConfigManager.argparse
+def main(cfg: ExperimentConfig) -> None:
     # Set Local Rank for Multi GPU Training
     local_rank = int(os.environ.get("LOCAL_RANK", -1))
+    # DDP Mode
+    if cfg.gpu.multi:
+        dist.init_process_group(backend="nccl", init_method="env://")
 
     # set Device
     device = set_device(
-        cfg.GPU.USE,
+        cfg.gpu.use,
         rank=local_rank,
-        use_cudnn=cfg.CUDNN,
-        is_cpu=cfg.CPU,
-        verbose=local_rank in [0, -1],
+        use_cudnn=cfg.gpu.use_cudnn,
+        is_cpu=cfg.use_cpu,
+        verbose=is_main_process(),
     )
 
-    if local_rank in [0, -1]:
-        # make Output dir
-        prefix = f"{cfg.MODEL.NAME}_{cfg.TRAIN_DATASET.NAME}"
-        prefix += "_" + cfg.TAG if cfg.TAG else ""
+    # make Output dir
+    prefix = f"{cfg.model.name}_{cfg.train_dataset.name}"
+    prefix += "_" + cfg.tag if cfg.tag else ""
+    if is_main_process():
         output_dir = make_output_dirs(
-            os.path.join(cfg.OUTPUT, cfg.TRAIN_DATASET.NAME),
+            Path(cfg.output) / cfg.train_dataset.name,
             prefix=prefix,
-            child_dirs=["figs", "models"],
+            child_dirs=["models", "optimizers"],
         )
-        output_dir = Path(output_dir)
 
-        # Logging
-        logger = Logger(str(output_dir), str(output_dir / "train.log"), "train", "INFO")
-        if cfg.USE_MLFLOW:
-            logger.setup_mlflow(output_dir.name, cfg.MLFLOW_EXPERIMENT_NAME)
-            logger.log_config(cfg, cfg.MLFLOW_LOG_CONGIG_PARAMS)
-
+    # Logging
+    level = "INFO" if is_main_process() else "ERROR"
+    logger = Logger(output_dir, "train", level, cfg.mlflow.use, cfg.mlflow.experiment_name)
+    logger.log_config(cfg, cfg.mlflow.log_params)
+    if is_main_process():
         # Save config
-        Config.dump(cfg, output_dir / "config.yaml")
-    else:
-        output_dir = None
-        logger = Logger(None, None, "train", "ERROR")
-
-    logger.info("\n" + Config.pretty_text(cfg))
-    logger.log_artifacts(output_dir)
-
-    # DDP Mode
-    if bool(cfg.GPU.MULTI):
-        dist.init_process_group(backend="nccl", init_method="env://")
+        ConfigManager.dump(cfg, output_dir / "config.yaml")
+    if is_distributed():
         logger.info("Use Distributed Data Parallel Training")
         logger.info(
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
         )
 
+    logger.info("\n" + ConfigManager.pretty_text(cfg))
+    logger.log_artifacts(output_dir)
+
     try:
-        result = do_train(local_rank, cfg, device, output_dir, logger)
+        do_train(cfg, device, output_dir, logger)
     except (Exception, KeyboardInterrupt) as e:
-        if local_rank in [0, -1]:
-            error_handle(e, "Train", f"Output: {str(output_dir)}")
-        logger.log_result_dir(output_dir, ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
+        if is_main_process():
+            message = [
+                f"host: {os.uname()[1]}",
+                f"output: {output_dir}",
+                f"last epoch: {cfg.last_epoch}",
+                f"resume cmd: python train.py {str(output_dir / 'config.yaml')}",
+                f"mlflow_url: {logger.get_mlflow_run_uri()}",
+                f"train error: {e}\n{traceback.format_exc()}",
+            ]
+            logger.error("\n".join(message))
+            post_slack(channel="#error", message="\n".join(message))
+            logger.log_result_dir(output_dir, ignore_dirs=cfg.mlflow.ignore_artifact_dirs)
+            if is_distributed():
+                dist.destroy_process_group()
         logger.close("FAILED")
         sys.exit(1)
 
     # Clean Up multi gpu process
-    if local_rank != -1:
+    if is_distributed():
         dist.destroy_process_group()
     torch.cuda.empty_cache()
 
-    if local_rank in [0, -1]:
-        message_dict = {
-            "host": os.uname()[1],
-            "tag": cfg.TAG,
-            "model": cfg.MODEL.NAME,
-            "dataset": cfg.TRAIN_DATASET.NAME,
-            "Train save": str(output_dir),
-            "Val Loss": f"{result:7.3f}",
-            "Test Cmd": f"python test.py {str(output_dir / 'config.yaml')}",
-        }
-        message = pprint.pformat(message_dict, width=150)
-        # Send Message to Slack
-        post_slack(message=f"Finish Training\n{message}")
-        logger.info(f"Finish Training {message}")
+    if not is_main_process():
+        return
 
-        # Prepare config for Test
-        cfg.MODEL.WEIGHT = str(output_dir / "models" / "model_best.pth")
-        cfg.GPU.MULTI = False
-        cfg.GPU.USE = 0
-        Config.dump(cfg, output_dir / "config.yaml")
-        logger.log_artifact(cfg.MODEL.WEIGHT)
-        logger.log_result_dir(str(output_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
+    messages = [
+        f"host: {os.uname()[1]}",
+        f"tag: {cfg.tag}",
+        f"model: {cfg.model.name}",
+        f"train dataset: {cfg.train_dataset.name}",
+        f"train output: {str(output_dir)}",
+        f"test cmd: python test.py {str(output_dir / 'config.yaml')}",
+        f"mlflow_url: {logger.get_mlflow_run_uri()}",
+    ]
+    post_slack(message="Finish Training:\n" + "\n".join(messages))
+    logger.info("Finish Training:\n" + "\n".join(messages))
+    cfg.model.trained_weight = str(output_dir / "models" / "model_best.pth")
+    ConfigManager.dump(cfg, output_dir / "config.yaml")
+    logger.log_artifact(cfg.model.trained_weight)
+    logger.log_result_dir(output_dir, ignore_dirs=cfg.mlflow.ignore_artifact_dirs)
 
-        # Test
-        logger.info("Start Test")
-        logger.phase = "test"
-        logger.log_tag("model_weight_test", cfg.MODEL.WEIGHT)
-        output_result_dir = Path(make_result_dirs(cfg.MODEL.WEIGHT))
-        device = torch.device("cpu" if cfg.CPU else "cuda:0")
-        try:
-            result = do_test(cfg, output_result_dir, device, logger)
-        except (Exception, KeyboardInterrupt) as e:
-            error_handle(e, "Test", f"Output: {output_dir}")
-            logger.close("FAILED")
-            sys.exit(1)
-        message_dict.update({"Test save": str(output_result_dir), "result": result})
-        message = pprint.pformat(message_dict, width=150)
-        # Send Message to Slack
-        post_slack(message=f"Finish Test\n{message}")
-        logger.info(f"Finish Test {message}")
-        Config.dump(cfg, os.path.join(output_result_dir, "config.yaml"))
-        logger.log_result_dir(str(output_result_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
-        logger.close()
-    return result
+    # ####### Test #######
+    output_result_dir = make_result_dirs(output_dir)
+    logger.logger.add(output_result_dir / "test.log", level="INFO")
+    logger.info("Start Test")
+    logger.info(f"Output dir: {str(output_result_dir)}")
+    logger.log_params(
+        {"test_output": str(output_result_dir), "test_weight": cfg.model.trained_weight}
+    )
+    device = torch.device("cpu" if cfg.use_cpu else "cuda:0")
+    try:
+        do_test(cfg, output_result_dir, device, logger)
+    except (Exception, KeyboardInterrupt) as e:
+        if is_main_process():
+            messages += [f"Test Error: {e}\n{traceback.format_exc()}\n"]
+            logger.error("\n".join(messages))
+            post_slack(channel="#error", message="\n".join(messages))
+        logger.close("FAILED")
+        sys.exit(1)
+    messages += [
+        f"test output: {str(output_result_dir)}",
+        f"test dataset: {cfg.test_dataset.name}",
+    ]
+    # Send Message to Slack
+    post_slack(message="Finish Test\n" + "\n".join(messages))
+    logger.info("Finish Test\n" + "\n".join(messages))
+    ConfigManager.dump(cfg, output_result_dir / "config.yaml")
+    logger.log_result_dir(output_dir, ignore_dirs=cfg.mlflow.ignore_artifact_dirs)
+    logger.close()
 
 
 if __name__ == "__main__":

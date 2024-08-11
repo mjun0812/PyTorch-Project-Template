@@ -10,7 +10,7 @@ sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
 from src.losses import build_loss  # noqa
 from src.models import build_model  # noqa
-from src.utils import Config  # noqa
+from src.config import ConfigManager  # noqa
 
 random.seed(42)
 np.random.seed(42)
@@ -20,7 +20,7 @@ torch.backends.cudnn.deterministic = True
 torch.use_deterministic_algorithms = True
 
 
-@Config.main
+@ConfigManager.main
 def main(cfg):
     phase = cfg.get("PHASE", "train")
     print(f"Phase: {phase}")

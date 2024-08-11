@@ -1,7 +1,9 @@
-NAME: CosineAnnealingWarmRestarts
-# T_0を周期とするコサインカーブで減衰して、
-# あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
-# 局所最適を脱出してもっと良いパラメータを探索します
-T_ZERO: 20
-T_MULT: 2
-ETA_MIN: 1e-6
+name: CosineAnnealingWarmRestarts
+scheduler: CosineAnnealingWarmRestarts
+args:
+  # T_0を周期とするコサインカーブで減衰して、
+  # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
+  # 局所最適を脱出してもっと良いパラメータを探索します
+  t_zero: 20
+  t_mult: 2
+  eta_min: 1e-6

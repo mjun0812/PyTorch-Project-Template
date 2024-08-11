@@ -1,51 +1,60 @@
+from typing import Literal
+
 import torch
-from torch.utils.data import DataLoader
+from loguru import logger
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
+from ..config import DatasetConfig, ExperimentConfig
 from ..transform import build_transforms
-from ..utils import BYTES_PER_GIB, Registry, TensorCache, get_shm_size, worker_init_fn
+from ..utils import (
+    Registry,
+    is_distributed,
+    worker_init_fn,
+)
 from .iteratable_dataloader import IterBasedDataloader
+from .tensor_cache import BYTES_PER_GIB, TensorCache, get_shm_size
 
 DATASET_REGISTRY = Registry("DATASET")
 
 
-def build_dataset(cfg, phase="train", rank=-1, logger=None):
-    cfg_dataset = cfg.get(f"{phase.upper()}_DATASET")
+def build_dataset(
+    cfg: ExperimentConfig, phase: Literal["train", "val", "test"] = "train"
+) -> tuple[Dataset, DataLoader, dict]:
+    transforms, batched_transform = build_transforms(cfg, phase)
 
-    transforms, batched_transform = build_transforms(cfg, phase=phase)
-
+    # Use RAM Cache
     cache = None
-    if phase == "train" and cfg.USE_RAM_CACHE:
+    if phase == "train" and cfg.use_ram_cache:
         cache_size_gb = int(get_shm_size() / BYTES_PER_GIB) / 8
         cache = TensorCache(size_limit_gb=cache_size_gb)
-        if logger is not None:
-            logger.info(f"Use RAM Cache: {cache_size_gb}GB")
-    dataset = DATASET_REGISTRY.get(cfg_dataset.TYPE)(cfg, transforms, phase=phase, cache=cache)
+        logger.info(f"Use RAM Cache: {cache_size_gb}GB")
 
-    if logger is not None:
-        logger.info(f"{phase.capitalize()} {cfg_dataset.NAME} Dataset sample num: {len(dataset)}")
-        logger.info(f"{phase.capitalize()} transform: {transforms}")
-        if batched_transform is not None:
-            logger.info(f"{phase.capitalize()} batched transform: {batched_transform}")
+    cfg_dataset: DatasetConfig = cfg.get(f"{phase}_dataset")
+    dataset = DATASET_REGISTRY.get(cfg_dataset.dataset)(cfg, transforms, phase=phase, cache=cache)
+
+    phase_cap = phase.capitalize()
+    logger.info(f"{phase_cap} {cfg_dataset.name} Dataset sample num: {len(dataset)}")
+    logger.info(f"{phase_cap} transform: {transforms}")
+    if batched_transform is not None:
+        logger.info(f"{phase_cap} batched transform: {batched_transform}")
 
     common_kwargs = {
         "pin_memory": True,
-        "num_workers": cfg.NUM_WORKER,
-        "batch_size": cfg.BATCH,
+        "num_workers": cfg.num_worker,
+        "batch_size": cfg.batch,
         "sampler": None,
         "worker_init_fn": worker_init_fn,
         "drop_last": phase == "train",
         "shuffle": phase == "train",
     }
-    if rank != -1:
+    if is_distributed():
         common_kwargs["shuffle"] = False
         common_kwargs["sampler"] = DistributedSampler(dataset, shuffle=(phase == "train"))
     dataloader = DataLoader(dataset, **common_kwargs)
 
-    if phase == "train" and cfg.ITER_TRAIN:
-        max_iter = cfg.MAX_ITER
-        step_iter = cfg.STEP_ITER
-        dataloader = IterBasedDataloader(dataloader, max_iter, step_iter)
+    if phase == "train" and cfg.use_iter_loop:
+        dataloader = IterBasedDataloader(dataloader, cfg.max_iter, cfg.step_iter)
 
     return dataset, dataloader, batched_transform
 

@@ -1,66 +1,89 @@
-from typing import Literal
+from dataclasses import dataclass, field
+from typing import Optional, TypedDict
 
 import torch
 import torch.distributed as dist
-from torch.utils.data import DataLoader
+from loguru import logger
+from torchmetrics import MetricCollection
 from tqdm import tqdm
 
-from .utils import TORCH_DTYPE, reduce_tensor
+from .alias import PhaseStr
+from .models import BaseModel, ModelOutput
+from .utils import TORCH_DTYPE, is_distributed, is_main_process, reduce_tensor
+
+
+class HistoryEpochLoss(TypedDict, total=False):
+    total_loss: float = 0.0
+
+
+@dataclass
+class EpochResult:
+    epoch_losses: HistoryEpochLoss = field(default_factory=HistoryEpochLoss)
+    lr: float = 0.0
+    metrics: Optional[dict] = None
 
 
 class Trainer:
     def __init__(
         self,
-        rank: int,
         epochs: int,
         device: torch.device,
         use_amp: bool,
-        optimizer,
-        lr_scheduler,
-        use_clip_grad=True,
-        clip_grad=10.0,
-        iter_lr_scheduler=None,
-        amp_init_scale=False,
-        amp_dtype="fp16",
+        datasets: dict[PhaseStr, torch.utils.data.Dataset],
+        dataloaders: dict[PhaseStr, torch.utils.data.DataLoader],
+        batched_transforms: dict[PhaseStr, callable],
+        optimizer: torch.optim.Optimizer,
+        lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
+        iter_lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+        evaluators: Optional[dict[PhaseStr, MetricCollection]] = None,
+        use_clip_grad: bool = True,
+        clip_grad: float = 10.0,
+        amp_init_scale=None,
+        amp_dtype: str = "fp16",
     ) -> None:
-        super().__init__()
-        self.rank = rank
         self.device = device
         self.is_cpu = device.type == "cpu"
-        self.use_amp = use_amp
         self.amp_dtype = TORCH_DTYPE[amp_dtype] if use_amp else torch.float32
+        self.datasets = datasets
+        self.dataloaders = dataloaders
+        self.batched_transforms = batched_transforms
+        self.optimizer = optimizer
+        self.iter_lr_scheduler = iter_lr_scheduler
+        self.lr_scheduler = lr_scheduler
+        self.evaluators = evaluators
+        self.use_clip_grad = use_clip_grad
+        self.clip_grad = clip_grad
+        self.epochs = epochs
+
+        self.use_amp = use_amp
+        if self.use_amp:
+            logger.info("Using Mixed Precision with AMP")
+            logger.info(f"AMP dtype: {self.amp_dtype}")
         if amp_init_scale:
             self.scaler = torch.cuda.amp.GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
         else:
             self.scaler = torch.cuda.amp.GradScaler(enabled=self.use_amp)
-        self.optimizer = optimizer
-        self.iter_lr_scheduler = iter_lr_scheduler
-        self.lr_scheduler = lr_scheduler
-        self.use_clip_grad = use_clip_grad
-        self.clip_grad = clip_grad
-
-        self.epochs = epochs
 
     def do_one_epoch(
         self,
-        phase: Literal["train", "val"],
+        phase: PhaseStr,
         epoch: int,
-        model: torch.nn.Module,
-        dataloader: DataLoader,
-        batched_transform,
-        evaluator=None,
+        model: BaseModel,
         model_ema=None,
-    ):
-        hist_epoch_loss = {}
+    ) -> EpochResult:
+        hist_epoch_loss = HistoryEpochLoss()
 
         # Set progress bar
-        progress_bar = enumerate(dataloader)
-        if self.rank in [-1, 0]:
-            progress_bar = tqdm(progress_bar, total=len(dataloader), dynamic_ncols=True)
+        progress_bar = enumerate(self.dataloaders[phase])
+        if is_main_process():
+            progress_bar = tqdm(
+                progress_bar, total=len(self.dataloaders[phase]), dynamic_ncols=True
+            )
 
         model.train(phase == "train")
-        if self.rank != -1:
+        if is_distributed():
             model.module.phase = phase
+            self.dataloaders[phase].sampler.set_epoch(epoch)
         else:
             model.phase = phase
 
@@ -70,21 +93,20 @@ class Trainer:
                 for k, v in data.items():
                     if isinstance(v, torch.Tensor):
                         data[k] = v.to(self.device, non_blocking=True)
-                if batched_transform:
-                    data = batched_transform(data)
+                if self.batched_transforms[phase]:
+                    data = self.batched_transforms[phase](data)
 
                 # ####### Forward #######
                 with torch.autocast(
-                    device_type="cuda" if not self.is_cpu else "cpu",
+                    device_type=self.device.type,
                     enabled=self.use_amp,
                     dtype=self.amp_dtype,
                 ):
-                    output = model(data)
-                loss = output["loss"]
+                    output: ModelOutput = model(data)
 
                 # ####### Backward #######
                 if phase == "train":
-                    self.scaler.scale(loss["total_loss"]).backward()
+                    self.scaler.scale(output["losses"]["total_loss"]).backward()
                     if self.use_clip_grad:
                         self.scaler.unscale_(self.optimizer)
                         torch.nn.utils.clip_grad_norm_(model.parameters(), self.clip_grad)
@@ -92,49 +114,53 @@ class Trainer:
                     self.scaler.update()
                     if self.iter_lr_scheduler:
                         self.iter_lr_scheduler.step(
-                            epoch=i + epoch * len(dataloader), metric=loss["total_loss"].item()
+                            epoch=i + epoch * len(self.dataloaders[phase]),
+                            metric=output["losses"]["total_loss"].item(),
                         )
                     self.optimizer.zero_grad(set_to_none=True)
                     if model_ema:
                         model_ema.update(model)
 
-            if evaluator:
-                evaluator.update(*self.generate_input_evaluator(output, data))
-            for key in loss.keys():
-                if self.rank != -1:
-                    loss[key] = reduce_tensor(loss[key]) / dist.get_world_size()
+            # ####### After each iteration #######
+            if self.evaluators[phase]:
+                self.evaluators[phase].update(*self.generate_input_evaluator(data, output["preds"]))
+            for key in output["losses"].keys():
+                if is_distributed():
+                    output["losses"][key] = (
+                        reduce_tensor(output["losses"][key]) / dist.get_world_size()
+                    )
                 hist_epoch_loss[key] = (
-                    hist_epoch_loss.get(key, 0.0) + loss[key].item() * dataloader.batch_size
+                    hist_epoch_loss.get(key, 0.0)
+                    + output["losses"][key].item() * self.dataloaders[phase].batch_size
                 )
-            if self.rank in [-1, 0]:
+            if is_main_process():
                 lr = self.optimizer.param_groups[0]["lr"]
                 description = f"Epoch: {epoch + 1:3}/{self.epochs:3}. LR: {lr:.4e}"
-                for k, v in loss.items():
+                for k, v in output["losses"].items():
                     description += f" {k.capitalize()}: {v.item():8.4f}"
                 progress_bar.set_description(description)
 
-        # Finish Epoch Process below
+        # ####### After each epoch #######
         for k, v in hist_epoch_loss.items():
-            hist_epoch_loss[k] = hist_epoch_loss[k] / (len(dataloader) * dataloader.batch_size)
+            hist_epoch_loss[k] = hist_epoch_loss[k] / len(self.datasets[phase])
+
+        # Epoch based lr_scheduler
         lr = self.optimizer.param_groups[0]["lr"]
         if phase == "train" and self.lr_scheduler:
             self.lr_scheduler.step(epoch=epoch, metric=hist_epoch_loss["total_loss"])
 
-        ret = {"epoch_losses": hist_epoch_loss, "lr": lr}
-        if evaluator:
-            metrics = evaluator.compute()
-            evaluator.reset()
-            ret["metrics"] = metrics
+        ret = EpochResult(epoch_losses=hist_epoch_loss, lr=lr)
+        if self.evaluators[phase]:
+            ret.metrics = self.evaluators[phase].compute()
+            self.evaluators[phase].reset()
+        logger.info(
+            self._build_epoch_log(phase=phase, epoch=epoch, epoch_losses=hist_epoch_loss, lr=lr)
+        )
         return ret
 
-    def build_epoch_log(
-        self,
-        phase: Literal["train", "val"],
-        epoch: int,
-        epoch_losses: dict,
-        lr: float,
-        **kwargs,
-    ):
+    def _build_epoch_log(
+        self, phase: PhaseStr, epoch: int, epoch_losses: HistoryEpochLoss, lr: float
+    ) -> str:
         description = (
             f"{phase.capitalize()} Epoch: {(epoch + 1):3}/{self.epochs:3}. "
             f"GPU: {torch.cuda.memory_reserved(self.device) / 1e9:.1f}GB. "
@@ -144,5 +170,5 @@ class Trainer:
             description += f" {k}: {v:8.4f}"
         return description
 
-    def generate_input_evaluator(self, output, data):
-        return output, data
+    def generate_input_evaluator(self, targets, preds):
+        return targets, preds

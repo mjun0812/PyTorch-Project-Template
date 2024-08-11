@@ -1,9 +1,15 @@
-NAME: mmdet_1x
-ITER_SCHEDULER:
-  NAME: LinearLR
-  START_FACTOR: 0.001
-  TOTAL_ITERS: 500
-EPOCH_SCHEDULER:
-  NAME: MultiStepLR
-  MILESTONES: [16, 19]
-  GAMMA: 0.1
+name: mmdet_20e
+scheduler: IterScheduler
+args:
+  iter_scheduler:
+    name: LinearLR
+    scheduler: LinearLR
+    args:
+      start_factor: 0.001
+      total_iters: 500
+  epoch_scheduler:
+    name: MultiStepLR
+    scheduler: MultiStepLR
+    args:
+      milestones: [16, 19]
+      gamma: 0.1

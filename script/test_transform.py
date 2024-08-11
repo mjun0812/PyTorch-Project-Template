@@ -7,13 +7,13 @@ import torchvision.transforms.functional as TF
 
 sys.path.append("./")
 from src.dataloaders import build_dataset  # noqa
-from src.utils import Config  # noqa
+from src.config import ConfigManager  # noqa
 
 leftkeys = (81, 110, 97, 65361, 2424832)
 rightkeys = (83, 109, 100, 65363, 2555904)
 
 
-@Config.main
+@ConfigManager.main
 def main(cfg):
     phase = cfg.get("PHASE", "train")
     print(f"Phase: {phase}")

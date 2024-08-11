@@ -1,8 +1,11 @@
-NAME: CosineLRScheduler
-LR_MIN: 1e-6
-WARMUP_T: 5
-WARMUP_LR_INIT: 1e-4
-CYCLE_DECAY: 0.1
-NOISE_T: [0.8, 0.9]
-# warmup終了時の学習率をlrと同じにする
-WARMUP_PREFIX: False
+name: CosineLRScheduler
+scheduler: CosineLRScheduler
+args:
+  lr_min: 1e-6
+  warmup_t: 5
+  warmup_lr_init: 1e-4
+  cycle_decay: 0.1
+  noise_t: [0.8, 0.9]
+  # warmup終了時の学習率をlrと同じにする
+  warmup_prefix: false
+  cycle_limit: 1

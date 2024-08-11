@@ -1,4 +1,5 @@
 """LR SchedulerのLRの推移をテスト"""
+
 from pathlib import Path
 
 import matplotlib
@@ -12,7 +13,7 @@ import sys  # noqa
 import matplotlib.pyplot as plt  # noqa
 
 sys.path.append("./")
-from src.scheduler import build_lr_scheduler  # noqa
+from scheduler.scheduler import build_lr_scheduler  # noqa
 
 EPOCH = 100
 ITER = 1500

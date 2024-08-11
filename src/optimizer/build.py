@@ -1,56 +1,53 @@
-import torch.optim as optim
+import torch
+from loguru import logger
+from torch import optim
 
-from ..utils import adjust_learning_rate, check_model_parallel
+from ..config import ExperimentConfig, OptimizerGroupConfig
+from ..utils import check_model_parallel, get_world_size
 from .lion import Lion
 
 
-def build_optimizer(cfg, model, logger=None):
-    optimizer_name = cfg.OPTIMIZER.NAME
-    lr = cfg.OPTIMIZER.LR
-    if cfg.ADJUST_LR:
-        lr = adjust_learning_rate(lr, cfg.BATCH)
+def adjust_learning_rate(base_lr: float, batch_size: int):
+    world_size = get_world_size()
+    return base_lr * batch_size * world_size
+
+
+def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Optimizer:
+    optimizer_cls = cfg.optimizer.optimizer
+    lr = cfg.optimizer.lr
+    if cfg.adjust_lr:
+        lr = adjust_learning_rate(lr, cfg.batch)
 
     target_model = model
     if check_model_parallel(model):
         target_model = model.module
 
-    if hasattr(target_model, "optimizer_dict"):
-        parameters = target_model.optimizer_dict
-    elif cfg.MODEL.get("LR"):
-        parameters = get_param_group(target_model, cfg, lr)
+    elif cfg.optimizer.group is not None:
+        parameters = get_param_group(target_model, cfg.optimizer.group, lr)
     else:
         parameters = target_model.parameters()
 
-    if optimizer_name == "AdamW":
-        args = {"weight_decay": cfg.OPTIMIZER.get("WEIGHT_DECAY", 1e-2)}
+    args = cfg.optimizer.get("args", {})
+    if optimizer_cls == "AdamW":
         optimizer = optim.AdamW(parameters, lr=lr, **args)
-    elif optimizer_name == "Adam":
-        optimizer = optim.Adam(parameters, lr=lr)
-    elif optimizer_name == "NesterovMomentum":
-        optimizer = optim.SGD(
-            parameters,
-            lr=lr,
-            momentum=cfg.OPTIMIZER.MOMENTUM,
-            nesterov=True,
-            weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY,
-        )
-    elif optimizer_name == "Momentum":
-        optimizer = optim.SGD(
-            parameters,
-            lr=lr,
-            momentum=cfg.OPTIMIZER.MOMENTUM,
-            nesterov=False,
-            weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY,
-        )
-    elif optimizer_name == "SGD":
-        optimizer = optim.SGD(parameters, lr=lr)
-    elif optimizer_name == "Lion":
-        optimizer = Lion(parameters, lr=lr, weight_decay=cfg.OPTIMIZER.WEIGHT_DECAY)
+    elif optimizer_cls == "Adam":
+        optimizer = optim.Adam(parameters, lr=lr, **args)
+    elif optimizer_cls == "NesterovMomentum":
+        optimizer = optim.SGD(parameters, lr=lr, **args)
+    elif optimizer_cls == "Momentum":
+        optimizer = optim.SGD(parameters, lr=lr, **args)
+    elif optimizer_cls == "SGD":
+        optimizer = optim.SGD(parameters, lr=lr, **args)
+    elif optimizer_cls == "Lion":
+        optimizer = Lion(parameters, lr=lr, **args)
 
-    if logger is not None:
-        logger.info(f"Optimizer: {optimizer_name}")
-        logger.info(f"Optimizer Group: {optimizer}")
-        logger.info(f"Learning Rate: {lr}")
+    if cfg.optimizer.checkpoint is not None:
+        optimizer.load_state_dict(torch.load(cfg.optimizer.checkpoint, map_location="cpu"))
+
+    logger.info(f"Optimizer: {cfg.optimizer.optimizer}")
+    logger.info(f"Optimizer Group: {optimizer}")
+    logger.info(f"Learning Rate: {lr}")
+
     return optimizer
 
 
@@ -73,12 +70,14 @@ def param_groups_weight_decay(model, weight_decay=1e-5, no_weight_decay_list=())
     ]
 
 
-def get_param_group(model, cfg, base_lr):
+def get_param_group(
+    model: torch.nn.Module, cfg: list[OptimizerGroupConfig], base_lr: float
+) -> list:
     optimizer_dict = [{"params": [], "lr": base_lr}]
     keys = []
-    for info in cfg.MODEL.LR:
-        optimizer_dict.append({"params": [], "lr": base_lr / float(info["DIVIDE"])})
-        keys.append(info["KEY"])
+    for info in cfg:
+        optimizer_dict.append({"params": [], "lr": base_lr / info.divide})
+        keys.append(info.name)
 
     for n, p in model.named_parameters():
         if not p.requires_grad:

@@ -1,71 +1,67 @@
 # Training Params
-BATCH: 16
-CONTINUE_TRAIN: False
-SEED: 42
-SAVE_INTERVAL: 5
+epoch: 200
+save_interval: 5
+val_interval: 5
 
-ITER_TRAIN: False
-# Epoch Based
-EPOCH: 200
-VAL_INTERVAL: 5
 # Iteration Based
-MAX_ITER: 160000
-STEP_ITER: 16000
+use_iter_loop: False
+step_iter: 16000
+max_iter: 160000
+
+batch: 16
+num_worker: 4
+use_ram_cache: False
+
+seed: 42
 
 # Device Params
-GPU:
-  USE: 0
-  MULTI: False
-CPU: False
-# Dataloader worker
-NUM_WORKER: 4
-USE_RAM_CACHE: False
+gpu:
+  use: 0
+  multi: False
+  use_cudnn: False
+use_cpu: False
 
 # Training Options
-CUDNN: True
-AMP: False
-AMP_INIT_SCALE: null
-AMP_DTYPE: "fp16"
-MODEL_EMA: False
-MODEL_EMA_DECAY: 0.99
-USE_CLIP_GRAD: True
-CLIP_GRAD_NORM: 10
-COMPILE: False
-COMPILE_BACKEND: "inductor"
-ADJUST_LR: False
+use_amp: False
+amp_init_scale: null
+amp_dtype: "fp16"
 
-# Output
-OUTPUT: ./result/
-TAG: ""
+use_compile: False
+compile_backend: "inductor"
+
+use_clip_grad: True
+clip_grad_norm: 10
+
+adjust_lr: False
+
+output: ./result/
+tag: null
 
 # MLflow
-USE_MLFLOW: True
-MLFLOW_IGNORE_DIRS: ["models"]
-MLFLOW_EXPERIMENT_NAME: "pytorch-project-template"
-MLFLOW_LOG_CONGIG_PARAMS:
-  - name: "Optimizer"
-    value: "cfg.OPTIMIZER.NAME"
-  - name: "LR scheduler"
-    value: "cfg.LR_SCHEDULER.NAME"
-  - name: "Learning Rate"
-    value: "cfg.OPTIMIZER.LR"
-  - name: "Epoch"
-    value: "cfg.EPOCH"
-  - name: "Model"
-    value: "cfg.MODEL.NAME"
-  - name: "Backbone"
-    value: 'cfg.MODEL.get("BACKBONE", None)'
-  - name: "Input size"
-    value: 'cfg.MODEL.get("INPUT_SIZE")'
-  - name: "Train_Dataset"
-    value: "cfg.TRAIN_DATASET.NAME"
-  - name: "Val_Dataset"
-    value: "cfg.VAL_DATASET.NAME"
-  - name: "Test_Dataset"
-    value: "cfg.TEST_DATASET.NAME"
-  - name: "Loss"
-    value: "cfg.LOSS.NAME"
-  - name: "Batch"
-    value: "cfg.BATCH"
-  - name: "GPU Ids"
-    value: "cfg.GPU.USE"
+mlflow:
+  use: True
+  ignore_artifact_dirs: ["models"]
+  experiment_name: "pytorch-project-template"
+  log_params:
+    - name: "Epoch"
+      value: "epoch"
+    - name: "Batch"
+      value: "batch"
+    - name: "GPU Ids"
+      value: "gpu.use"
+    - name: "Model"
+      value: "model.name"
+    - name: "Optimizer"
+      value: "optimizer.name"
+    - name: "LR scheduler"
+      value: "lr_scheduler.name"
+    - name: "Learning Rate"
+      value: "optimizer.lr"
+    - name: "Train_Dataset"
+      value: "train_dataset.name"
+    - name: "Val_Dataset"
+      value: "val_dataset.name"
+    - name: "Test_Dataset"
+      value: "test_dataset.name"
+    - name: "Loss"
+      value: "model.loss.name"

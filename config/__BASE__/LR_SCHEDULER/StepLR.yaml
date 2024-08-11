@@ -1,4 +1,6 @@
-NAME: StepLR
-# 割合で指定，Epochで自動計算
-LR_DROP: 0.7
-GAMMA: 0.1
+name: StepLR
+scheduler: StepLR
+args:
+  # 割合で指定，Epochで自動計算
+  lr_drop: 0.7
+  gamma: 0.1

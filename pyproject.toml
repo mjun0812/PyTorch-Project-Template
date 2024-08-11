@@ -1,6 +1,6 @@
 [project]
 name = "pytorch-project-template"
-version = "3.0.0"
+version = "4.0.0"
 description = ""
 authors = [{ name = "Junya Morioka", email = "mjun@mjunya.com" }]
 dependencies = [
@@ -8,7 +8,7 @@ dependencies = [
     "torchvision==0.17.1+cu121",
     "timm>=0.9.16",
     "kornia>=0.7.2",
-    "mlflow>=2.12.1",
+    "mlflow>=2.15.1",
     "torchmetrics>=1.0.3",
     "natsort>=8.4.0",
     "tabulate>=0.9.0",
@@ -22,6 +22,8 @@ dependencies = [
     "psutil>=5.9.8",
     "torch-cpp @ https://github.com/mjun0812/torch_cpp/releases/download/v1.0.5/torch_cpp-1.0.5+torch221cu122-cp311-cp311-linux_x86_64.whl",
     "einops>=0.8.0",
+    "loguru>=0.7.2",
+    "pandas>=2.2.2",
 ]
 readme = "README.md"
 requires-python = ">= 3.10"

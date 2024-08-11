@@ -1,18 +1,17 @@
 import json
 import os
-import pprint
 from pathlib import Path
 
 import torch
 
+from src.config import ConfigManager, ExperimentConfig
 from src.dataloaders import build_dataset
+from src.evaluator import build_evaluator
 from src.models import build_model
 from src.tester import Tester
 from src.utils import (
-    Config,
     JsonEncoder,
     Logger,
-    build_evaluator,
     get_cmd,
     load_model_weight,
     make_result_dirs,
@@ -21,99 +20,85 @@ from src.utils import (
 )
 
 
-def do_test(cfg, output_dir, device, logger: Logger):
+def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logger: Logger):
     logger.info("Loading Dataset...")
-    _, dataloader, batched_transform = build_dataset(cfg, phase="test", logger=logger)
+    _, dataloader, batched_transform = build_dataset(cfg, phase="test")
+    logger.info("Complete Load Dataset")
 
-    model, _ = build_model(cfg, device, phase="test", logger=logger)
-    load_model_weight(cfg.MODEL.WEIGHT, model, logger)
+    logger.info("Building Model...")
+    model, _ = build_model(cfg, device, "test")
+    load_model_weight(cfg.model.trained_weight, model)
     model.eval()
     model.requires_grad_(False)
-    logger.info("Complete load model")
+    logger.info("Complete Build model")
 
-    evaluator = build_evaluator(cfg, phase="train")
+    logger.info("Building Evaluator...")
+    evaluator = build_evaluator(cfg, "test")
     if evaluator is not None:
         evaluator = evaluator.to(device)
-
-    if cfg.AMP:
-        logger.info("Using Mixed Precision with AMP")
-        logger.info(f"AMP dtype: {cfg.AMP_DTYPE}")
+    logger.info("Complete Build Evaluator")
 
     tester = Tester(
-        cfg,
         device,
         model,
         dataloader,
         batched_transform,
         evaluator,
-        use_amp=cfg.AMP,
-        amp_dtype=cfg.AMP_DTYPE,
+        use_amp=cfg.use_amp,
+        amp_dtype=cfg.amp_dtype,
     )
     results = tester.do_test()
 
-    inference_speed = results["inference_speed"]
-    logger.info(
-        f"Average Inferance Speed: {inference_speed:.5f}s, {(1.0 / inference_speed):.2f}fps"
-    )
+    inference_speed = results.inference_speed
+    logger.info(f"Speed/ms: {inference_speed/1000:.5f}ms")
+    logger.info(f"FPS: {1.0 / inference_speed:.2f}")
 
-    tester.save_results(output_dir, results["outputs"], results["targets"])
+    tester.save_results(output_dir, results.targets, results.results)
 
-    metrics = {}
-    if evaluator is not None:
-        metrics = evaluator.compute()
-    metrics.update(
-        {
-            "Speed/s": inference_speed,
-            "fps": 1.0 / inference_speed,
-        }
-    )
+    metrics = evaluator.compute() if evaluator else {}
+    metrics.update({"Speed/ms": inference_speed / 1000, "fps": 1.0 / inference_speed})
+
     for name, value in metrics.items():
         logger.info(f"{name}: {value}")
         if isinstance(value, torch.Tensor) and value.dim() == 0:
             metrics[name] = value.item()
-    logger.log_metrics(metrics, None)
+    logger.log_metrics(metrics, None, "test")
     with open(os.path.join(output_dir, "result.json"), "w") as f:
         json.dump(metrics, f, indent=2, cls=JsonEncoder)
 
 
-@Config.main
-def main(cfg):
+@ConfigManager.argparse
+def main(cfg: ExperimentConfig):
     # set Device
-    device = set_device(cfg.GPU.USE, use_cudnn=cfg.CUDNN, is_cpu=cfg.CPU)
+    device = set_device(cfg.gpu.use, use_cudnn=cfg.gpu.use_cudnn, is_cpu=cfg.use_cpu)
 
-    output_dir = Path(make_result_dirs(cfg.MODEL.WEIGHT))
+    base_dir = Path(cfg.model.trained_weight).parent
+    output_dir = make_result_dirs(base_dir)
 
-    Config.dump(cfg, output_dir / "config.yaml")
-    logger = Logger(str(output_dir), str(output_dir / "test.log"), "test")
-    if cfg.USE_MLFLOW:
-        logger.setup_mlflow(str(output_dir.parents[1].name), cfg.MLFLOW_EXPERIMENT_NAME)
-        logger.log_config(cfg, cfg.MLFLOW_LOG_CONGIG_PARAMS)
-    logger.info("\n" + Config.pretty_text(cfg))
-    logger.log_artifact(output_dir.parents[1] / "cmd_histry.log")
-    logger.log_artifact(output_dir / "config.yaml")
+    ConfigManager.dump(cfg, output_dir / "config.yaml")
+    logger = Logger(output_dir, "test", "INFO", cfg.mlflow.use, cfg.mlflow.experiment_name)
+    logger.log_config(cfg, cfg.mlflow.log_params)
+    logger.info("\n" + ConfigManager.pretty_text(cfg))
     with open(output_dir.parents[1] / "cmd_histry.log", "a") as f:
         print(get_cmd(), file=f)
+    logger.log_artifact(output_dir.parents[1] / "cmd_histry.log")
+    logger.log_artifact(output_dir / "config.yaml")
 
-    result = do_test(cfg, output_dir, device, logger)
+    do_test(cfg, output_dir, device, logger)
 
-    message = pprint.pformat(
-        {
-            "host": os.uname()[1],
-            "tag": cfg.TAG,
-            "model": cfg.MODEL.NAME,
-            "dataset": cfg.TEST_DATASET.NAME,
-            "save": str(output_dir),
-            "result": f"{result:7.3f}",
-        },
-        width=150,
-    )
+    messages = [
+        f"host: {os.uname()[1]}",
+        f"tag: {cfg.tag}",
+        f"model: {cfg.model.name}",
+        f"dataset: {cfg.test_dataset.name}",
+        f"save: {str(output_dir)}",
+        f"mlflow_url: {logger.get_mlflow_run_uri()}",
+    ]
     # Send Message to Slack
-    post_slack(message=f"Finish Test\n{message}")
-    logger.info(f"Finish Test {message}")
-    logger.log_result_dir(str(output_dir), ignore_dirs=cfg.MLFLOW_IGNORE_DIRS)
+    post_slack(message="Finish Test\n" + "\n".join(messages))
+    logger.info("Finish Test\n" + "\n".join(messages))
+    logger.log_result_dir(output_dir, ignore_dirs=cfg.mlflow.ignore_artifact_dirs)
     logger.close()
-
-    return result
 
 
 if __name__ == "__main__":

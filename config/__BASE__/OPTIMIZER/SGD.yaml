@@ -1,3 +1,7 @@
-NAME: SGD
-LR: 1e-3
-WEIGHT_DECAY: 4e-5
+name: SGD
+optimizer: SGD
+lr: 1e-3
+args:
+  weight_decay: 4e-5
+group: null
+checkpoint: null

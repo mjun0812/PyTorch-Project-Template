@@ -331,8 +331,8 @@ outputs
 *.pt
 .tmp
 
-result
 result/*
+!result/.gitkeep
 
 dataset/*
 !dataset/.gitkeep

@@ -1,2 +1,6 @@
-NAME: Adam
-LR: 1e-3
+name: Adam
+optimizer: Adam
+args:
+  lr: 1e-3
+group: null
+checkpoint: null

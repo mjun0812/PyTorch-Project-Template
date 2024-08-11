@@ -1,28 +1,26 @@
 import datetime
 import importlib
 import json
-import logging
 import os
 import subprocess
 import sys
-import traceback
 from pathlib import Path
+from typing import Optional
 
 import matplotlib
 import numpy as np
 import requests
 import torch
-import torch.distributed as dist
 from dotenv import load_dotenv
+
+from ..alias import PathLike
 
 matplotlib.use("Agg")
 import matplotlib.font_manager as font_manager  # noqa
 import matplotlib.pyplot as plt  # noqa
 
-logger = logging.getLogger()
 
-
-def get_git_hash():
+def get_git_hash() -> str:
     """gitハッシュを取得する
 
     Returns:
@@ -38,7 +36,7 @@ def get_git_hash():
     return git_hash
 
 
-def get_cmd():
+def get_cmd() -> str:
     """実行コマンドを取得する
     Returns:
         string: 実行コマンド
@@ -51,7 +49,11 @@ def get_cmd():
     return cmd
 
 
-def make_output_dirs(output_base_path: str, prefix="", child_dirs=None) -> str:
+def make_output_dirs(
+    output_base_path: str | Path,
+    prefix: Optional[str] = None,
+    child_dirs: Optional[list[str]] = None,
+) -> Path:
     """mkdir YYYYMMDD_HHmmSS (+ _prefix)
 
     Args:
@@ -74,23 +76,29 @@ def make_output_dirs(output_base_path: str, prefix="", child_dirs=None) -> str:
     today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     if prefix:
         prefix = "_" + prefix
-    output_path = os.path.join(output_base_path, f"{today}{prefix}")
-    os.makedirs(output_path, exist_ok=True)
+    output_path = Path(output_base_path) / f"{today}{prefix}"
+    output_path.mkdir(parents=True, exist_ok=True)
     if child_dirs:
         for d in child_dirs:
-            os.makedirs(os.path.join(output_path, d), exist_ok=True)
+            (output_path / d).mkdir(exist_ok=True, parents=True)
     return output_path
 
 
-def make_result_dirs(weight_path, prefix=""):
-    weight_name, _ = os.path.splitext(os.path.basename(weight_path))
-    today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+def make_result_dirs(base_path: PathLike, prefix: str = "") -> Path:
+    """
+    Creates a directory for storing results.
+    Args:
+        base_path (PathLike): The base path where the directory will be created.
+        prefix (str, optional): The prefix to be added to the directory name. Defaults to "".
+    Returns:
+        Path: The path of the created directory.
+    """
+
+    dir_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     if prefix:
-        prefix = "_" + prefix
-    dir_name = f"{today}_{weight_name}{prefix}"
-    output_dir = os.path.dirname(os.path.dirname(weight_path))
-    output_dir = os.path.join(output_dir, "runs", dir_name)
-    os.makedirs(output_dir, exist_ok=True)
+        dir_name = "_" + prefix
+    output_dir = Path(base_path) / "runs" / dir_name
+    output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 
@@ -181,19 +189,6 @@ def _post_slack(token, channel="#通知", username="通知", message=""):
     return response.status_code
 
 
-def error_handle(e, phase, message):
-    message = (
-        f"Error {phase}\n{e}\n"
-        f"{traceback.format_exc()}\n"
-        f"{message}\n"
-        f"Host: {os.uname()[1]}"
-    )
-    logger.error(message)
-    post_slack(channel="#error", message=message)
-    if dist.is_initialized():
-        dist.destroy_process_group()
-
-
 class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
@@ -237,15 +232,32 @@ class HidePrints:
         sys.stdout = self.stdout
 
 
-def create_symlink(target, dst):
+def create_symlink(target: PathLike, dst: PathLike):
     """
-    シンボリックリンクを作成します。
+    Creates a symbolic link from the target path to the destination path.
+    Both paths are relative to the current working directory.
+    The symbolic link is created using a path relative to the destination.
 
     Args:
-        target (str): シンボリックリンクのターゲットとなるファイルまたはディレクトリのパス。
-        dst (str): シンボリックリンクの作成先のパス。
+    target (Union[str, Path]): The target path to create a symbolic link to,
+                               relative to the current directory.
+    dst (Union[str, Path]): The destination path where the symbolic link will be created,
+                            relative to the current directory.
+
+    Returns:
+    None
     """
-    relative_target = os.path.relpath(target, os.path.dirname(dst))
-    if os.path.islink(dst):
-        os.unlink(dst)
-    os.symlink(relative_target, dst)
+    # Convert input paths to Path objects and make them absolute
+    current_dir = Path.cwd()
+    abs_target = current_dir / Path(target)
+    abs_dst = current_dir / Path(dst)
+
+    # Calculate the relative path from dst to target
+    relative_target = abs_target.relative_to(abs_dst.parent)
+
+    # Remove existing symlink if it exists
+    if abs_dst.is_symlink():
+        abs_dst.unlink()
+
+    # Create the symlink
+    abs_dst.symlink_to(relative_target)

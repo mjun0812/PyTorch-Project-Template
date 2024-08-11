@@ -1,13 +1,11 @@
-import torch.nn as nn
+from ..config import ExperimentConfig
+from .build import LOSS_REGISTRY, BaseLoss, LossOutput
 
-from .build import LOSS_REGISTRY  # noqa
 
+@LOSS_REGISTRY.register()
+class DummyLoss(BaseLoss):
+    def __init__(self, cfg: ExperimentConfig):
+        super().__init__(cfg)
 
-# @LOSS_REGISTRY.register()
-class BaseLoss(nn.Module):
-    def __init__(self, cfg) -> None:
-        super().__init__()
-        self.cfg = cfg
-
-    def forward(self, x):
-        return {"total_loss": x.mean()}
+    def forward(self, targets: dict, preds: dict) -> LossOutput:
+        return LossOutput(total_loss=preds["pred"].sum())

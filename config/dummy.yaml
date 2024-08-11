@@ -1,0 +1,37 @@
+__base__: ./__base__/config.yaml
+
+optimizer:
+  __import__: ./__base__/optimizer/Momentum.yaml
+lr_scheduler:
+  __import__: ./__base__/lr_scheduler/ReduceLROnPlateau.yaml
+train_dataset:
+  __import__: ./__base__/dataset/dummy_dataset.yaml
+val_dataset:
+  __import__: ./__base__/dataset/dummy_dataset.yaml
+test_dataset:
+  __import__: ./__base__/dataset/dummy_dataset.yaml
+evaluator:
+  __import__: ./__base__/evaluator/dummy_evaluator.yaml
+
+epoch: 3
+val_interval: 1
+save_interval: 1
+batch: 4
+
+# MODEL Param
+model:
+  name: DummyModel
+  model: DummyModel # Class名
+
+  pre_trained_weight: null
+  trained_weight: null
+
+  use_sync_bn: false
+  find_unused_parameters: false
+
+  use_model_ema: False
+  model_ema_decay: 0.99
+
+  loss:
+    name: DummyLoss
+    loss: DummyLoss # Class名
