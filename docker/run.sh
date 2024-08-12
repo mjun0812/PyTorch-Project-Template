@@ -41,7 +41,7 @@ docker run \
     --shm-size=128g \
     --hostname $(hostname) \
     --ipc=host \
-    --net=host \
+    -p 38880:38880 \
     -p 38888:38888 \
     --ulimit memlock=-1 \
     --env DISPLAY=$DISPLAY \

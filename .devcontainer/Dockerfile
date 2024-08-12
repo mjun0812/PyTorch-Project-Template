@@ -48,5 +48,3 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=requirements-dev.lock,target=requirements-dev.lock \
     rye pin $PYTHON && \
     rye sync --no-lock
-
-COPY ./docker/zshrc /etc/zsh/zshrc

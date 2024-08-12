@@ -5,9 +5,7 @@ PyTorchのProjectテンプレートです．
 ## Features
 
 - Rye + Dockerで環境構築
-- PyTorchのDistributed Data Parallel(DDP)とData ParallelによるマルチGPU Training
-- `torch.amp`を使った混合精度学習(FP16, FP32)
-- `torch.compile`に対応
+- PyTorchのDistributed Data Parallel(DDP) or Data ParallelによるマルチGPU Training
 - [MLflow](https://mlflow.org)を使った実験管理
 - [OmegaConf](https://github.com/omry/omegaconf)を使ったコンフィグ管理
 
@@ -21,10 +19,11 @@ PyTorchのProjectテンプレートです．
 ## Install
 
 環境構築はDockerで行います．
-Dockerコンテナにデータセットディレクトリをマウントするため，先にディレクトリを作成するか，シンボリックリンクを作成しておきます．
+Dockerコンテナにデータセットディレクトリをマウントするため，
+先にディレクトリを作成するか，シンボリックリンクを作成しておきます．
 
 ```bash
-ln -sfv [datasets_dir] ./dataset
+ln -sfv [datasets_dir] ./dataset/
 ```
 
 次に，Dockerイメージをビルドします．ビルドスクリプトが用意されています．
@@ -33,7 +32,7 @@ ln -sfv [datasets_dir] ./dataset
 ./docker/build.sh
 ```
 
-### Optional: MLflow
+### MLflow
 
 本テンプレートでは，MLflowによる実験管理を行います．
 MLflowのデータをローカルに保存する場合と，外部のサーバに送信する場合の両方に対応しています．
@@ -71,32 +70,6 @@ mlflow ui --port 5000
 
 ```bash
 SLACK_TOKEN="HOGE"
-```
-
-## Use as Template
-
-本テンプレートを用いてリポジトリを作成するときは，本リポジトリをcloneして，
-リモートリポジトリを変更して利用してください．
-
-```bash
-# Clone
-git clone git@github.com:mjun0812/PyTorch-Project-Template.git [project_name]
-cd [project_name]
-
-# デフォルト(origin)のリモートリポジトリをupstreamに名前変更
-git remote rename origin upstream
-
-# 自分のリモートリポジトリを追加
-git remote add origin [uri]
-```
-
-テンプレートは度々更新されます．その時，プロジェクトに更新を反映するには，
-fetchとmergeで反映します．
-自分で一部のコードを変更していた場合は，コンフリクトが発生するかもしれないです．
-
-```bash
-git fetch upstream main
-git merge upstream/main
 ```
 
 ## Usage
@@ -137,7 +110,7 @@ gpu:
 ./docker/run.sh ./torchrun.sh 4 train.py config/model/ResNet.yaml gpu.use="0,1,2,3"
 ```
 
-学習結果は`result/[Dataset名]/[日付]_[モデル]_[データセット]_[タグ]`以下のディレクトリに保存されます．
+学習結果は`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]`以下のディレクトリに保存されます．
 
 ### Test
 
@@ -150,18 +123,50 @@ gpu:
 ```
 
 上記のコマンドは，学習時のログでも表示されています．学習時のログは，
-`result/[Dataset名]/[日付]_[モデル]_[データセット]_[タグ]/train.log`に保存されています．
+`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]/train.log`に保存されています．
+
+テスト時のログやデータは
+`result/[train_dataset/name]/[日付]_[model.name]_[dataset.name]_[tag]/runs/`以下に，
+ディレクトリが作成され，その中に保存されます．
+
+## Scripts
+
+### Config一括編集
 
 ```bash
-[2023-11-30 13:06:26,337][INFO] Finish Training {'Test Cmd': 'python test.py result/hoge/fuga/config.yaml',
- 'Train save': 'result/hoge/fuga',
- 'Val Loss': '  9.013',
- 'dataset': 'hoge',
- 'host': 'server',
- 'model': 'fuga',
- 'tag': ''}
+./docker/run.sh python script/edit_configs.py [config_path or recursive directory] "params.hoge=aa,params.fuga=bb"
 ```
 
-テスト時のログやデータは`result/[Dataset名]/[日付]_[モデル]_[データセット]_[タグ]/runs/`以下に，
-`[日付]_[使用した重みの名前]`のようなディレクトリが作成され，その中に保存されます．
+### MLflow UI
 
+```bash
+./docker/run.sh ./script/run_mlflow.sh
+```
+
+### JupyterLab
+
+```bash
+./docker/run.sh ./script/run_notebook.sh
+```
+
+### Test
+
+```bash
+./docker/run.sh ./script/run_test.sh
+```
+
+### Clean result
+
+MLflowで削除された実験結果をローカルの`./result/`から削除する
+
+```bash
+./docker/run.sh python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
+```
+
+### 集計
+
+MLflowの結果を集計し、`./doc/result_csv`以下に保存する。
+
+```bash
+./docker/run.sh python script/aggregate_mlflow.py [dataset_name or all]
+```
