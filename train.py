@@ -185,6 +185,7 @@ def main(cfg: ExperimentConfig) -> None:
     # make Output dir
     prefix = f"{cfg.model.name}_{cfg.train_dataset.name}"
     prefix += "_" + cfg.tag if cfg.tag else ""
+    output_dir = None
     if is_main_process():
         output_dir = make_output_dirs(
             Path(cfg.output) / cfg.train_dataset.name,
@@ -229,13 +230,12 @@ def main(cfg: ExperimentConfig) -> None:
         logger.close("FAILED")
         sys.exit(1)
 
+    if not is_main_process():
+        return
     # Clean Up multi gpu process
     if is_distributed():
         dist.destroy_process_group()
     torch.cuda.empty_cache()
-
-    if not is_main_process():
-        return
 
     messages = [
         f"host: {os.uname()[1]}",

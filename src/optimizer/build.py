@@ -22,7 +22,7 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
     if check_model_parallel(model):
         target_model = model.module
 
-    elif cfg.optimizer.group is not None:
+    if cfg.optimizer.group is not None:
         parameters = get_param_group(target_model, cfg.optimizer.group, lr)
     else:
         parameters = target_model.parameters()

@@ -13,7 +13,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 from torch import Tensor
 
-from ..alias import PhaseStr
+from ..alias import PathLike, PhaseStr
 from ..config import ExperimentConfig, MlflowLogParamsConfig
 from .torch_utils import is_main_process
 from .utils import get_cmd, get_git_hash
@@ -29,20 +29,23 @@ load_dotenv()
 class Logger:
     def __init__(
         self,
-        output_dir: Union[str, Path],
+        output_dir: Optional[PathLike],
         phase: PhaseStr,
         level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
         use_mlflow: bool = False,
         mlflow_experiment_name: Optional[str] = None,
     ) -> None:
-        self.output_dir = Path(output_dir)
+        self.output_dir = output_dir
         self.histories = defaultdict(dict)
         self.last_epoch = 0
         self.phase = phase
         self.level = level
         self.use_mlflow = False
 
-        self.logger = self.setup_logger(output_dir / f"{self.phase}.log", level)
+        if output_dir is not None:
+            self.logger = self.setup_logger(output_dir / f"{self.phase}.log", level)
+        else:
+            self.logger = self.setup_logger(None, level)
 
         if is_main_process():
             with open(Path(output_dir) / "cmd_histry.log", "a") as f:
@@ -50,8 +53,9 @@ class Logger:
 
         if use_mlflow and is_main_process():
             self.use_mlflow = True
-            self.mlflow_run = self.setup_mlflow(output_dir.name, mlflow_experiment_name)
-            self.logger.info(f"MLflow Tracking URI: {self.get_mlflow_run_uri()}")
+            if mlflow_experiment_name is not None and output_dir is not None:
+                self.mlflow_run = self.setup_mlflow(output_dir.name, mlflow_experiment_name)
+                self.logger.info(f"MLflow Tracking URI: {self.get_mlflow_run_uri()}")
 
         self.logger.info(f"Command: {get_cmd()}")
         self.logger.info(f"Git Hash: {get_git_hash()}")
