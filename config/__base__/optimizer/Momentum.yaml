@@ -1,0 +1,9 @@
+name: Momentum
+optimizer: Momentum
+lr: 1e-3
+args:
+  momentum: 0.937
+  weight_decay: 4e-5
+  nesterov: false
+group: null
+checkpoint: null

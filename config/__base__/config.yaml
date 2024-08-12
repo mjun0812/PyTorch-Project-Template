@@ -1,0 +1,67 @@
+# Training Params
+epoch: 200
+save_interval: 5
+val_interval: 5
+
+# Iteration Based
+use_iter_loop: False
+step_iter: 16000
+max_iter: 160000
+
+batch: 16
+num_worker: 4
+use_ram_cache: False
+
+seed: 42
+
+# Device Params
+gpu:
+  use: 0
+  multi: False
+  use_cudnn: False
+use_cpu: False
+
+# Training Options
+use_amp: False
+amp_init_scale: null
+amp_dtype: "fp16"
+
+use_compile: False
+compile_backend: "inductor"
+
+use_clip_grad: True
+clip_grad_norm: 10
+
+adjust_lr: False
+
+output: ./result/
+tag: null
+
+# MLflow
+mlflow:
+  use: True
+  ignore_artifact_dirs: ["models"]
+  experiment_name: "pytorch-project-template"
+  log_params:
+    - name: "Epoch"
+      value: "epoch"
+    - name: "Batch"
+      value: "batch"
+    - name: "GPU Ids"
+      value: "gpu.use"
+    - name: "Model"
+      value: "model.name"
+    - name: "Optimizer"
+      value: "optimizer.name"
+    - name: "LR scheduler"
+      value: "lr_scheduler.name"
+    - name: "Learning Rate"
+      value: "optimizer.lr"
+    - name: "Train_Dataset"
+      value: "train_dataset.name"
+    - name: "Val_Dataset"
+      value: "val_dataset.name"
+    - name: "Test_Dataset"
+      value: "test_dataset.name"
+    - name: "Loss"
+      value: "model.loss.name"
