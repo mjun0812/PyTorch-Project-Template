@@ -1,7 +1,0 @@
-name: MultiStepLR
-scheduler: MultiStepLR
-args:
-  # 割合で指定した場合はEpochで自動計算
-  # 数字で指定した場合は指定Epoch
-  milestones: [0.5, 0.75]
-  gamma: 0.1

@@ -1,7 +1,0 @@
-name: Lion
-optimizer: Lion
-lr: 1e-4
-args:
-  weight_decay: 1e-2
-group: null
-checkpoint: null

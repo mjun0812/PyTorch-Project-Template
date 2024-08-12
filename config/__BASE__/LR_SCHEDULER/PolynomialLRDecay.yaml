@@ -1,5 +1,0 @@
-name: PolynomialLRDecay
-scheduler: PolynomialLRDecay
-args:
-  end_lr: 1e-4
-  power: 0.9

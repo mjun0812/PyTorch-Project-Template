@@ -1,7 +1,0 @@
-name: SGD
-optimizer: SGD
-lr: 1e-3
-args:
-  weight_decay: 4e-5
-group: null
-checkpoint: null

@@ -1,8 +1,0 @@
-name: LinearLR
-scheduler: LinearLR
-args:
-  start_factor: 0.00066667
-  # 最終的なLRの値に乗算する倍率，
-  # 例えばLR=0.1, END_FACTOR=0.5の時，LinearLRはlr=0.5になるまで上昇する．
-  end_factor: 1.0
-  total_iters: ${epoch}
