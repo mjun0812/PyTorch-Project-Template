@@ -1,6 +1,6 @@
 name: Adam
 optimizer: Adam
-args:
-  lr: 1e-3
+lr: 1e-3
+args: null
 group: null
 checkpoint: null

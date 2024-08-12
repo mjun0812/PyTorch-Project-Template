@@ -42,6 +42,7 @@ docker run \
     --hostname $(hostname) \
     --ipc=host \
     --net=host \
+    --port 38888:38888 \
     --ulimit memlock=-1 \
     --env DISPLAY=$DISPLAY \
     --env USER_NAME=$USER_NAME \

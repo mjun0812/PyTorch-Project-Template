@@ -6,7 +6,7 @@ train_transforms:
     args: null
   - name: ToTensor
     args: null
-train_batch_transforms: []
+train_batch_transforms: null
 val_transforms:
   - name: DummyTransform
     args: null

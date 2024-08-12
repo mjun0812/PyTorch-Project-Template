@@ -56,7 +56,7 @@ class BaseModel(nn.Module):
 
 def build_model(
     cfg: ExperimentConfig, device: torch.device, phase: PhaseStr = "train"
-) -> tuple[torch.nn.Module, torch.nn.Module]:
+) -> tuple[BaseModel, torch.nn.Module]:
     """build model
 
     Args:

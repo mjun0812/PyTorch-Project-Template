@@ -2,7 +2,7 @@ import torch
 from loguru import logger
 from torch import optim
 
-from ..config import ExperimentConfig, OptimizerGroupConfig
+from ..config import ConfigManager, ExperimentConfig, OptimizerGroupConfig
 from ..utils import check_model_parallel, get_world_size
 from .lion import Lion
 
@@ -27,7 +27,11 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
     else:
         parameters = target_model.parameters()
 
-    args = cfg.optimizer.get("args", {})
+    args = cfg.optimizer.get("args")
+    if args is not None:
+        args = ConfigManager.to_object(args.copy())
+    else:
+        args = {}
     if optimizer_cls == "AdamW":
         optimizer = optim.AdamW(parameters, lr=lr, **args)
     elif optimizer_cls == "Adam":

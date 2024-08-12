@@ -1,10 +1,11 @@
+from copy import deepcopy
 from typing import Optional
 
 from loguru import logger
 from timm.scheduler import CosineLRScheduler
 from torch import optim
 
-from ..config import ExperimentConfig, LrSchedulerConfig
+from ..config import ConfigManager, ExperimentConfig, LrSchedulerConfig
 from .scheduler import (
     ChainedScheduler,
     CosineAnnealingWarmRestarts,
@@ -25,13 +26,13 @@ def build_lr_scheduler(
     lr_scheduler_name = cfg.lr_scheduler.scheduler
 
     if lr_scheduler_name == "IterScheduler":
-        if cfg.args.iter_scheduler:
+        if cfg.lr_scheduler.args["iter_scheduler"]:
             c = LrSchedulerConfig(**cfg.lr_scheduler.args["iter_scheduler"])
             iter_scheduler = get_lr_scheduler(optimizer, c, cfg.epoch)
         else:
             iter_scheduler = None
 
-        if cfg.args.epoch_scheduler:
+        if cfg.lr_scheduler.args["epoch_scheduler"]:
             c = LrSchedulerConfig(**cfg.lr_scheduler.args["epoch_scheduler"])
             scheduler = get_lr_scheduler(optimizer, c, cfg.epoch)
         else:
@@ -47,7 +48,11 @@ def get_lr_scheduler(
     optimizer: optim.Optimizer, cfg: LrSchedulerConfig, epoch: int
 ) -> optim.lr_scheduler._LRScheduler:
     lr_scheduler_name = cfg.scheduler
-    args = cfg.get("args", {})
+    args = cfg.get("args")
+    if args and not isinstance(args, dict):
+        args = ConfigManager.to_object(deepcopy(args))
+    elif args is None:
+        args = {}
 
     if lr_scheduler_name == "ReduceLROnPlateau":
         # factor : 学習率の減衰率
@@ -61,8 +66,14 @@ def get_lr_scheduler(
     elif lr_scheduler_name == "CosineAnnealingWarmupReduceRestarts":
         scheduler = CosineAnnealingWarmupReduceRestarts(optimizer, **args)
     elif lr_scheduler_name == "CosineLRScheduler":
-        if args.get("noise_range_t"):
-            args["noise_range_t"] = [int(epoch * n) for n in cfg.NOISE_T]
+        if args.get("noise_range_t") is not None:
+            noise_range_t = []
+            for n in args["noise_range_t"]:
+                if isinstance(n, float):
+                    noise_range_t.append(round(n * epoch))
+                elif isinstance(n, int):
+                    noise_range_t.append(n)
+            args["noise_range_t"] = noise_range_t
         scheduler = CosineLRScheduler(optimizer, t_initial=epoch, **args)
     elif lr_scheduler_name == "PolynomialLRDecay":
         scheduler = PolynomialLRDecay(optimizer, max_decay_steps=epoch, **args)
@@ -76,18 +87,20 @@ def get_lr_scheduler(
         args["milestones"] = milestones
         scheduler = MultiStepLR(optimizer, **args)
     elif lr_scheduler_name == "StepLR":
-        if isinstance(args["lr_drop"], float):
-            args["lr_drop"] = round(args["lr_drop"] * epoch)
-        else:
-            args["lr_drop"] = args["lr_drop"]
+        if isinstance(args["step_size"], float) and args["step_size"] <= 1:
+            args["step_size"] = round(args["step_size"] * epoch)
         scheduler = StepLR(optimizer, **args)
     elif lr_scheduler_name == "LinearLR":
+        if args.get("total_iters") is None:
+            args["total_iters"] = epoch
         scheduler = LinearLR(optimizer, **args)
     elif lr_scheduler_name == "ChainedScheduler":
         schedulers = []
-        for s in cfg.schedulers:
+        for s in args["schedulers"]:
             s = LrSchedulerConfig(**s)
             schedulers.append(get_lr_scheduler(optimizer, s, epoch))
         scheduler = ChainedScheduler(schedulers)
+    else:
+        raise ValueError(f"Invalid lr scheduler name: {lr_scheduler_name}")
 
     return scheduler

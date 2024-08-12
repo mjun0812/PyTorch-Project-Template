@@ -5,7 +5,7 @@ args:
   warmup_t: 5
   warmup_lr_init: 1e-4
   cycle_decay: 0.1
-  noise_t: [0.8, 0.9]
+  noise_range_t: [0.8, 0.9]
   # warmup終了時の学習率をlrと同じにする
   warmup_prefix: false
   cycle_limit: 1

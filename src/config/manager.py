@@ -107,3 +107,7 @@ class ConfigManager:
             return OmegaConf.to_yaml(text, resolve=True)
         elif output_format == "json":
             return json.dumps(OmegaConf.to_object(text), indent=4, sort_keys=False)
+
+    @staticmethod
+    def to_object(cfg: DictConfig):
+        return OmegaConf.to_container(cfg, resolve=True)

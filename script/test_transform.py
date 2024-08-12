@@ -1,3 +1,4 @@
+import os
 import sys
 
 import cv2
@@ -5,28 +6,30 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as TF
 
-sys.path.append("./")
-from src.dataloaders import build_dataset  # noqa
-from src.config import ConfigManager  # noqa
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from src.config import ConfigManager, ExperimentConfig
+from src.dataloaders import build_dataset
 
 leftkeys = (81, 110, 97, 65361, 2424832)
 rightkeys = (83, 109, 100, 65363, 2555904)
 
 
-@ConfigManager.main
-def main(cfg):
-    phase = cfg.get("PHASE", "train")
-    print(f"Phase: {phase}")
-    cfg.BATCH = 1
+@ConfigManager.argparse
+def main(cfg: ExperimentConfig):
+    cfg.batch = 2
+    phase = "train"
     data = build_dataset(cfg, phase)
     _, dataloader, batched_transforms = data
-    print("Loading dataset Complete")
 
     for _, data in enumerate(dataloader):
         if batched_transforms:
             data = batched_transforms(data)
+        print(f"Data: {data.keys()}")
+        if "image" not in data:
+            continue
+
         image = data["image"][0]
-        print(image.shape)
+        print(f"Image Shape: {image.shape}")
 
         image = TF.normalize(
             image,

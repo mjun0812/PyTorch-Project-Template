@@ -50,13 +50,13 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     results = tester.do_test()
 
     inference_speed = results.inference_speed
-    logger.info(f"Speed/ms: {inference_speed/1000:.5f}ms")
+    logger.info(f"Speed/ms: {inference_speed*1000:.5f}ms")
     logger.info(f"FPS: {1.0 / inference_speed:.2f}")
 
     tester.save_results(output_dir, results.targets, results.results)
 
     metrics = evaluator.compute() if evaluator else {}
-    metrics.update({"Speed/ms": inference_speed / 1000, "fps": 1.0 / inference_speed})
+    metrics.update({"Speed/ms": inference_speed * 1000, "fps": 1.0 / inference_speed})
 
     for name, value in metrics.items():
         logger.info(f"{name}: {value}")

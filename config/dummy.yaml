@@ -3,7 +3,7 @@ __base__: ./__base__/config.yaml
 optimizer:
   __import__: ./__base__/optimizer/Momentum.yaml
 lr_scheduler:
-  __import__: ./__base__/lr_scheduler/ReduceLROnPlateau.yaml
+  __import__: ./__base__/lr_scheduler/CosineLRScheduler.yaml
 train_dataset:
   __import__: ./__base__/dataset/dummy_dataset.yaml
 val_dataset:

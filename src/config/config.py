@@ -1,16 +1,22 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 
 @dataclass
-class LossConfig:
+class BaseConfig:
+    def get(self, key: str, default: Optional[Any] = None) -> Any:
+        return getattr(self, key, default)
+
+
+@dataclass
+class LossConfig(BaseConfig):
     name: str = "BaseLoss"
     loss: str = "BaseLoss"
     args: dict = field(default_factory=dict)
 
 
 @dataclass
-class ModelConfig:
+class ModelConfig(BaseConfig):
     name: str = "BaseModel"
     model: str = "BaseModel"
 
@@ -27,66 +33,66 @@ class ModelConfig:
 
 
 @dataclass
-class OptimizerGroupConfig:
+class OptimizerGroupConfig(BaseConfig):
     name: str
     divide: float
 
 
 @dataclass
-class OptimizerConfig:
+class OptimizerConfig(BaseConfig):
     name: str = "AdamW"
     optimizer: str = "AdamW"
     lr: float = 1e-3
-    args: dict = field(default_factory=dict)
+    args: Optional[dict] = None
     checkpoint: Optional[str] = None
     group: Optional[list[OptimizerGroupConfig]] = None
 
 
 @dataclass
-class LrSchedulerConfig:
+class LrSchedulerConfig(BaseConfig):
     name: str = "StepLR"
     scheduler: str = "StepLR"
-    args: dict = field(default_factory=dict)
+    args: Optional[dict] = None
 
 
 @dataclass
-class TransformConfig:
+class TransformConfig(BaseConfig):
     name: str = "BaseTransform"
     args: Optional[dict] = None
 
 
 @dataclass
-class DatasetConfig:
+class DatasetConfig(BaseConfig):
     name: str = "BaseDataset"
     dataset: str = "BaseDataset"
 
     train_transforms: list[TransformConfig] = field(default_factory=list)
-    train_batch_transforms: list[TransformConfig] = field(default_factory=list)
+    train_batch_transforms: Optional[list[TransformConfig]] = None
     val_transforms: list[TransformConfig] = field(default_factory=list)
     test_transforms: list[TransformConfig] = field(default_factory=list)
 
 
 @dataclass
-class EvaluatorConfig:
+class EvaluatorConfig(BaseConfig):
     name: str = "BaseEvaluator"
     args: Optional[dict] = None
 
 
 @dataclass
-class EvaluatorsConfig:
+class EvaluatorsConfig(BaseConfig):
     train: Optional[list[EvaluatorConfig]] = None
     val: Optional[list[EvaluatorConfig]] = None
     test: Optional[list[EvaluatorConfig]] = None
 
 
 @dataclass
-class MlflowLogParamsConfig:
+class MlflowLogParamsConfig(BaseConfig):
     name: str = "Model"
     value: str = "model.name"
 
 
 @dataclass
-class MlflowConfig:
+class MlflowConfig(BaseConfig):
     use: bool = False
     experiment_name: str = "pytorch-project-template"
     ignore_artifact_dirs: list[str] = field(default_factory=lambda: ["models"])
@@ -94,14 +100,14 @@ class MlflowConfig:
 
 
 @dataclass
-class GPUConfig:
+class GPUConfig(BaseConfig):
     use: str | int = 0
     multi: bool = False
     use_cudnn: bool = True
 
 
 @dataclass
-class ExperimentConfig:
+class ExperimentConfig(BaseConfig):
     epoch: int = 100
     last_epoch: int = 0
     val_interval: int = 5

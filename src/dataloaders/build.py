@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 import torch
 from loguru import logger
@@ -20,7 +20,7 @@ DATASET_REGISTRY = Registry("DATASET")
 
 def build_dataset(
     cfg: ExperimentConfig, phase: Literal["train", "val", "test"] = "train"
-) -> tuple[Dataset, DataLoader, dict]:
+) -> tuple[Dataset, DataLoader, Any]:
     transforms, batched_transform = build_transforms(cfg, phase)
 
     # Use RAM Cache

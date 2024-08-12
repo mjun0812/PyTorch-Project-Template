@@ -12,14 +12,14 @@ class DummyModel(BaseModel):
         self.model = nn.Linear(256, 10)
 
     def train_forward(self, data: dict) -> ModelOutput:
-        loss = self.loss(data, {"pred": self.model(data["image"])})
+        loss = self.loss(data, {"pred": self.model(data["data"])})
         return ModelOutput(losses=loss)
 
     def val_forward(self, data: dict) -> ModelOutput:
-        x = self.model(data["image"])
+        x = self.model(data["data"])
         loss = self.loss(data, {"pred": x})
         return ModelOutput(losses=loss, preds={"pred": x})
 
     def test_forward(self, data: dict) -> ModelOutput:
-        x = self.model(data["image"])
+        x = self.model(data["data"])
         return ModelOutput(preds={"pred": x})

@@ -87,6 +87,8 @@ class Logger:
         return mlflow_run
 
     def get_mlflow_run_uri(self) -> str:
+        if not self.use_mlflow:
+            return ""
         run = mlflow.get_run(self.mlflow_run.info.run_id)
         artifact_uri = run.info.artifact_uri
 
