@@ -5,3 +5,4 @@ from .conv import *
 from .init_weights import *
 from .norm import *
 from .pooling import *
+from .attention import *

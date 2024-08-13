@@ -17,7 +17,8 @@
 				"njpwerner.autodocstring",
 				"shardulm94.trailing-spaces",
 				"yzhang.markdown-all-in-one",
-				"tamasfe.even-better-toml"
+				"tamasfe.even-better-toml",
+				"ms-toolsai.jupyter"
 			],
 			"settings": {
 				"python.defaultInterpreterPath": "/opt/rye/shims/python",

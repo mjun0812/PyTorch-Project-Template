@@ -1,5 +1,10 @@
+from dataclasses import dataclass
+from typing import Optional
+
 import timm
+import torch
 import torchvision
+from omegaconf import OmegaConf
 from torchvision.models._utils import IntermediateLayerGetter
 
 from ...utils import Registry
@@ -9,21 +14,31 @@ from .internimage import create_model as create_internimage_model
 BACKBONE_REGISTRY = Registry("BACKBONE")
 
 
-# BACKBONE: resnet50
-#   BACKBONE_ARGS:
-#     out_indices: [1, 2, 3, 4]
-#   IMAGENET_PRE_TRAINED: true
-#   USE_BACKBONE_FEATURES: [1, 2, 3, 4]
+@dataclass
+class BackboneConfig:
+    name: str
+    imagenet_pretrained: bool = True
+    imagenet_pretrained_weight: Optional[str] = None
+    use_backbone_features: Optional[list] = None
+    args: Optional[dict] = None
 
 
-def build_backbone(cfg):
-    args = cfg.MODEL.get("BACKBONE_ARGS", {})
-    model_name = cfg.MODEL.BACKBONE
+def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
+    cfg_backbone = BackboneConfig(**cfg)
+
+    model_name = cfg_backbone.name
+    args = cfg_backbone.args
+    if args is None:
+        args = {}
+    else:
+        args = OmegaConf.to_object(args)
 
     if model_name.startswith("torchvision_"):
         model_name = model_name.replace("torchvision_", "")
 
-        weights = "DEFAULT" if cfg.MODEL.get("IMAGENET_PRE_TRAINED", True) else None
+        weights = None
+        if cfg_backbone.imagenet_pretrained and cfg_backbone.imagenet_pretrained_weight is None:
+            weights = "DEFAULT"
 
         if model_name in ("resnet18", "resnet34"):
             resnet_backbone_num_channels = [32, 64, 128, 256, 512]
@@ -32,7 +47,7 @@ def build_backbone(cfg):
 
         return_layers = {}
         backbone_num_channels = []
-        for i, num_feat in enumerate(cfg.MODEL.USE_BACKBONE_FEATURES):
+        for i, num_feat in enumerate(cfg_backbone.use_backbone_features):
             return_layers[f"layer{num_feat}"] = str(i)
             backbone_num_channels.append(resnet_backbone_num_channels[num_feat])
 
@@ -44,22 +59,25 @@ def build_backbone(cfg):
         backbone = create_internimage_model(
             model_name,
             features_only=True,
-            pretrained=cfg.MODEL.get("IMAGENET_PRE_TRAINED", True),
+            pretrained=cfg_backbone.imagenet_pretrained,
+            out_indices=cfg_backbone.use_backbone_features,
             **args,
         )
         backbone_num_channels = [info["num_chs"] for info in backbone.feature_info]
     elif model_name in BACKBONE_REGISTRY._obj_map.keys():
-        backbone = BACKBONE_REGISTRY.get(cfg.MODEL.BACKBONE)(
-            pretrained=cfg.MODEL.IMAGENET_PRE_TRAINED,
-            weight_path=cfg.MODEL.IMAGENET_PRE_TRAINED_WEIGHT,
+        backbone = BACKBONE_REGISTRY.get(cfg_backbone.name)(
+            pretrained=cfg_backbone.imagenet_pretrained,
+            weight_path=cfg_backbone.imagenet_pretrained_weight,
+            out_indices=cfg_backbone.use_backbone_features,
             **args,
         )
         backbone_num_channels = backbone.feature_channels
     else:
         backbone = timm.create_model(
-            cfg.MODEL.BACKBONE,
+            cfg_backbone.name,
             features_only=True,
-            pretrained=cfg.MODEL.get("IMAGENET_PRE_TRAINED", True),
+            pretrained=cfg_backbone.imagenet_pretrained,
+            out_indices=cfg_backbone.use_backbone_features,
             **args,
         )
         backbone_num_channels = backbone.feature_info.channels()

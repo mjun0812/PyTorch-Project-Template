@@ -191,3 +191,35 @@ def test_scripts():
         )
         assert process.returncode == 0
         print("end", script)
+
+
+def test_backbone():
+    from src.models import BackboneConfig, build_backbone
+
+    # resnet18
+    cfg = BackboneConfig(name="resnet18", use_backbone_features=[1, 2, 3])
+    cfg = OmegaConf.structured(cfg)
+    print(cfg)
+    backbone, channels = build_backbone(cfg)
+    print(backbone)
+    print(channels)
+
+    # resnet18 from torchvision
+    cfg = BackboneConfig(name="torchvision_resnet18", use_backbone_features=[1, 2, 3])
+    cfg = OmegaConf.structured(cfg)
+    print(cfg)
+    backbone, channels = build_backbone(cfg)
+    print(backbone)
+    print(channels)
+
+    # swin transformer
+    cfg = BackboneConfig(
+        name="swin_tiny_patch4_window7_224_22k",
+        imagenet_pretrained=False,
+        use_backbone_features=[0],
+    )
+    cfg = OmegaConf.structured(cfg)
+    print(cfg)
+    backbone, channels = build_backbone(cfg)
+    print(backbone)
+    print(channels)

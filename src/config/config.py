@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -105,7 +105,8 @@ class GPUConfig(BaseConfig):
     use: str | int = 0
     multi: bool = False
     use_cudnn: bool = True
-    multi_strategy: Literal["ddp", "fsdp", "dp"] = "ddp"
+    # dp, ddp, fsdp
+    multi_strategy: str = "ddp"
 
 
 @dataclass
