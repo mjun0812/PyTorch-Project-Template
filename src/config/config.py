@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 
 @dataclass
@@ -27,7 +27,8 @@ class ModelConfig(BaseConfig):
     find_unused_parameters: bool = False
 
     use_model_ema: bool = False
-    model_ema_decay: float = 0.99
+    model_ema_decay: float = 0.9998
+    model_ema_warmup: bool = False
 
     loss: LossConfig = field(default_factory=LossConfig)
 
@@ -104,6 +105,7 @@ class GPUConfig(BaseConfig):
     use: str | int = 0
     multi: bool = False
     use_cudnn: bool = True
+    multi_strategy: Literal["ddp", "fsdp", "dp"] = "ddp"
 
 
 @dataclass
@@ -129,7 +131,7 @@ class ExperimentConfig(BaseConfig):
 
     use_amp: bool = False
     amp_dtype: str = "fp16"
-    amp_init_scale: Optional[float] = None
+    amp_init_scale: Optional[float] = 2**16
 
     # torch.compile
     use_compile: bool = False

@@ -30,7 +30,8 @@ model:
   find_unused_parameters: false
 
   use_model_ema: False
-  model_ema_decay: 0.99
+  model_ema_decay: 0.9998
+  model_ema_warmup: false
 
   loss:
     name: DummyLoss

@@ -32,6 +32,7 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
         args = ConfigManager.to_object(args.copy())
     else:
         args = {}
+
     if optimizer_cls == "AdamW":
         optimizer = optim.AdamW(parameters, lr=lr, **args)
     elif optimizer_cls == "Adam":

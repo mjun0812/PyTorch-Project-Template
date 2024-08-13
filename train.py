@@ -117,6 +117,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         logger.log_metric("Epoch", epoch + 1, epoch + 1)
 
         result = trainer.do_one_epoch(phase="train", epoch=epoch, model=model, model_ema=model_ema)
+
         logger.log_metrics(result.epoch_losses, epoch + 1, "train")
         logger.log_metric("Learning Rate", result.lr, epoch + 1, "train")
         if is_main_process():

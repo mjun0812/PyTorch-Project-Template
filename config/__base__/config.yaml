@@ -19,11 +19,12 @@ gpu:
   use: 0
   multi: False
   use_cudnn: False
+  multi_strategy: "ddp"
 use_cpu: False
 
 # Training Options
 use_amp: False
-amp_init_scale: null
+amp_init_scale: 65536
 amp_dtype: "fp16"
 
 use_compile: False
@@ -65,3 +66,5 @@ mlflow:
       value: "test_dataset.name"
     - name: "Loss"
       value: "model.loss.name"
+    - name: "dtype"
+      value: "amp_dtype"
