@@ -219,15 +219,11 @@ def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
         model = model.module
     torch.save(model.state_dict(), str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
-    if is_distributed():
-        dist.barrier()
 
 
 def save_optimizer(optimizer: torch.optim.Optimizer, file_path: Union[str, Path]):
     torch.save(optimizer.state_dict(), str(file_path))
     logger.info(f"Saving optimizer at {str(file_path)}")
-    if is_distributed():
-        dist.barrier()
 
 
 def save_lr_scheduler(
@@ -235,8 +231,6 @@ def save_lr_scheduler(
 ):
     torch.save(lr_scheduler.state_dict(), str(file_path))
     logger.info(f"Saving lr_scheduler at {str(file_path)}")
-    if is_distributed():
-        dist.barrier()
 
 
 def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=""):
