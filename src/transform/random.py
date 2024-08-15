@@ -1,6 +1,7 @@
 import random
 
 import numpy as np
+import torch
 
 from ..config import TransformConfig
 from .build import TRANSFORM_REGISTRY, get_transform
@@ -47,6 +48,8 @@ class RandomSelect(BaseTransform):
 class ToTensor(BaseTransform):
     def __call__(self, data: dict) -> dict:
         for key in data:
-            if isinstance(data[key], (list, tuple, np.ndarray)):
-                data[key] = TF.to_tensor(data[key])
+            if isinstance(data[key], list):
+                data[key] = torch.tensor(data[key])
+            elif isinstance(data[key], np.ndarray):
+                data[key] = torch.from_numpy(data[key])
         return data

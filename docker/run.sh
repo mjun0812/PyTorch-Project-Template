@@ -9,12 +9,23 @@ USER_ID=`id -u`
 GROUP_ID=`id -g`
 GROUP_NAME=`id -gn`
 USER_NAME=$USER
+
 USE_QUEUE="-i"
+USE_JUPYTER=""
+USE_MLFLOW_UI=""
 
 for OPT in "$@"; do
     case $OPT in
         '-q' | '--queue')
             USE_QUEUE=""
+            shift 1;
+        ;;
+        '--jupyter')
+            USE_JUPYTER="-p 38888:38888"
+            shift 1;
+        ;;
+        '--mlflow-ui')
+            USE_MLFLOW_UI="-p 38880:38880"
             shift 1;
         ;;
     esac
@@ -41,9 +52,9 @@ docker run \
     --shm-size=128g \
     --hostname $(hostname) \
     --ipc=host \
-    -p 38880:38880 \
-    -p 38888:38888 \
     --ulimit memlock=-1 \
+    $USE_JUPYTER \
+    $USE_MLFLOW_UI \
     --env DISPLAY=$DISPLAY \
     --env USER_NAME=$USER_NAME \
     --env USER_ID=$USER_ID \

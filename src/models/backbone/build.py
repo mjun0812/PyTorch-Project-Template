@@ -20,6 +20,7 @@ class BackboneConfig:
     imagenet_pretrained: bool = True
     imagenet_pretrained_weight: Optional[str] = None
     use_backbone_features: Optional[list] = None
+    freeze_backbone: bool = False
     args: Optional[dict] = None
 
 
@@ -52,7 +53,9 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
             backbone_num_channels.append(resnet_backbone_num_channels[num_feat])
 
         backbone = getattr(torchvision.models, model_name)(
-            weights=weights, norm_layer=FrozenBatchNorm2d, **args
+            weights=weights,
+            norm_layer=FrozenBatchNorm2d if cfg_backbone.freeze_backbone else None,
+            **args,
         )
         backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
     elif model_name.startswith("internimage"):

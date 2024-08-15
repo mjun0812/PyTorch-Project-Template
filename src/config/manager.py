@@ -39,6 +39,17 @@ class ConfigManager:
         return cfg
 
     @staticmethod
+    def recursive_set_struct(cfg: DictConfig, value: bool):
+        OmegaConf.set_struct(cfg, value)
+        for key, val in cfg.items():
+            if isinstance(val, (DictConfig, dict)):
+                ConfigManager.recursive_set_struct(val, value)
+            elif isinstance(val, list):
+                for item in val:
+                    if isinstance(item, (DictConfig, dict)):
+                        ConfigManager.recursive_set_struct(item, value)
+
+    @staticmethod
     def build_config_from_file(filename: str | Path):
         if Path(filename).suffix == ".json":
             cfg_dict = ConfigManager._load_json(filename)

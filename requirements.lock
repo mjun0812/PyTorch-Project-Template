@@ -175,6 +175,7 @@ pandas==2.2.2
 pillow==10.2.0
     # via matplotlib
     # via torchvision
+pip==24.2
 protobuf==5.26.1
     # via mlflow-skinny
 psutil==5.9.8

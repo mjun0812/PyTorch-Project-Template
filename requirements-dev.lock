@@ -334,6 +334,7 @@ pexpect==4.9.0
 pillow==10.2.0
     # via matplotlib
     # via torchvision
+pip==24.2
 platformdirs==4.2.2
     # via jupyter-core
 pluggy==1.5.0

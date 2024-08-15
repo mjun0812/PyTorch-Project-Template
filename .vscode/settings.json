@@ -2,6 +2,7 @@
     "search.exclude": {
         "**/dataset": true,
         "**/model_zoo": true,
-        "**/result": true
+        "**/result": true,
+        "**/.venv": true
     }
 }

@@ -198,6 +198,8 @@ def main(cfg: ExperimentConfig) -> None:
     level = "INFO" if is_main_process() else "ERROR"
     logger = Logger(output_dir, "train", level, cfg.mlflow.use, cfg.mlflow.experiment_name)
     logger.log_config(cfg, cfg.mlflow.log_params)
+    if cfg.tag:
+        logger.log_tag("tag", cfg.tag)
     if is_main_process():
         # Save config
         ConfigManager.dump(cfg, output_dir / "config.yaml")

@@ -12,6 +12,7 @@ class IterBasedDataloader:
         self.current_iter = 0
         self.epoch = 0
         self.batch_size = self.dataloader.batch_size
+        self.sampler = self.dataloader.sampler
 
     def __len__(self):
         return self.step_iter

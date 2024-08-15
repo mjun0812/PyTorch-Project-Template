@@ -52,12 +52,8 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     inference_speed = results.inference_speed
     logger.info(f"Speed/ms: {inference_speed*1000:.5f}ms")
     logger.info(f"FPS: {1.0 / inference_speed:.2f}")
-
-    tester.save_results(output_dir, results.targets, results.results)
-
-    metrics = evaluator.compute() if evaluator else {}
+    metrics = results.metrics
     metrics.update({"Speed/ms": inference_speed * 1000, "fps": 1.0 / inference_speed})
-
     for name, value in metrics.items():
         logger.info(f"{name}: {value}")
         if isinstance(value, torch.Tensor) and value.dim() == 0:
@@ -66,18 +62,22 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     with open(os.path.join(output_dir, "result.json"), "w") as f:
         json.dump(metrics, f, indent=2, cls=JsonEncoder)
 
+    tester.save_results(output_dir, results.targets, results.results)
+
 
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig):
     # set Device
     device = set_device(cfg.gpu.use, use_cudnn=cfg.gpu.use_cudnn, is_cpu=cfg.use_cpu)
 
-    base_dir = Path(cfg.model.trained_weight).parent
+    base_dir = Path(cfg.model.trained_weight).parents[1]
     output_dir = make_result_dirs(base_dir)
 
     ConfigManager.dump(cfg, output_dir / "config.yaml")
     logger = Logger(output_dir, "test", "INFO", cfg.mlflow.use, cfg.mlflow.experiment_name)
     logger.log_config(cfg, cfg.mlflow.log_params)
+    if cfg.tag:
+        logger.log_tag("tag", cfg.tag)
     logger.info("\n" + ConfigManager.pretty_text(cfg))
     with open(output_dir.parents[1] / "cmd_histry.log", "a") as f:
         print(get_cmd(), file=f)

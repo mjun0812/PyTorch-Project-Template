@@ -54,10 +54,8 @@ MLFLOW_TRACKING_URI=""
 ```
 
 ローカルで保存している場合，mlflow server(ui)のコマンドは以下です．
-Dockerでポートフォワードを行っていないので，ホストマシンでmlflowを実行する必要があります．
 
 ```bash
-cd result
 mlflow ui --port 5000
 ```
 
@@ -140,13 +138,13 @@ gpu:
 ### MLflow UI
 
 ```bash
-./docker/run.sh ./script/run_mlflow.sh
+./docker/run.sh --mlflow-ui ./script/run_mlflow.sh
 ```
 
 ### JupyterLab
 
 ```bash
-./docker/run.sh ./script/run_notebook.sh
+./script/run_notebook.sh
 ```
 
 ### Test

@@ -114,13 +114,14 @@ class BaseTester:
     def _extract_batch_list(self, data: list[dict]) -> list[dict]:
         batch_list = []
         for d in data:
-            batch_size = next((v.size(0) for v in d.values() if isinstance(v, torch.Tensor)), 1)
-            batch_list.extend(
-                [
-                    {k: v[i] if isinstance(v, torch.Tensor) else v for k, v in d.items()}
-                    for i in range(batch_size)
-                ]
-            )
+            batch_size = 0
+            for v in d.values():
+                if isinstance(v, torch.Tensor):
+                    batch_size = v.size(0)
+                    break
+            for batch_idx in range(batch_size):
+                batch = {k: v[batch_idx] for k, v in d.items()}
+                batch_list.append(batch)
         return batch_list
 
     def generate_input_evaluator(self, targets, preds):
