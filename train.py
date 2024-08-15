@@ -32,19 +32,21 @@ from src.utils import (
 )
 
 from test import do_test  # isort: skip
+from torch.distributed.elastic.multiprocessing.errors import record
 
 
+@record
 def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger):
     fix_seed(cfg.seed + int(os.environ.get("LOCAL_RANK", -1)))
 
     # ###### Build Model #######
     logger.info("Building Model...")
     model, model_ema = build_model(cfg, device, "train")
+    # save initial model
+    save_model(model, f"{output_dir}/models/model_init_0.pth")
     if is_main_process():
         # Model構造を出力
         save_model_info(str(output_dir), model)
-        # save initial model
-        save_model(model, output_dir / "models/model_init_0.pth")
     logger.info("Complete Build Model")
 
     # ####### Build Dataset and Dataloader #######
@@ -135,27 +137,24 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
 
         logger.log_metrics(result.epoch_losses, epoch + 1, "train")
         logger.log_metric("Learning Rate", result.lr, epoch + 1, "train")
-        if is_main_process():
-            logger.log_artifact(output_dir / "train.log")
-            if (epoch + 1) % cfg.save_interval == 0:
-                # Save Model Weight
-                weight_path = output_dir / f"models/model_epoch_{epoch+1}.pth"
-                save_model(model, weight_path)
-                cfg.model.trained_weight = str(weight_path)
-
-                optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
+        logger.log_artifact(f"{output_dir}/train.log")
+        if (epoch + 1) % cfg.save_interval == 0:
+            # Save Model Weight
+            weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
+            save_model(model, weight_path)
+            cfg.model.trained_weight = str(weight_path)
+            if is_main_process():
+                optimizer_path = f"{output_dir}/optimizers/optimizer_epoch_{epoch+1}.pth"
                 save_optimizer(optimizer, optimizer_path)
                 cfg.optimizer.checkpoint = str(optimizer_path)
 
-                if lr_scheduler is not None:
-                    scheduler_path = output_dir / f"schedulers/scheduler_epoch_{epoch+1}.pth"
-                    save_lr_scheduler(lr_scheduler, scheduler_path)
-                    cfg.lr_scheduler.checkpoint = str(scheduler_path)
+                scheduler_path = output_dir / f"schedulers/scheduler_epoch_{epoch+1}.pth"
+                iter_scheduler_path = output_dir / f"schedulers/iter_scheduler_epoch_{epoch+1}.pth"
+                cfg.lr_scheduler.checkpoint = str(scheduler_path)
                 if iter_lr_scheduler is not None:
-                    iter_scheduler_path = (
-                        output_dir / f"schedulers/iter_scheduler_epoch_{epoch+1}.pth"
-                    )
                     save_lr_scheduler(iter_lr_scheduler, iter_scheduler_path)
+                if lr_scheduler is not None:
+                    save_lr_scheduler(lr_scheduler, scheduler_path)
 
         cfg.last_epoch = epoch + 1
 
@@ -165,25 +164,23 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
             logger.log_metrics(result.metrics, epoch + 1, "val")
             logger.log_metric("Learning Rate", result.lr, epoch + 1, "val")
 
+            weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
+            save_model(model, weight_path)
             if is_main_process() and result.epoch_losses["total_loss"] < best_loss:
-                weight_path = output_dir / f"models/model_epoch_{epoch+1}.pth"
-                if not weight_path.exists():
-                    save_model(model, weight_path)
                 create_symlink(weight_path, output_dir / "models/model_best.pth")
                 best_loss = result.epoch_losses["total_loss"]
                 best_epoch = epoch + 1
                 logger.info(f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}")
 
     # Finish Training Process below
+    weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
+    save_model(model, weight_path)
     if is_main_process():
         try:
             logger.log_history_figure()
         except Exception:
             logger.error(f"Cannot draw graph. {traceback.format_exc()}")
-        weight_path = output_dir / f"models/model_epoch_{epoch+1}.pth"
         optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
-        if not weight_path.exists():
-            save_model(model, weight_path)
         if not optimizer_path.exists():
             save_optimizer(optimizer, optimizer_path)
         create_symlink(weight_path, output_dir / "models/model_final.pth")

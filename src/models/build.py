@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 from loguru import logger
 from timm.utils import ModelEmaV3
-from torch.distributed.fsdp import FullyShardedDataParallel
+from torch.distributed.fsdp import FullyShardedDataParallel, ShardingStrategy
 from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload, MixedPrecision
-from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
+from torch.distributed.fsdp.wrap import _module_wrap_policy, size_based_auto_wrap_policy
 from torch.nn.parallel import DistributedDataParallel
 
 from ..alias import TORCH_DTYPE, ModelOutput, PhaseStr
@@ -120,6 +120,7 @@ def build_model(
             auto_wrap_policy = partial(
                 size_based_auto_wrap_policy, min_num_params=cfg.gpu.fsdp.min_num_params
             )
+            # auto_wrap_policy = partial(_module_wrap_policy, module_classes=[nn.Conv2d, nn.Linear])
 
             model = FullyShardedDataParallel(
                 model,
@@ -127,6 +128,7 @@ def build_model(
                 cpu_offload=cpu_offload,
                 auto_wrap_policy=auto_wrap_policy,
                 mixed_precision=amp_policy,
+                sharding_strategy=ShardingStrategy.FULL_SHARD,
             )
     elif cfg.gpu.multi and cfg.gpu.multi_strategy == "dp" and torch.cuda.device_count() > 1:
         logger.info("Use DataParallel Training")

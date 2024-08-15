@@ -217,12 +217,16 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
 def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
     if check_model_parallel(model):
         model = model.module
-    torch.save(model.state_dict(), str(file_path))
+    state_dict = model.state_dict()
+    if is_main_process():
+        torch.save(state_dict, str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
 
 
 def save_optimizer(optimizer: torch.optim.Optimizer, file_path: Union[str, Path]):
-    torch.save(optimizer.state_dict(), str(file_path))
+    state_dict = optimizer.state_dict()
+    if is_main_process():
+        torch.save(state_dict, str(file_path))
     logger.info(f"Saving optimizer at {str(file_path)}")
 
 
