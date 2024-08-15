@@ -133,7 +133,7 @@ nvidia-cuda-nvrtc-cu12==12.1.105
     # via torch
 nvidia-cuda-runtime-cu12==12.1.105
     # via torch
-nvidia-cudnn-cu12==8.9.2.26
+nvidia-cudnn-cu12==9.1.0.70
     # via torch
 nvidia-cufft-cu12==11.0.2.54
     # via torch
@@ -144,7 +144,7 @@ nvidia-cusolver-cu12==11.4.5.107
 nvidia-cusparse-cu12==12.1.0.106
     # via nvidia-cusolver-cu12
     # via torch
-nvidia-nccl-cu12==2.19.3
+nvidia-nccl-cu12==2.20.5
     # via torch
 nvidia-nvjitlink-cu12==12.1.105
     # via nvidia-cusolver-cu12
@@ -235,7 +235,7 @@ tabulate==0.9.0
 threadpoolctl==3.4.0
     # via scikit-learn
 timm==0.9.16
-torch==2.2.1+cu121
+torch==2.4.0+cu121
     # via kornia
     # via timm
     # via torch-cpp
@@ -243,12 +243,12 @@ torch==2.2.1+cu121
     # via torchvision
 torch-cpp @ https://github.com/mjun0812/torch_cpp/releases/download/v1.0.5/torch_cpp-1.0.5+torch221cu122-cp311-cp311-linux_x86_64.whl
 torchinfo==1.8.0
-torchmetrics==1.0.3
-torchvision==0.17.1+cu121
+torchmetrics==1.4.1
+torchvision==0.19.0+cu121
     # via timm
 tqdm==4.64.1
     # via huggingface-hub
-triton==2.2.0
+triton==3.0.0
     # via torch
 typing-extensions==4.9.0
     # via alembic

@@ -158,7 +158,9 @@ gpu:
 MLflowで削除された実験結果をローカルの`./result/`から削除する
 
 ```bash
-./docker/run.sh python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
+./docker/run.sh
+# In container
+python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
 ```
 
 ### 集計

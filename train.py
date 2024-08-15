@@ -170,9 +170,6 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
 def main(cfg: ExperimentConfig) -> None:
     # Set Local Rank for Multi GPU Training
     local_rank = int(os.environ.get("LOCAL_RANK", -1))
-    # DDP Mode
-    if cfg.gpu.multi:
-        dist.init_process_group(backend="nccl", init_method="env://")
 
     # set Device
     device = set_device(
@@ -182,6 +179,10 @@ def main(cfg: ExperimentConfig) -> None:
         is_cpu=cfg.use_cpu,
         verbose=is_main_process(),
     )
+
+    # DDP Mode
+    if cfg.gpu.multi:
+        dist.init_process_group(backend="nccl", init_method="env://")
 
     # make Output dir
     prefix = f"{cfg.model.name}_{cfg.train_dataset.name}"
