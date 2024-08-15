@@ -66,7 +66,6 @@ docker run \
     -v "$(pwd):$(pwd)" \
     -v "$(pwd)/dataset:$(pwd)/dataset" \
     -v "$(pwd)/result:$(pwd)/result" \
-    -v "$(pwd)/model_zoo:$(pwd)/model_zoo" \
     $SYMLINK_MOUNTS \
     --workdir $(pwd) \
     --name "${IMAGE_NAME}-$(date '+%s')" \
