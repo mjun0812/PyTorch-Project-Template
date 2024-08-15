@@ -42,7 +42,7 @@ class DummyDataset(BaseDataset):
         super().__init__(cfg, transforms, phase, cache)
 
     def __len__(self):
-        return 10
+        return 32
 
     def __getitem__(self, idx) -> dict:
         return dict(data=torch.ones(1, 28, 28), label=idx % 10)

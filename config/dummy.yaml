@@ -13,10 +13,10 @@ test_dataset:
 evaluator:
   __import__: ./__base__/evaluator/dummy_evaluator.yaml
 
-epoch: 3
+epoch: 5
 val_interval: 1
 save_interval: 1
-batch: 4
+batch: 8
 
 # MODEL Param
 model:
