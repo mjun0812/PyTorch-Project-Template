@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import Optional
 
+import torch
 from loguru import logger
 from timm.scheduler import CosineLRScheduler
 from torch import optim
@@ -102,5 +103,8 @@ def get_lr_scheduler(
         scheduler = ChainedScheduler(schedulers)
     else:
         raise ValueError(f"Invalid lr scheduler name: {lr_scheduler_name}")
+
+    if cfg.checkpoint is not None:
+        scheduler.load_state_dict(torch.load(cfg.checkpoint, map_location="cpu", weights_only=True))
 
     return scheduler

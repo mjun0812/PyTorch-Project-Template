@@ -45,4 +45,4 @@ class DummyDataset(BaseDataset):
         return 10
 
     def __getitem__(self, idx) -> dict:
-        return dict(data=torch.ones(256), label=idx % 10)
+        return dict(data=torch.ones(1, 28, 28), label=idx % 10)

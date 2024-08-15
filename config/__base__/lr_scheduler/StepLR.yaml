@@ -1,5 +1,6 @@
 name: StepLR
 scheduler: StepLR
+checkpoint: null
 args:
   # 割合で指定，Epochで自動計算
   step_size: 0.7

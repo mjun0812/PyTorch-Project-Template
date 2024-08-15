@@ -1,5 +1,6 @@
 name: CosineLRScheduler
 scheduler: CosineLRScheduler
+checkpoint: null
 args:
   lr_min: 1e-6
   warmup_t: 5

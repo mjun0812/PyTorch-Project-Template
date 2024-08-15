@@ -19,7 +19,11 @@ gpu:
   use: 0
   multi: False
   use_cudnn: False
-  multi_strategy: "ddp"
+  multi_strategy: "ddp" # "ddp" or "dp" or "fsdp"
+  use_tf32: True
+  fsdp:
+    min_num_params: 100000000
+    use_cpu_offload: False
 use_cpu: False
 
 # Training Options

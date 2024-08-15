@@ -1,8 +1,6 @@
 from functools import partial
-from typing import NotRequired, TypedDict
 
 import torch
-import torch._dynamo as dynamo  # noqa
 import torch.nn as nn
 from loguru import logger
 from timm.utils import ModelEmaV3
@@ -11,10 +9,10 @@ from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload, Mixed
 from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
 from torch.nn.parallel import DistributedDataParallel
 
-from ..alias import PhaseStr
+from ..alias import TORCH_DTYPE, ModelOutput, PhaseStr
 from ..config import ExperimentConfig
-from ..losses import LossOutput, build_loss
-from ..utils import TORCH_DTYPE, Registry, get_local_rank, is_distributed, load_model_weight
+from ..losses import build_loss
+from ..utils import Registry, get_local_rank, is_distributed, load_model_weight
 
 try:
     from timm.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
@@ -36,11 +34,6 @@ def calc_model_prameters(model: torch.nn.Module) -> tuple[int, int, int]:
             num_trainable_prams += m.numel()
         num_params += m.numel()
     return num_params, num_trainable_prams, num_backbone_prams
-
-
-class ModelOutput(TypedDict, total=False):
-    losses: NotRequired[LossOutput]
-    preds: NotRequired[dict[str, torch.Tensor]]
 
 
 class BaseModel(nn.Module):
@@ -100,11 +93,11 @@ def build_model(
         )
 
     if is_distributed():
-        if cfg.model.use_sync_bn:
-            model = convert_sync_batchnorm_timm(model)
-            logger.info("Use Sync BatchNorm")
-
         if cfg.gpu.multi_strategy == "ddp":
+            if cfg.model.use_sync_bn:
+                model = convert_sync_batchnorm_timm(model)
+                logger.info("Use Sync BatchNorm")
+
             logger.info("Use DistributedDataParallel Training")
             model = DistributedDataParallel(
                 model,
@@ -115,17 +108,23 @@ def build_model(
         elif cfg.gpu.multi_strategy == "fsdp":
             logger.info("Use FullyShardedDataParallel Training")
             amp_policy = None
-            if cfg.gpu.amp:
+            if cfg.use_amp:
                 amp_policy = MixedPrecision(
                     param_dtype=TORCH_DTYPE[cfg.amp_dtype],
                     reduce_dtype=TORCH_DTYPE[cfg.amp_dtype],
                     buffer_dtype=TORCH_DTYPE[cfg.amp_dtype],
                 )
-            auto_wrap_policy = partial(size_based_auto_wrap_policy, min_num_params=100)
+            cpu_offload = None
+            if cfg.gpu.fsdp.use_cpu_offload:
+                cpu_offload = CPUOffload(offload_params=True)
+            auto_wrap_policy = partial(
+                size_based_auto_wrap_policy, min_num_params=cfg.gpu.fsdp.min_num_params
+            )
+
             model = FullyShardedDataParallel(
                 model,
                 device_id=get_local_rank(),
-                cpu_offload=CPUOffload(offload_params=True),
+                cpu_offload=cpu_offload,
                 auto_wrap_policy=auto_wrap_policy,
                 mixed_precision=amp_policy,
             )

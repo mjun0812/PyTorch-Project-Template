@@ -17,12 +17,14 @@ from src.utils import (
     Logger,
     create_symlink,
     fix_seed,
+    get_local_rank,
     is_distributed,
     is_main_process,
     load_model_weight,
     make_output_dirs,
     make_result_dirs,
     post_slack,
+    save_lr_scheduler,
     save_model,
     save_model_info,
     save_optimizer,
@@ -88,7 +90,20 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         load_model_weight(cfg.model.trained_weight, model)
         if model_ema:
             model_ema.load_state_dict(model.state_dict())
-        optimizer.load_state_dict(torch.load(cfg.optimizer.checkpoint, map_location=device))
+        optimizer.load_state_dict(
+            torch.load(cfg.optimizer.checkpoint, map_location=device, weights_only=True)
+        )
+        if lr_scheduler:
+            lr_scheduler.load_state_dict(
+                torch.load(cfg.lr_scheduler.checkpoint, map_location=device, weights_only=True)
+            )
+        if iter_lr_scheduler:
+            iter_lr_scheduler_path = (
+                output_dir / f"schedulers/iter_scheduler_epoch_{cfg.last_epoch}.pth"
+            )
+            iter_lr_scheduler.load_state_dict(
+                torch.load(iter_lr_scheduler_path, map_location=device, weights_only=True)
+            )
         logger.info(f"Load model weight from {cfg.model.trained_weight}")
         logger.info(f"Load optimizer weight from {cfg.optimizer.checkpoint}")
         logger.info("Complete Load Model Weight")
@@ -125,11 +140,23 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
             if (epoch + 1) % cfg.save_interval == 0:
                 # Save Model Weight
                 weight_path = output_dir / f"models/model_epoch_{epoch+1}.pth"
-                optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
                 save_model(model, weight_path)
-                save_optimizer(optimizer, optimizer_path)
                 cfg.model.trained_weight = str(weight_path)
+
+                optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
+                save_optimizer(optimizer, optimizer_path)
                 cfg.optimizer.checkpoint = str(optimizer_path)
+
+                if lr_scheduler is not None:
+                    scheduler_path = output_dir / f"schedulers/scheduler_epoch_{epoch+1}.pth"
+                    save_lr_scheduler(lr_scheduler, scheduler_path)
+                    cfg.lr_scheduler.checkpoint = str(scheduler_path)
+                if iter_lr_scheduler is not None:
+                    iter_scheduler_path = (
+                        output_dir / f"schedulers/iter_scheduler_epoch_{epoch+1}.pth"
+                    )
+                    save_lr_scheduler(iter_lr_scheduler, iter_scheduler_path)
+
         cfg.last_epoch = epoch + 1
 
         if (epoch + 1) % cfg.val_interval == 0:
@@ -169,7 +196,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig) -> None:
     # Set Local Rank for Multi GPU Training
-    local_rank = int(os.environ.get("LOCAL_RANK", -1))
+    local_rank = get_local_rank()
 
     # set Device
     device = set_device(
@@ -177,7 +204,8 @@ def main(cfg: ExperimentConfig) -> None:
         rank=local_rank,
         use_cudnn=cfg.gpu.use_cudnn,
         is_cpu=cfg.use_cpu,
-        verbose=is_main_process(),
+        verbose=local_rank in [-1, 0],
+        allow_tf32=cfg.gpu.use_tf32,
     )
 
     # DDP Mode
@@ -192,7 +220,7 @@ def main(cfg: ExperimentConfig) -> None:
         output_dir = make_output_dirs(
             Path(cfg.output) / cfg.train_dataset.name,
             prefix=prefix,
-            child_dirs=["models", "optimizers"],
+            child_dirs=["models", "optimizers", "schedulers"],
         )
 
     # Logging

@@ -1,5 +1,6 @@
 name: ChainedScheduler
 scheduler: ChainedScheduler
+checkpoint: null
 args:
   schedulers:
     - name: LinearLR

@@ -47,7 +47,9 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
         optimizer = Lion(parameters, lr=lr, **args)
 
     if cfg.optimizer.checkpoint is not None:
-        optimizer.load_state_dict(torch.load(cfg.optimizer.checkpoint, map_location="cpu"))
+        optimizer.load_state_dict(
+            torch.load(cfg.optimizer.checkpoint, map_location="cpu", weights_only=True)
+        )
 
     logger.info(f"Optimizer: {cfg.optimizer.optimizer}")
     logger.info(f"Optimizer Group: {optimizer}")

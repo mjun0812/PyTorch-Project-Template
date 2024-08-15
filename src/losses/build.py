@@ -1,16 +1,10 @@
-from typing import Required, TypedDict
-
 import torch.nn as nn
-from torch import Tensor
 
+from ..alias import LossOutput
 from ..config import ExperimentConfig
 from ..utils import Registry
 
 LOSS_REGISTRY = Registry("LOSS")
-
-
-class LossOutput(TypedDict, total=False):
-    total_loss: Required[Tensor]
 
 
 class BaseLoss(nn.Module):

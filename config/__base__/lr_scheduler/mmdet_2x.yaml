@@ -1,5 +1,6 @@
 name: mmdet_2x
 scheduler: IterScheduler
+checkpoint: null
 args:
   iter_scheduler:
     name: LinearLR

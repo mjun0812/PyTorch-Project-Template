@@ -2,7 +2,6 @@
 
 from .logger import Logger
 from .torch_utils import (
-    TORCH_DTYPE,
     check_model_parallel,
     cuda_info,
     get_world_size,

@@ -4,12 +4,14 @@ from typing import Optional, TypedDict
 import torch
 import torch.distributed as dist
 from loguru import logger
+from torch import GradScaler
+from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from torchmetrics import MetricCollection
 from tqdm import tqdm
 
-from .alias import PhaseStr
-from .models import BaseModel, ModelOutput
-from .utils import TORCH_DTYPE, is_distributed, is_main_process, reduce_tensor
+from .alias import TORCH_DTYPE, ModelOutput, PhaseStr
+from .models import BaseModel
+from .utils import is_distributed, is_main_process, reduce_tensor
 
 
 class HistoryEpochLoss(TypedDict, total=False):
@@ -28,41 +30,48 @@ class BaseTrainer:
         self,
         epochs: int,
         device: torch.device,
-        use_amp: bool,
         datasets: dict[PhaseStr, torch.utils.data.Dataset],
         dataloaders: dict[PhaseStr, torch.utils.data.DataLoader],
         batched_transforms: dict[PhaseStr, callable],
         optimizer: torch.optim.Optimizer,
         lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
         iter_lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
-        generate_input_evaluator: Optional[callable] = None,
         evaluators: Optional[dict[PhaseStr, MetricCollection]] = None,
+        generate_input_evaluator: Optional[callable] = None,
         use_clip_grad: bool = True,
         clip_grad: float = 10.0,
+        gpu_multi_strategy: str = "ddp",
+        use_amp: bool = False,
         amp_init_scale: int = 2**16,
         amp_dtype: str = "fp16",
     ) -> None:
+        self.epochs = epochs
         self.device = device
-        self.is_cpu = device.type == "cpu"
-        self.amp_dtype = TORCH_DTYPE[amp_dtype] if use_amp else torch.float32
         self.datasets = datasets
         self.dataloaders = dataloaders
         self.batched_transforms = batched_transforms
         self.optimizer = optimizer
-        self.iter_lr_scheduler = iter_lr_scheduler
         self.lr_scheduler = lr_scheduler
+        self.iter_lr_scheduler = iter_lr_scheduler
+        self.evaluators = evaluators
         self.generate_input_evaluator = (
             generate_input_evaluator or self.default_generate_input_evaluator
         )
-        self.evaluators = evaluators
         self.use_clip_grad = use_clip_grad
         self.clip_grad = clip_grad
-        self.epochs = epochs
-
+        self.gpu_multi_strategy = gpu_multi_strategy
         self.use_amp = use_amp
+        self.amp_dtype = TORCH_DTYPE[amp_dtype] if use_amp else torch.float32
+
         if self.use_amp:
             logger.info(f"Using Mixed Precision with AMP (dtype: {self.amp_dtype})")
-        self.scaler = torch.cuda.amp.GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
+
+        self.is_cpu = device.type == "cpu"
+
+        if self.gpu_multi_strategy == "fsdp":
+            self.scaler = ShardedGradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
+        else:
+            self.scaler = GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
 
     def do_one_epoch(
         self,
@@ -74,6 +83,7 @@ class BaseTrainer:
         hist_epoch_loss = HistoryEpochLoss()
         pbar = self._setup_progress_bar(phase)
         self._set_model_phase(model, phase, epoch)
+        self.optimizer.zero_grad(set_to_none=True)
 
         for i, data in pbar:
             with torch.set_grad_enabled(phase == "train"):
@@ -130,7 +140,7 @@ class BaseTrainer:
                 epoch=i + epoch * len(self.dataloaders["train"]),
                 metric=output["losses"]["total_loss"].item(),
             )
-        self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
         if model_ema:
             model_ema.update(model)
 

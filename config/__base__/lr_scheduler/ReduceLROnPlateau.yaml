@@ -1,5 +1,6 @@
 name: ReduceLROnPlateau
 scheduler: ReduceLROnPlateau
+checkpoint: null
 args:
   # factor : 学習率の減衰率
   # patience : 何ステップ向上しなければlrを変更するか

@@ -66,7 +66,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     curl \
     libgl1-mesa-dev \
     libglib2.0-0 \
-    libsm6
+    libsm6 \
+    build-essential
 
 RUN locale-gen ja_JP.UTF-8 \
     && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers

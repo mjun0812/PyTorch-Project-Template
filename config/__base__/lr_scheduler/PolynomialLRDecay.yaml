@@ -1,5 +1,6 @@
 name: PolynomialLRDecay
 scheduler: PolynomialLRDecay
+checkpoint: null
 args:
   end_learning_rate: 1e-4
   power: 0.9

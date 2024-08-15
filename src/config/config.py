@@ -53,6 +53,7 @@ class OptimizerConfig(BaseConfig):
 class LrSchedulerConfig(BaseConfig):
     name: str = "StepLR"
     scheduler: str = "StepLR"
+    checkpoint: Optional[str] = None
     args: Optional[dict] = None
 
 
@@ -101,12 +102,20 @@ class MlflowConfig(BaseConfig):
 
 
 @dataclass
+class FsdpConfig(BaseConfig):
+    min_num_params: int = 100000000
+    use_cpu_offload: bool = False
+
+
+@dataclass
 class GPUConfig(BaseConfig):
     use: str | int = 0
     multi: bool = False
     use_cudnn: bool = True
+    use_tf32: bool = False
     # dp, ddp, fsdp
     multi_strategy: str = "ddp"
+    fsdp: FsdpConfig = field(default_factory=FsdpConfig)
 
 
 @dataclass

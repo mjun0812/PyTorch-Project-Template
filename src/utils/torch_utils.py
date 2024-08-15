@@ -12,17 +12,6 @@ from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel
 from torchinfo import summary
 
-TORCH_DTYPE = {
-    "fp32": torch.float32,
-    "fp64": torch.float64,
-    "fp16": torch.float16,
-    "bf16": torch.bfloat16,
-    "int8": torch.int8,
-    "int16": torch.int16,
-    "int32": torch.int32,
-    "int64": torch.int64,
-}
-
 
 def worker_init_fn(worker_id: int):
     """Reset numpy random seed in PyTorch Dataloader
@@ -76,6 +65,7 @@ def set_device(
     is_cpu=False,
     use_cudnn=True,
     cudnn_deterministic=False,
+    allow_tf32=False,
     pci_device_order=True,
     verbose=True,
 ) -> torch.device:
@@ -104,6 +94,7 @@ def set_device(
             cuda_info(int(os.environ["CUDA_VISIBLE_DEVICES"].split(",")[0]))
             print(f"Using GPU is CUDA:{global_gpu_index}")
 
+        torch.backends.cuda.matmul.allow_tf32 = allow_tf32
         if use_cudnn and cudnn.is_available():
             cudnn.benchmark = True
             cudnn.deterministic = cudnn_deterministic  # 乱数固定のため
@@ -200,7 +191,7 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     device = next(model.parameters()).device
     model_state_dict = model.state_dict()
 
-    check_point = torch.load(weight_path, map_location=device)
+    check_point = torch.load(weight_path, map_location=device, weights_only=True)
     # for torch.compile model
     checkpoint_state_dict = {}
     for k, v in check_point.items():
@@ -228,11 +219,15 @@ def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
         model = model.module
     torch.save(model.state_dict(), str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
+    if is_distributed():
+        dist.barrier()
 
 
 def save_optimizer(optimizer: torch.optim.Optimizer, file_path: Union[str, Path]):
     torch.save(optimizer.state_dict(), str(file_path))
     logger.info(f"Saving optimizer at {str(file_path)}")
+    if is_distributed():
+        dist.barrier()
 
 
 def save_lr_scheduler(
@@ -240,6 +235,8 @@ def save_lr_scheduler(
 ):
     torch.save(lr_scheduler.state_dict(), str(file_path))
     logger.info(f"Saving lr_scheduler at {str(file_path)}")
+    if is_distributed():
+        dist.barrier()
 
 
 def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=""):

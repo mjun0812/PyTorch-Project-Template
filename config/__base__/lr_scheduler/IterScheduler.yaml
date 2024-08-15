@@ -1,5 +1,6 @@
 name: IterScheduler
 scheduler: IterScheduler
+checkpoint: null
 args:
   iter_scheduler:
     name: LinearLR

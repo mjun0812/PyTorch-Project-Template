@@ -8,8 +8,9 @@ from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from tqdm import tqdm
 
-from .models import BaseModel, ModelOutput
-from .utils import TORCH_DTYPE, time_synchronized
+from .alias import TORCH_DTYPE, ModelOutput
+from .models import BaseModel
+from .utils import time_synchronized
 
 
 @dataclass
