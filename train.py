@@ -32,10 +32,8 @@ from src.utils import (
 )
 
 from test import do_test  # isort: skip
-from torch.distributed.elastic.multiprocessing.errors import record
 
 
-@record
 def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger):
     fix_seed(cfg.seed + int(os.environ.get("LOCAL_RANK", -1)))
 
