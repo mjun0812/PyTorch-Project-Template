@@ -217,7 +217,7 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
 def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
     if check_model_parallel(model):
         model = model.module
-    state_dict = model.state_dict()
+    state_dict = model.state_dict()  # For FSDP
     if is_main_process():
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving model at {str(file_path)}")

@@ -142,7 +142,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
             save_model(model, weight_path)
             cfg.model.trained_weight = str(weight_path)
             if is_main_process():
-                optimizer_path = f"{output_dir}/optimizers/optimizer_epoch_{epoch+1}.pth"
+                optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
                 save_optimizer(optimizer, optimizer_path)
                 cfg.optimizer.checkpoint = str(optimizer_path)
 
