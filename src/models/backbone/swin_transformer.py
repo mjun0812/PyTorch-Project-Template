@@ -342,9 +342,7 @@ def swin_large_patch4_window7_224_22kto1k(
 
 
 @BACKBONE_REGISTRY.register()
-def swin_large_patch4_window12_384_22k(
-    pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs
-):
+def swin_large_patch4_window12_384_22k(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
     model = SwinTransformer(
         embed_dim=192,
         depths=[2, 2, 18, 2],
@@ -676,11 +674,9 @@ class WindowAttention(nn.Module):
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size[0])
         coords_w = torch.arange(self.window_size[1])
-        coords = torch.stack(torch.meshgrid([coords_h, coords_w]))  # 2, Wh, Ww
+        coords = torch.stack(torch.meshgrid([coords_h, coords_w]), indexing="ij")  # 2, Wh, Ww
         coords_flatten = torch.flatten(coords, 1)  # 2, Wh*Ww
-        relative_coords = (
-            coords_flatten[:, :, None] - coords_flatten[:, None, :]
-        )  # 2, Wh*Ww, Wh*Ww
+        relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
         relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # Wh*Ww, Wh*Ww, 2
         relative_coords[:, :, 0] += self.window_size[0] - 1  # shift to start from 0
         relative_coords[:, :, 1] += self.window_size[1] - 1

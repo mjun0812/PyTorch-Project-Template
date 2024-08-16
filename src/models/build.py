@@ -128,7 +128,7 @@ def build_model(
                 cpu_offload=cpu_offload,
                 auto_wrap_policy=auto_wrap_policy,
                 mixed_precision=amp_policy,
-                sharding_strategy=ShardingStrategy.FULL_SHARD,
+                # sharding_strategy=ShardingStrategy.FULL_SHARD,
             )
     elif cfg.gpu.multi and cfg.gpu.multi_strategy == "dp" and torch.cuda.device_count() > 1:
         logger.info("Use DataParallel Training")

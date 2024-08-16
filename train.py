@@ -119,6 +119,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         evaluators=evaluators,
         use_clip_grad=cfg.use_clip_grad,
         clip_grad=cfg.clip_grad_norm,
+        gpu_multi_strategy=cfg.gpu.multi_strategy,
         iter_lr_scheduler=iter_lr_scheduler,
         use_amp=cfg.use_amp,
         amp_init_scale=cfg.amp_init_scale,
