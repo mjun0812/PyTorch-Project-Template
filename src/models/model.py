@@ -4,7 +4,8 @@ from torch.nn import functional as F
 
 from ..alias import ModelOutput, PhaseStr
 from ..config import ExperimentConfig
-from .build import MODEL_REGISTRY, BaseModel
+from .base import BaseModel
+from .build import MODEL_REGISTRY
 
 
 @MODEL_REGISTRY.register()

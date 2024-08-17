@@ -1,5 +1,5 @@
+from .base import BaseTransform
 from .build import TRANSFORM_REGISTRY
-from .transform import BaseTransform
 
 
 @TRANSFORM_REGISTRY.register()

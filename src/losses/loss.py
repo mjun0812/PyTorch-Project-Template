@@ -2,7 +2,8 @@ import torch.nn.functional as F
 
 from ..alias import LossOutput
 from ..config import ExperimentConfig
-from .build import LOSS_REGISTRY, BaseLoss
+from .base import BaseLoss
+from .build import LOSS_REGISTRY
 
 
 @LOSS_REGISTRY.register()

@@ -4,8 +4,8 @@ import numpy as np
 import torch
 
 from ..config import TransformConfig
+from .base import BaseTransform
 from .build import TRANSFORM_REGISTRY, get_transform
-from .transform import BaseTransform
 
 USE_V2 = False
 try:

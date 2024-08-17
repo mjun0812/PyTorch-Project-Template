@@ -1,7 +1,7 @@
 from omegaconf import OmegaConf
 
 from ..config import TransformConfig
-from .transform import BaseTransform
+from .base import BaseTransform
 
 
 # Use below Compose when using transforms has multi input.

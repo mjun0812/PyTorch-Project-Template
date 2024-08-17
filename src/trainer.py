@@ -4,7 +4,6 @@ from typing import Optional, TypedDict
 import torch
 import torch.distributed as dist
 from loguru import logger
-from torch import GradScaler
 from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from torchmetrics import MetricCollection
 from tqdm import tqdm
@@ -12,6 +11,11 @@ from tqdm import tqdm
 from .alias import TORCH_DTYPE, ModelOutput, PhaseStr
 from .models import BaseModel
 from .utils import is_distributed, is_main_process, reduce_tensor
+
+try:
+    from torch import GradScaler
+except ImportError:
+    from torch.cuda.amp import GradScaler
 
 
 class HistoryEpochLoss(TypedDict, total=False):

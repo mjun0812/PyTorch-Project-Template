@@ -1,16 +1,13 @@
 from typing import Optional
 
-import torch
+from torch.utils.data import Dataset
 
 from ..alias import PhaseStr
 from ..config import ExperimentConfig
-from .base import BaseDataset
-from .build import DATASET_REGISTRY
 from .tensor_cache import TensorCache
 
 
-@DATASET_REGISTRY.register()
-class DummyDataset(BaseDataset):
+class BaseDataset(Dataset):
     def __init__(
         self,
         cfg: ExperimentConfig,
@@ -18,10 +15,13 @@ class DummyDataset(BaseDataset):
         phase: PhaseStr = "train",
         cache: Optional[TensorCache] = None,
     ):
-        super().__init__(cfg, transforms, phase, cache)
+        self.cfg = cfg
+        self.transforms = transforms
+        self.phase = phase
+        self.cache = cache
 
     def __len__(self):
-        return 32
+        raise NotImplementedError
 
     def __getitem__(self, idx) -> dict:
-        return dict(data=torch.ones(1, 28, 28), label=idx % 10)
+        raise NotImplementedError

@@ -4,64 +4,22 @@ import torch
 import torch.nn as nn
 from loguru import logger
 from timm.utils import ModelEmaV3
-from torch.distributed.fsdp import FullyShardedDataParallel, ShardingStrategy
+from torch.distributed.fsdp import FullyShardedDataParallel
 from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload, MixedPrecision
 from torch.distributed.fsdp.wrap import _module_wrap_policy, size_based_auto_wrap_policy
 from torch.nn.parallel import DistributedDataParallel
 
-from ..alias import TORCH_DTYPE, ModelOutput, PhaseStr
+from ..alias import TORCH_DTYPE, PhaseStr
 from ..config import ExperimentConfig
-from ..losses import build_loss
 from ..utils import Registry, get_local_rank, is_distributed, load_model_weight
+from .base import BaseModel
 
 try:
-    from timm.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
-except Exception:
-    from timm.models.layers import convert_sync_batchnorm as convert_sync_batchnorm_timm
-
+    from timm.layers import convert_sync_batchnorm
+except ImportError:
+    from timm.models.layers import convert_sync_batchnorm
 
 MODEL_REGISTRY = Registry("MODEL")
-
-
-def calc_model_prameters(model: torch.nn.Module) -> tuple[int, int, int]:
-    num_params = 0
-    num_backbone_prams = 0
-    num_trainable_prams = 0
-    for n, m in model.named_parameters():
-        if "backbone" in n:
-            num_backbone_prams += m.numel()
-        if m.requires_grad:
-            num_trainable_prams += m.numel()
-        num_params += m.numel()
-    return num_params, num_trainable_prams, num_backbone_prams
-
-
-class BaseModel(nn.Module):
-    def __init__(self, cfg: ExperimentConfig, phase: PhaseStr = "train"):
-        super().__init__()
-        self.cfg = cfg
-        self.phase = phase
-
-        self.loss = None
-        if self.phase in ["train", "val"]:
-            self.loss = build_loss(self.cfg)
-
-    def train_forward(self, data: dict) -> ModelOutput:
-        raise NotImplementedError
-
-    def val_forward(self, data: dict) -> ModelOutput:
-        raise NotImplementedError
-
-    def test_forward(self, data: dict) -> ModelOutput:
-        raise NotImplementedError
-
-    def forward(self, data: dict) -> ModelOutput:
-        if self.phase == "train":
-            return self.train_forward(data)
-        elif self.phase == "val":
-            return self.val_forward(data)
-        else:
-            return self.test_forward(data)
 
 
 def build_model(
@@ -73,66 +31,20 @@ def build_model(
     if cfg.model.pre_trained_weight:
         load_model_weight(cfg.model.pre_trained_weight, model)
 
-    # Print Model Parameters
-    (
-        num_parameters,
-        num_trainable_parameters,
-        num_backbone_parameters,
-    ) = calc_model_prameters(model)
-    logger.info(f"Num Model Parameters: {num_parameters}")
-    logger.info(f"Num Trainable Model Parameters: {num_trainable_parameters}")
-    if num_backbone_parameters > 0:
-        logger.info(f"Num Backbone Model Parameters: {num_backbone_parameters}")
+    log_model_parameters(model)
 
-    # Model Exponential Moving Average
     model_ema = None
     if cfg.model.use_model_ema:
-        logger.info("Use Model Exponential Moving Average(EMA)")
-        model_ema = ModelEmaV3(
-            model, decay=cfg.model.model_ema_decay, warmup=cfg.model.model_ema_warmup
-        )
+        model_ema = create_model_ema(cfg, model)
 
     if is_distributed():
         if cfg.gpu.multi_strategy == "ddp":
-            if cfg.model.use_sync_bn:
-                model = convert_sync_batchnorm_timm(model)
-                logger.info("Use Sync BatchNorm")
-
-            logger.info("Use DistributedDataParallel Training")
-            model = DistributedDataParallel(
-                model,
-                device_ids=[get_local_rank()],
-                output_device=get_local_rank(),
-                find_unused_parameters=cfg.model.find_unused_parameters,
-            )
+            model = setup_ddp_model(cfg, model)
         elif cfg.gpu.multi_strategy == "fsdp":
-            logger.info("Use FullyShardedDataParallel Training")
-            amp_policy = None
-            if cfg.use_amp:
-                amp_policy = MixedPrecision(
-                    param_dtype=TORCH_DTYPE[cfg.amp_dtype],
-                    reduce_dtype=TORCH_DTYPE[cfg.amp_dtype],
-                    buffer_dtype=TORCH_DTYPE[cfg.amp_dtype],
-                )
-            cpu_offload = None
-            if cfg.gpu.fsdp.use_cpu_offload:
-                cpu_offload = CPUOffload(offload_params=True)
-            auto_wrap_policy = partial(
-                size_based_auto_wrap_policy, min_num_params=cfg.gpu.fsdp.min_num_params
-            )
-            # auto_wrap_policy = partial(_module_wrap_policy, module_classes=[nn.Conv2d, nn.Linear])
-
-            model = FullyShardedDataParallel(
-                model,
-                device_id=get_local_rank(),
-                cpu_offload=cpu_offload,
-                auto_wrap_policy=auto_wrap_policy,
-                mixed_precision=amp_policy,
-                # sharding_strategy=ShardingStrategy.FULL_SHARD,
-            )
+            model = setup_fsdp_model(cfg, model)
     elif cfg.gpu.multi and cfg.gpu.multi_strategy == "dp" and torch.cuda.device_count() > 1:
         logger.info("Use DataParallel Training")
-        model = torch.nn.DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
+        model = nn.DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
 
     if cfg.use_compile and torch.__version__ >= "2.0.0":
         logger.info("Use Torch Compile")
@@ -141,3 +53,67 @@ def build_model(
             model_ema = torch.compile(model_ema, backend=cfg.compile_backend)
 
     return model, model_ema
+
+
+def calc_model_parameters(model: nn.Module) -> tuple[int, int, int]:
+    num_params = num_backbone_params = num_trainable_params = 0
+    for name, param in model.named_parameters():
+        param_count = param.numel()
+        num_params += param_count
+        if "backbone" in name:
+            num_backbone_params += param_count
+        if param.requires_grad:
+            num_trainable_params += param_count
+    return num_params, num_trainable_params, num_backbone_params
+
+
+def log_model_parameters(model: nn.Module):
+    num_params, num_trainable_params, num_backbone_params = calc_model_parameters(model)
+    logger.info(f"Num Model Parameters: {num_params}")
+    logger.info(f"Num Trainable Model Parameters: {num_trainable_params}")
+    if num_backbone_params > 0:
+        logger.info(f"Num Backbone Model Parameters: {num_backbone_params}")
+
+
+def create_model_ema(cfg: ExperimentConfig, model: nn.Module) -> ModelEmaV3:
+    logger.info("Use Model Exponential Moving Average(EMA)")
+    return ModelEmaV3(model, decay=cfg.model.model_ema_decay, warmup=cfg.model.model_ema_warmup)
+
+
+def setup_ddp_model(cfg: ExperimentConfig, model: nn.Module) -> DistributedDataParallel:
+    if cfg.model.use_sync_bn:
+        model = convert_sync_batchnorm(model)
+        logger.info("Use Sync BatchNorm")
+
+    logger.info("Use DistributedDataParallel Training")
+    return DistributedDataParallel(
+        model,
+        device_ids=[get_local_rank()],
+        output_device=get_local_rank(),
+        find_unused_parameters=cfg.model.find_unused_parameters,
+    )
+
+
+def setup_fsdp_model(cfg: ExperimentConfig, model: nn.Module) -> FullyShardedDataParallel:
+    logger.info("Use FullyShardedDataParallel Training")
+    amp_policy = None
+    if cfg.use_amp:
+        amp_policy = MixedPrecision(
+            param_dtype=TORCH_DTYPE[cfg.amp_dtype],
+            reduce_dtype=TORCH_DTYPE[cfg.amp_dtype],
+            buffer_dtype=TORCH_DTYPE[cfg.amp_dtype],
+        )
+    cpu_offload = None
+    if cfg.gpu.fsdp.use_cpu_offload:
+        cpu_offload = CPUOffload(offload_params=True)
+    auto_wrap_policy = partial(
+        size_based_auto_wrap_policy, min_num_params=cfg.gpu.fsdp.min_num_params
+    )
+
+    return FullyShardedDataParallel(
+        model,
+        device_id=get_local_rank(),
+        cpu_offload=cpu_offload,
+        auto_wrap_policy=auto_wrap_policy,
+        mixed_precision=amp_policy,
+    )

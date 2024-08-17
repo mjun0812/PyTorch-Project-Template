@@ -1,4 +1,5 @@
-from .build import EVALUATOR_REGISTRY, BaseEvaluator
+from .base import BaseEvaluator
+from .build import EVALUATOR_REGISTRY
 
 
 @EVALUATOR_REGISTRY.register()

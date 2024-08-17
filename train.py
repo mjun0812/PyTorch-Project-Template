@@ -225,6 +225,7 @@ def main(cfg: ExperimentConfig) -> None:
     logger.log_config(cfg, cfg.mlflow.log_params)
     if cfg.tag:
         logger.log_tag("tag", cfg.tag)
+        logger.log_params({"tag": cfg.tag})
     if is_main_process():
         # Save config
         ConfigManager.dump(cfg, output_dir / "config.yaml")
