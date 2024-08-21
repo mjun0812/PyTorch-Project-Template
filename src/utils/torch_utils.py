@@ -88,13 +88,13 @@ def set_device(
         if pci_device_order:
             os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"] = str(global_gpu_index)
+        torch.backends.cuda.matmul.allow_tf32 = allow_tf32
 
         # print using GPU Info
         if verbose:
             cuda_info(int(os.environ["CUDA_VISIBLE_DEVICES"].split(",")[0]))
             print(f"Using GPU is CUDA:{global_gpu_index}")
 
-        torch.backends.cuda.matmul.allow_tf32 = allow_tf32
         if use_cudnn and cudnn.is_available():
             cudnn.benchmark = True
             cudnn.deterministic = cudnn_deterministic  # 乱数固定のため

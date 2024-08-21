@@ -157,9 +157,7 @@ class BaseTrainer:
         for key, value in output["losses"].items():
             if is_distributed():
                 value = reduce_tensor(value) / dist.get_world_size()
-            hist_epoch_loss[key] = (
-                hist_epoch_loss.get(key, 0.0) + value.item() * self.dataloaders[phase].batch_size
-            )
+            hist_epoch_loss[key] = hist_epoch_loss.get(key, 0.0) + value.item()
 
     def _update_pbar(self, pbar, epoch: int, losses: dict):
         lr = self.optimizer.param_groups[0]["lr"]
@@ -172,7 +170,7 @@ class BaseTrainer:
         self, phase: PhaseStr, epoch: int, hist_epoch_loss: HistoryEpochLoss
     ) -> EpochResult:
         for k, v in hist_epoch_loss.items():
-            hist_epoch_loss[k] = v / len(self.datasets[phase])
+            hist_epoch_loss[k] = v / len(self.dataloaders[phase])
 
         lr = self.optimizer.param_groups[0]["lr"]
         if phase == "train" and self.lr_scheduler:
