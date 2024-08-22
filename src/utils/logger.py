@@ -6,6 +6,8 @@ from typing import Literal, Optional, Union
 
 import matplotlib
 import matplotlib.figure
+import matplotlib.font_manager as font_manager  # noqa
+import matplotlib.pyplot as plt  # noqa
 import mlflow
 import numpy as np
 from dotenv import load_dotenv
@@ -19,8 +21,17 @@ from .torch_utils import is_main_process
 from .utils import get_cmd, get_git_hash
 
 matplotlib.use("Agg")
-import matplotlib.font_manager as font_manager  # noqa
-import matplotlib.pyplot as plt  # noqa
+# 論文用にFontを変更する
+font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
+plt.rcParams.update(
+    {
+        "font.family": "Times New Roman",
+        "font.size": 18,
+        # "text.usetex": True,
+        "ps.useafm": True,
+        "pdf.use14corefonts": True,
+    }
+)
 
 load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
 load_dotenv()
@@ -223,17 +234,6 @@ class Logger:
     def plot_graph(self, title, labels, data):
         plt.gcf().clear()
 
-        # 論文用にFontを変更する
-        font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
-        plt.rcParams.update(
-            {
-                "font.family": "Times New Roman",
-                "font.size": 18,
-                # "text.usetex": True,
-                "ps.useafm": True,
-                "pdf.use14corefonts": True,
-            }
-        )
         fig, ax = plt.subplots(
             1, 1, figsize=(9, 6), tight_layout=True, subplot_kw=dict(title=title)
         )

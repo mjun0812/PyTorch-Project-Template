@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import matplotlib
+import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import torch
 from omegaconf import OmegaConf
@@ -13,6 +14,17 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.config import ConfigManager, ExperimentConfig
 
 matplotlib.use("Agg")
+# 論文用にFontを変更する
+font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
+plt.rcParams.update(
+    {
+        "font.family": "Times New Roman",
+        "font.size": 18,
+        # "text.usetex": True,
+        "ps.useafm": True,
+        "pdf.use14corefonts": True,
+    }
+)
 
 
 def test_train_test_resume():

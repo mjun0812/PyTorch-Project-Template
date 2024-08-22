@@ -84,13 +84,7 @@ def main():
 
     options = dict(experiment_ids=experiment_id, filter_string="")
     if args.dataset != "all":
-        query = [
-            f"params.Train_Dataset LIKE '%{args.dataset}%'"
-            f"OR params.Val_Dataset LIKE '%{args.dataset}%'"
-            f"OR params.Test_Dataset LIKE '%{args.dataset}%'"
-            f"OR params.Dataset LIKE '%{args.dataset}%'"
-        ]
-        options["filter_string"] = " ".join(query)
+        options["filter_string"] = f"params.Train_Dataset LIKE '%{args.dataset}%'"
     if not args.running:
         if options["filter_string"]:
             options["filter_string"] = "(" + options["filter_string"] + ") AND status='FINISHED'"

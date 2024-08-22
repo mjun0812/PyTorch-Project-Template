@@ -21,7 +21,7 @@
 				"ms-toolsai.jupyter"
 			],
 			"settings": {
-				"python.defaultInterpreterPath": "/opt/rye/shims/python",
+				"python.defaultInterpreterPath": "/.venv/bin/python",
 				"[python]": {
 					"editor.defaultFormatter": "charliermarsh.ruff",
 					"editor.codeActionsOnSave": {
