@@ -2110,7 +2110,7 @@ requires-dist = [
 dev = [
     { name = "jupyter", specifier = ">=1.0.0" },
     { name = "pytest", specifier = ">=8.3.2" },
-    { name = "ruff" },
+    { name = "ruff", specifier = ">=0.6.2" },
 ]
 
 [[package]]
