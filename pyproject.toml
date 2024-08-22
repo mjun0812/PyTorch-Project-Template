@@ -43,7 +43,11 @@ find-links = [
     "https://download.pytorch.org/whl/cu121/torch",
     "https://download.pytorch.org/whl/cu121/torchvision",
 ]
-dev-dependencies = ["jupyter>=1.0.0", "pytest>=8.3.2"]
+dev-dependencies = [
+    "jupyter>=1.0.0",
+    "pytest>=8.3.2",
+    "ruff>=0.6.2",
+]
 
 [tool.uv.sources]
 torch-cpp = { url = "https://github.com/mjun0812/torch_cpp/releases/download/v1.1.1/torch_cpp-1.1.1+torch240cu121-cp311-cp311-linux_x86_64.whl" }
