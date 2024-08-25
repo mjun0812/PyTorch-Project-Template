@@ -4,29 +4,22 @@ PyTorchのProjectテンプレートです．
 
 ## Features
 
-- Rye + Dockerで環境構築
-- PyTorchのDistributed Data Parallel(DDP) or Data ParallelによるマルチGPU Training
-- [MLflow](https://mlflow.org)を使った実験管理
+- Docker + uvで環境構築
+- PyTorchのDistributed Data Parallel(DDP), Data Parallel, Fully Shared Distributed Parallel(FSDP)によるマルチGPU Training
+- [MLflow](https://mlflow.org)と[wandb](https://www.wandb.jp)を使った実験管理
 - [OmegaConf](https://github.com/omry/omegaconf)を使ったコンフィグ管理
 
 ## Environments
 
 - Python 3.11
 - CUDA 12.1
-- PyTorch
-- TorchVision
+- PyTorch 2.4.0
 
 ## Install
 
 環境構築はDockerで行います．
-Dockerコンテナにデータセットディレクトリをマウントするため，
-先にディレクトリを作成するか，シンボリックリンクを作成しておきます．
-
-```bash
-ln -sfv [datasets_dir] ./dataset/
-```
-
-次に，Dockerイメージをビルドします．ビルドスクリプトが用意されています．
+Dockerコンテナに`./dataset`をマウントするため，この中に各データセットのディレクトリを入れてください。
+Docker Imageのビルドは以下のコマンドで行えます。
 
 ```bash
 ./docker/build.sh
@@ -34,7 +27,7 @@ ln -sfv [datasets_dir] ./dataset/
 
 ### MLflow
 
-本テンプレートでは，MLflowによる実験管理を行います．
+本テンプレートでは，MLflowによる実験管理が行えます。
 MLflowのデータをローカルに保存する場合と，外部のサーバに送信する場合の両方に対応しています．
 デフォルトはローカル保存となり，`result/mlruns`に保存されます．
 
@@ -56,7 +49,16 @@ MLFLOW_TRACKING_URI=""
 ローカルで保存している場合，mlflow server(ui)のコマンドは以下です．
 
 ```bash
-mlflow ui --port 5000
+./docker/run.sh --mlflow-ui ./script/run_mlflow.sh
+```
+
+### Optional: Wandb
+
+Wandbによる実験管理も行えます。
+`.env`の`WANDB_API_KEY`を設定し、configの`wandb.use`をtrueにすれば結果が送信されます。
+
+```bash
+./docker/run.sh python train.py config/dummy.yaml wandb.use=true wandb.project_name="hoge"
 ```
 
 ### Optional: Slackによる通知
@@ -64,11 +66,7 @@ mlflow ui --port 5000
 学習の終了や評価の終了時にSlackに通知を行うことができます．
 通知を行うには.envにSlackのトークン(Webhookではない)を書き込む必要があります．
 デフォルトでは，通知は`channel="#通知", username="通知"`で行われます．
-`.env`に以下の値を記入してください．
-
-```bash
-SLACK_TOKEN="HOGE"
-```
+`.env`の`SLACK_TOKEN`にAPI tokenを入れて下さい。
 
 ## Usage
 

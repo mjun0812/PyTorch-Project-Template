@@ -17,6 +17,7 @@ def main():
     )
     args = parser.parse_args()
 
+    # コンフィグファイルのパスを取得
     config_path = Path(args.config_path_or_dir)
     if config_path.is_dir():
         config_paths = list(config_path.rglob("*.yaml"))
@@ -27,7 +28,7 @@ def main():
 
     for config_path in config_paths:
         print(f"Edit config: {config_path}")
-        cfg = ConfigManager.build_config_from_file(config_path)
+        cfg = OmegaConf.load(config_path)
 
         for o in args.override.split(","):
             key, value = o.split("=")

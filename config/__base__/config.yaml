@@ -42,33 +42,37 @@ adjust_lr: False
 output: ./result/
 tag: null
 
-# MLflow
 mlflow:
   use: True
   ignore_artifact_dirs: ["models"]
   experiment_name: "pytorch-project-template"
-  log_params:
-    - name: "Epoch"
-      value: "epoch"
-    - name: "Batch"
-      value: "batch"
-    - name: "GPU Ids"
-      value: "gpu.use"
-    - name: "Model"
-      value: "model.name"
-    - name: "Optimizer"
-      value: "optimizer.name"
-    - name: "LR scheduler"
-      value: "lr_scheduler.name"
-    - name: "Learning Rate"
-      value: "optimizer.lr"
-    - name: "Train_Dataset"
-      value: "train_dataset.name"
-    - name: "Val_Dataset"
-      value: "val_dataset.name"
-    - name: "Test_Dataset"
-      value: "test_dataset.name"
-    - name: "Loss"
-      value: "model.loss.name"
-    - name: "dtype"
-      value: "amp_dtype"
+
+wandb:
+  use: False
+  project_name: "pytorch-project-template"
+  
+log_params:
+  - name: "Epoch"
+    value: "epoch"
+  - name: "Batch"
+    value: "batch"
+  - name: "GPU Ids"
+    value: "gpu.use"
+  - name: "Model"
+    value: "model.name"
+  - name: "Optimizer"
+    value: "optimizer.name"
+  - name: "LR scheduler"
+    value: "lr_scheduler.name"
+  - name: "Learning Rate"
+    value: "optimizer.lr"
+  - name: "Train_Dataset"
+    value: "train_dataset.name"
+  - name: "Val_Dataset"
+    value: "val_dataset.name"
+  - name: "Test_Dataset"
+    value: "test_dataset.name"
+  - name: "Loss"
+    value: "model.loss.name"
+  - name: "dtype"
+    value: "amp_dtype"

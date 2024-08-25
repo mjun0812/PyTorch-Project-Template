@@ -10,13 +10,15 @@ import matplotlib.font_manager as font_manager  # noqa
 import matplotlib.pyplot as plt  # noqa
 import mlflow
 import numpy as np
+import wandb
 from dotenv import load_dotenv
 from loguru import logger
 from omegaconf import OmegaConf
 from torch import Tensor
+from wandb.sdk.wandb_run import Run as WandbRun
 
 from ..alias import PathLike, PhaseStr
-from ..config import ExperimentConfig, MlflowLogParamsConfig
+from ..config import ExperimentConfig, LogParamsConfig
 from .torch_utils import is_main_process
 from .utils import get_cmd, get_git_hash
 
@@ -44,7 +46,9 @@ class Logger:
         phase: PhaseStr,
         level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
         use_mlflow: bool = False,
+        use_wandb: bool = False,
         mlflow_experiment_name: Optional[str] = None,
+        wandb_project_name: Optional[str] = None,
     ) -> None:
         self.output_dir = output_dir
         self.histories = defaultdict(dict)
@@ -52,21 +56,26 @@ class Logger:
         self.phase = phase
         self.level = level
         self.use_mlflow = False
+        self.use_wandb = False
+        self.mlflow_run: Optional[mlflow.ActiveRun] = None
+        self.wandb_run: Optional[WandbRun] = None
 
-        if output_dir is not None:
-            self.logger = self.setup_logger(output_dir / f"{self.phase}.log", level)
-        else:
-            self.logger = self.setup_logger(None, level)
+        log_path = output_dir / f"{self.phase}.log" if output_dir is not None else None
+        self.logger = self.setup_logger(log_path, level)
 
         if is_main_process():
             with open(Path(output_dir) / "cmd_histry.log", "a") as f:
                 print(get_cmd(), file=f)  # Execute CLI command history
 
-        if use_mlflow and is_main_process():
-            self.use_mlflow = True
-            if mlflow_experiment_name is not None and output_dir is not None:
+            if use_mlflow and mlflow_experiment_name is not None and output_dir is not None:
+                self.use_mlflow = True
                 self.mlflow_run = self.setup_mlflow(output_dir.name, mlflow_experiment_name)
-                self.logger.info(f"MLflow Tracking URI: {self.get_mlflow_run_uri()}")
+                self.logger.info(f"MLflow Tracking: {self.get_mlflow_run_uri()}")
+
+            if use_wandb and wandb_project_name is not None and output_dir is not None:
+                self.use_wandb = True
+                self.wandb_run = self.setup_wandb(wandb_project_name, output_dir.name)
+                self.logger.info(f"Wandb Tracking: {wandb.run.get_url()}")
 
         self.logger.info(f"Command: {get_cmd()}")
         self.logger.info(f"Git Hash: {get_git_hash()}")
@@ -82,7 +91,6 @@ class Logger:
     def setup_mlflow(self, run_name: str, experiment_name: str):
         mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
         mlflow.set_tracking_uri(mlflow_uri)
-        mlflow.enable_system_metrics_logging()
 
         experiment = mlflow.set_experiment(experiment_name=experiment_name)
         mlflow_run = mlflow.start_run(
@@ -97,17 +105,14 @@ class Logger:
         self.log_params({"output_dir": self.output_dir, "hostname": os.uname()[1]})
         return mlflow_run
 
-    def get_mlflow_run_uri(self) -> str:
-        if not self.use_mlflow:
-            return ""
-        run = mlflow.get_run(self.mlflow_run.info.run_id)
-        artifact_uri = run.info.artifact_uri
-
-        if artifact_uri.startswith("file:"):
-            return artifact_uri.replace("file:", "")
-        else:
-            tracking_uri = mlflow.get_tracking_uri()
-            return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
+    def setup_wandb(self, project_name: str, run_name: str) -> WandbRun:
+        Path("result/wandb").mkdir(parents=True, exist_ok=True)
+        wandb.require("core")
+        return wandb.init(
+            project=project_name,
+            name=run_name,
+            dir="result",
+        )
 
     def info(self, message):
         self.logger.info(message)
@@ -124,6 +129,24 @@ class Logger:
     def debug(self, message):
         self.logger.debug(message)
 
+    def get_mlflow_run_uri(self) -> str:
+        if not self.use_mlflow:
+            return ""
+        run = mlflow.get_run(self.mlflow_run.info.run_id)
+        artifact_uri = run.info.artifact_uri
+
+        if artifact_uri.startswith("file:"):
+            return artifact_uri.replace("file:", "")
+        else:
+            tracking_uri = mlflow.get_tracking_uri()
+            return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
+
+    def get_wandb_run_uri(self) -> str:
+        if self.use_wandb:
+            return wandb.run.get_url()
+        else:
+            return ""
+
     def log_metric(
         self,
         name: str,
@@ -139,13 +162,15 @@ class Logger:
 
         self.logger.info(f"{phase.capitalize()} {name}: {metric}")
         if self.use_mlflow:
-            mlflow.log_metric(f"{name}_{phase}", metric, step)
+            mlflow.log_metric(f"{phase}/{name}", metric, step)
+        if self.use_wandb:
+            wandb.log({f"{phase}/{name}": metric}, step=step)
 
     def log_metrics(self, metrics: dict, step: int, phase: Optional[PhaseStr] = None):
         if phase is None:
             phase = self.phase
 
-        mlflow_metrics = {}
+        log_metrics = {}
         for name, value in metrics.items():
             if isinstance(value, Tensor):
                 value = value.cpu().item()
@@ -156,20 +181,26 @@ class Logger:
                     self.histories[name][phase] = []
                 self.histories[name][phase].append(value)
 
-                mlflow_metrics[f"{name}_{phase}"] = value
+                log_metrics[f"{phase}/{name}"] = value
 
             self.logger.info(f"{phase.capitalize()} {name}: {value}")
 
         if self.use_mlflow:
-            mlflow.log_metrics(mlflow_metrics, step)
+            mlflow.log_metrics(log_metrics, step)
+        if self.use_wandb:
+            wandb.log(log_metrics, step=step)
 
     def log_params(self, parameters: dict):
         if self.use_mlflow:
             mlflow.log_params(parameters)
+        if self.use_wandb:
+            wandb.config.update(parameters)
 
     def log_tag(self, key: str, value: str):
         if self.use_mlflow:
             mlflow.set_tag(key, value)
+        if self.use_wandb:
+            wandb.run.tags[key] = value
 
     def log_figure(self, fig: matplotlib.figure.Figure, path: Union[str, Path]):
         if self.use_mlflow:
@@ -242,12 +273,12 @@ class Logger:
         ax.legend()
         return fig
 
-    def log_config(self, cfg: ExperimentConfig, params: MlflowLogParamsConfig):
-        log_params = {}
-        for p in params:
-            log_params[p.name] = OmegaConf.select(cfg, p.value)
+    def log_config(self, cfg: ExperimentConfig, params: LogParamsConfig):
+        log_params = {p.name: OmegaConf.select(cfg, p.value) for p in params}
         self.log_params(log_params)
 
     def close(self, status="FINISHED"):
         if self.use_mlflow:
             mlflow.end_run(status=status)
+        if self.use_wandb:
+            wandb.finish()

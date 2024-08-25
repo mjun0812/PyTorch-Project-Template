@@ -74,8 +74,16 @@ def main(cfg: ExperimentConfig):
     output_dir = make_result_dirs(base_dir)
 
     ConfigManager.dump(cfg, output_dir / "config.yaml")
-    logger = Logger(output_dir, "test", "INFO", cfg.mlflow.use, cfg.mlflow.experiment_name)
-    logger.log_config(cfg, cfg.mlflow.log_params)
+    logger = Logger(
+        output_dir,
+        "test",
+        "INFO",
+        use_mlflow=cfg.mlflow.use,
+        use_wandb=cfg.wandb.use,
+        mlflow_experiment_name=cfg.mlflow.experiment_name,
+        wandb_project_name=cfg.wandb.project_name,
+    )
+    logger.log_config(cfg, cfg.log_params)
     if cfg.tag:
         logger.log_tag("tag", cfg.tag)
     logger.info("\n" + ConfigManager.pretty_text(cfg))
@@ -93,6 +101,7 @@ def main(cfg: ExperimentConfig):
         f"dataset: {cfg.test_dataset.name}",
         f"save: {str(output_dir)}",
         f"mlflow_url: {logger.get_mlflow_run_uri()}",
+        f"wandb_url: {logger.get_wandb_run_uri()}",
     ]
     # Send Message to Slack
     post_slack(message="Finish Test\n" + "\n".join(messages))

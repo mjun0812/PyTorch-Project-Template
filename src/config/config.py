@@ -88,7 +88,7 @@ class EvaluatorsConfig(BaseConfig):
 
 
 @dataclass
-class MlflowLogParamsConfig(BaseConfig):
+class LogParamsConfig(BaseConfig):
     name: str = "Model"
     value: str = "model.name"
 
@@ -98,7 +98,12 @@ class MlflowConfig(BaseConfig):
     use: bool = False
     experiment_name: str = "pytorch-project-template"
     ignore_artifact_dirs: list[str] = field(default_factory=lambda: ["models"])
-    log_params: list[MlflowLogParamsConfig] = field(default_factory=list)
+
+
+@dataclass
+class WandbConfig(BaseConfig):
+    use: bool = False
+    project_name: str = "pytorch-project-template"
 
 
 @dataclass
@@ -139,6 +144,7 @@ class ExperimentConfig(BaseConfig):
     gpu: GPUConfig = field(default_factory=GPUConfig)
     use_cpu: bool = False
 
+    # AutoMixedPrecision
     use_amp: bool = False
     amp_dtype: str = "fp16"
     amp_init_scale: Optional[float] = 2**16
@@ -156,11 +162,14 @@ class ExperimentConfig(BaseConfig):
     tag: Optional[str] = None
 
     mlflow: MlflowConfig = field(default_factory=MlflowConfig)
+    wandb: WandbConfig = field(default_factory=WandbConfig)
+    log_params: list[LogParamsConfig] = field(default_factory=list)
 
     model: ModelConfig = field(default_factory=ModelConfig)
     optimizer: OptimizerConfig = field(default_factory=OptimizerConfig)
     lr_scheduler: LrSchedulerConfig = field(default_factory=LrSchedulerConfig)
 
+    # dataset
     train_dataset: DatasetConfig = field(default_factory=DatasetConfig)
     val_dataset: DatasetConfig = field(default_factory=DatasetConfig)
     test_dataset: DatasetConfig = field(default_factory=DatasetConfig)

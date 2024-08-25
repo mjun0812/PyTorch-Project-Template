@@ -221,8 +221,16 @@ def main(cfg: ExperimentConfig) -> None:
 
     # Logging
     level = "INFO" if is_main_process() else "ERROR"
-    logger = Logger(output_dir, "train", level, cfg.mlflow.use, cfg.mlflow.experiment_name)
-    logger.log_config(cfg, cfg.mlflow.log_params)
+    logger = Logger(
+        output_dir,
+        "train",
+        level,
+        use_mlflow=cfg.mlflow.use,
+        use_wandb=cfg.wandb.use,
+        mlflow_experiment_name=cfg.mlflow.experiment_name,
+        wandb_project_name=cfg.wandb.project_name,
+    )
+    logger.log_config(cfg, cfg.log_params)
     if cfg.tag:
         logger.log_tag("tag", cfg.tag)
         logger.log_params({"tag": cfg.tag})
@@ -274,6 +282,7 @@ def main(cfg: ExperimentConfig) -> None:
         f"train output: {str(output_dir)}",
         f"test cmd: python test.py {str(output_dir / 'config.yaml')}",
         f"mlflow_url: {logger.get_mlflow_run_uri()}",
+        f"wandb_url: {logger.get_wandb_run_uri()}",
     ]
     post_slack(message="Finish Training:\n" + "\n".join(messages))
     logger.info("Finish Training:\n" + "\n".join(messages))
