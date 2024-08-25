@@ -17,6 +17,11 @@ class ModelOutput(TypedDict, total=False):
     preds: NotRequired[dict[str, Tensor]]
 
 
+class DatasetOutput(TypedDict, total=False):
+    data: NotRequired[Tensor]
+    label: NotRequired[int]
+
+
 TORCH_DTYPE = {
     "fp32": torch.float32,
     "fp64": torch.float64,

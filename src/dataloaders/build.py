@@ -5,6 +5,7 @@ from loguru import logger
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
+from ..alias import DatasetOutput, PhaseStr
 from ..config import DatasetConfig, ExperimentConfig
 from ..transform import build_transforms
 from ..utils import (
@@ -19,7 +20,7 @@ DATASET_REGISTRY = Registry("DATASET")
 
 
 def build_dataset(
-    cfg: ExperimentConfig, phase: Literal["train", "val", "test"] = "train"
+    cfg: ExperimentConfig, phase: PhaseStr = "train"
 ) -> tuple[Dataset, DataLoader, Any]:
     transforms, batched_transform = build_transforms(cfg, phase)
 
@@ -59,7 +60,7 @@ def build_dataset(
     return dataset, dataloader, batched_transform
 
 
-def collate(batch):
+def collate(batch: list[DatasetOutput]) -> dict[str, torch.Tensor]:
     keys = list(batch[0].keys())
     output = {k: [] for k in keys}
     for b in batch:
