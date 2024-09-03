@@ -6,7 +6,6 @@ from pathlib import Path
 from omegaconf import OmegaConf
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from src.config import ConfigManager
 
 
 def main():
@@ -52,7 +51,7 @@ def main():
                 print(f"Key not found: {key}, Add new key")
 
             OmegaConf.update(cfg, key, value, merge=True)
-        ConfigManager.dump(cfg, config_path)
+        OmegaConf.save(cfg, config_path, resolve=False)
 
 
 if __name__ == "__main__":
