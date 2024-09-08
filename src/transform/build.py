@@ -6,7 +6,7 @@ from omegaconf import OmegaConf
 from ..alias import PhaseStr
 from ..config import ExperimentConfig, TransformConfig
 from ..utils import Registry
-from .compose import KorniaCompose
+from .compose import BatchedTransformCompose
 
 USE_V2 = False
 try:
@@ -24,7 +24,7 @@ for augmentation in inspect.getmembers(K, inspect.isclass):
 
 def build_transforms(
     cfg: ExperimentConfig, phase: PhaseStr = "train"
-) -> tuple[T.Compose, KorniaCompose]:
+) -> tuple[T.Compose, BatchedTransformCompose]:
     cfg_batched = None
     if phase == "train":
         cfg_transforms = cfg.train_dataset.train_transforms
@@ -40,7 +40,7 @@ def build_transforms(
 
     batched_transform = None
     if cfg_batched is not None:
-        batched_transform = KorniaCompose(cfg_batched)
+        batched_transform = BatchedTransformCompose(cfg_batched)
     return T.Compose(transes), batched_transform
 
 

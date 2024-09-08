@@ -48,7 +48,7 @@ class RandomSelect(BaseTransform):
 class ToTensor(BaseTransform):
     def __call__(self, data: dict) -> dict:
         for key in data:
-            if isinstance(data[key], list):
+            if isinstance(data[key], list) and not isinstance(data[key][0], str):
                 data[key] = torch.tensor(data[key])
             elif isinstance(data[key], np.ndarray):
                 data[key] = torch.from_numpy(data[key])
