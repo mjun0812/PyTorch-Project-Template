@@ -4,7 +4,8 @@ import sys
 import cv2
 import numpy as np
 import torch
-import torchvision.transforms.functional as TF
+import torchvision.transforms.v2 as T
+import torchvision.transforms.v2.functional as TF
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.config import ConfigManager, ExperimentConfig
@@ -21,6 +22,11 @@ def main(cfg: ExperimentConfig):
     data = build_dataset(cfg, phase)
     _, dataloader, batched_transforms = data
 
+    denormalize = T.Normalize(
+        mean=[-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225],
+        std=[1 / 0.229, 1 / 0.224, 1 / 0.225],
+    )
+
     for _, data in enumerate(dataloader):
         if batched_transforms:
             data = batched_transforms(data)
@@ -31,13 +37,9 @@ def main(cfg: ExperimentConfig):
         image = data["image"][0]
         print(f"Image Shape: {image.shape}")
 
-        image = TF.normalize(
-            image,
-            mean=[-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225],
-            std=[1 / 0.229, 1 / 0.224, 1 / 0.225],
-        )
-        image = TF.to_pil_image(image.squeeze())
-        image = np.array(image, dtype=np.uint8)
+        image = denormalize(image)
+        image = image.cpu().numpy()
+        image = np.transpose(image, (1, 2, 0))  # (H, W, C)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         if "bbox" in data:
