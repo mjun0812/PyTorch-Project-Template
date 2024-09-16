@@ -1,0 +1,7 @@
+name: PolyLRScheduler_timm
+scheduler: poly
+checkpoint: null
+args:
+  t_initial: ${epoch}
+  min_lr: 1e-6
+  k_decay: 1.0

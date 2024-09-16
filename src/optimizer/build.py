@@ -1,5 +1,6 @@
 import torch
 from loguru import logger
+from timm.optim import create_optimizer_v2
 from torch import optim
 
 from ..config import ConfigManager, ExperimentConfig, OptimizerGroupConfig
@@ -45,6 +46,8 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
         optimizer = optim.SGD(parameters, lr=lr, **args)
     elif optimizer_cls == "Lion":
         optimizer = Lion(parameters, lr=lr, **args)
+    else:
+        optimizer = create_optimizer_v2(target_model, opt=optimizer_cls, lr=lr, **args)
 
     if cfg.optimizer.checkpoint is not None:
         optimizer.load_state_dict(

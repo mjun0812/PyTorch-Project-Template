@@ -3,7 +3,7 @@ from typing import Optional
 
 import torch
 from loguru import logger
-from timm.scheduler import CosineLRScheduler
+from timm.scheduler import CosineLRScheduler, create_scheduler_v2
 from torch import optim
 
 from ..config import ConfigManager, ExperimentConfig, LrSchedulerConfig
@@ -102,7 +102,7 @@ def get_lr_scheduler(
             schedulers.append(get_lr_scheduler(optimizer, s, epoch))
         scheduler = ChainedScheduler(schedulers)
     else:
-        raise ValueError(f"Invalid lr scheduler name: {lr_scheduler_name}")
+        scheduler = create_scheduler_v2(optimizer, sched=lr_scheduler_name, **args)
 
     if cfg.checkpoint is not None:
         scheduler.load_state_dict(torch.load(cfg.checkpoint, map_location="cpu", weights_only=True))
