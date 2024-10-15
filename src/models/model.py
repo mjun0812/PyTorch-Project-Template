@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-from ..alias import ModelOutput, PhaseStr
 from ..config import ExperimentConfig
+from ..types import ModelOutput, PhaseStr
 from .base import BaseModel
 from .build import MODEL_REGISTRY
 

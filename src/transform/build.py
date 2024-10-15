@@ -1,20 +1,17 @@
 import inspect
+import warnings
 
-import kornia.augmentation as K
+import torchvision.transforms.v2 as T
 from omegaconf import OmegaConf
 
-from ..alias import PhaseStr
 from ..config import ExperimentConfig, TransformConfig
+from ..types import PhaseStr
 from ..utils import Registry
 from .compose import BatchedTransformCompose
 
-USE_V2 = False
-try:
-    USE_V2 = True
-    import torchvision.transforms.v2 as T
-except ImportError:
-    print("ImportError: torchvision.transforms.v2")
-    from torchvision import transforms as T
+with warnings.catch_warnings():
+    import kornia.augmentation as K
+
 
 TRANSFORM_REGISTRY = Registry("TRANSFORM")
 BATCHED_TRANSFORM_REGISTRY = Registry("BATCHED_TRANSFORM")

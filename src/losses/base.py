@@ -1,7 +1,7 @@
 import torch.nn as nn
 
-from ..alias import LossOutput
 from ..config import ExperimentConfig
+from ..types import LossOutput
 
 
 class BaseLoss(nn.Module):

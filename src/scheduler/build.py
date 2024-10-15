@@ -102,7 +102,7 @@ def get_lr_scheduler(
             schedulers.append(get_lr_scheduler(optimizer, s, epoch))
         scheduler = ChainedScheduler(schedulers)
     else:
-        scheduler = create_scheduler_v2(optimizer, sched=lr_scheduler_name, **args)
+        scheduler, _ = create_scheduler_v2(optimizer, sched=lr_scheduler_name, **args)
 
     if cfg.checkpoint is not None:
         scheduler.load_state_dict(torch.load(cfg.checkpoint, map_location="cpu", weights_only=True))

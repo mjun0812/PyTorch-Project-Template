@@ -14,6 +14,7 @@ from .config import (
     TransformConfig,
 )
 from .manager import ConfigManager
+from .optional import BackboneConfig
 
 __all__ = [
     "ConfigManager",
@@ -30,4 +31,5 @@ __all__ = [
     "OptimizerConfig",
     "OptimizerGroupConfig",
     "TransformConfig",
+    "BackboneConfig",
 ]

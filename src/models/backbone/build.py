@@ -1,27 +1,15 @@
-from dataclasses import dataclass
-from typing import Optional
-
 import timm
 import torch
 import torchvision
 from omegaconf import OmegaConf
 from torchvision.models._utils import IntermediateLayerGetter
 
+from ...config import BackboneConfig
 from ...utils import Registry
 from ..layers import FrozenBatchNorm2d
 from .internimage import create_model as create_internimage_model
 
 BACKBONE_REGISTRY = Registry("BACKBONE")
-
-
-@dataclass
-class BackboneConfig:
-    name: str
-    imagenet_pretrained: bool = True
-    imagenet_pretrained_weight: Optional[str] = None
-    use_backbone_features: Optional[list] = None
-    freeze_backbone: bool = False
-    args: Optional[dict] = None
 
 
 def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:

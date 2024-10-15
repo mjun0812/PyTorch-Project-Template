@@ -2,20 +2,12 @@ import random
 
 import numpy as np
 import torch
+import torchvision.transforms.v2 as T
+import torchvision.transforms.v2.functional as TF
 
 from ..config import TransformConfig
 from .base import BaseTransform
 from .build import TRANSFORM_REGISTRY, get_transform
-
-USE_V2 = False
-try:
-    USE_V2 = True
-    import torchvision.transforms.v2 as T
-    import torchvision.transforms.v2.functional as TF
-except ImportError:
-    print("ImportError: torchvision.transforms.v2")
-    import torchvision.transforms.functional as TF
-    from torchvision import transforms as T
 
 
 @TRANSFORM_REGISTRY.register()

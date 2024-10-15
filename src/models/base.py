@@ -1,8 +1,8 @@
 import torch.nn as nn
 
-from ..alias import ModelOutput, PhaseStr
 from ..config import ExperimentConfig
 from ..losses import build_loss
+from ..types import ModelOutput, PhaseStr
 
 
 class BaseModel(nn.Module):

@@ -206,7 +206,8 @@ def test_scripts():
 
 
 def test_backbone():
-    from src.models import BackboneConfig, build_backbone
+    from src.config import BackboneConfig
+    from src.models import build_backbone
 
     # resnet18
     cfg = BackboneConfig(name="resnet18", use_backbone_features=[1, 2, 3])

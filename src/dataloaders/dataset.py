@@ -2,8 +2,8 @@ from typing import Optional
 
 import torch
 
-from ..alias import DatasetOutput, PhaseStr
 from ..config import ExperimentConfig
+from ..types import DatasetOutput, PhaseStr
 from .base import BaseDataset
 from .build import DATASET_REGISTRY
 from .tensor_cache import TensorCache

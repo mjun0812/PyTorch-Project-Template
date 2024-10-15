@@ -3,8 +3,8 @@ from typing import Optional
 from loguru import logger
 from torchmetrics import MetricCollection
 
-from ..alias import PhaseStr
 from ..config import ConfigManager, EvaluatorConfig, ExperimentConfig
+from ..types import PhaseStr
 from ..utils import Registry
 
 EVALUATOR_REGISTRY = Registry("EVALUATOR")

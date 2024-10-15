@@ -13,7 +13,7 @@ import requests
 import torch
 from dotenv import load_dotenv
 
-from ..alias import PathLike
+from ..types import PathLike
 
 matplotlib.use("Agg")
 import matplotlib.font_manager as font_manager  # noqa

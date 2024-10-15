@@ -5,9 +5,9 @@ from loguru import logger
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
-from ..alias import DatasetOutput, PhaseStr
 from ..config import DatasetConfig, ExperimentConfig
 from ..transform import build_transforms
+from ..types import DatasetOutput, PhaseStr
 from ..utils import (
     Registry,
     is_distributed,

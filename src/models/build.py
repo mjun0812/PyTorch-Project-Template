@@ -9,8 +9,8 @@ from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload, Mixed
 from torch.distributed.fsdp.wrap import _module_wrap_policy, size_based_auto_wrap_policy
 from torch.nn.parallel import DistributedDataParallel
 
-from ..alias import TORCH_DTYPE, PhaseStr
 from ..config import ExperimentConfig
+from ..types import TORCH_DTYPE, PhaseStr
 from ..utils import Registry, get_local_rank, is_distributed, load_model_weight
 from .base import BaseModel
 

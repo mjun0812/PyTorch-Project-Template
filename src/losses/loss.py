@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 
-from ..alias import LossOutput
 from ..config import ExperimentConfig
+from ..types import LossOutput
 from .base import BaseLoss
 from .build import LOSS_REGISTRY
 

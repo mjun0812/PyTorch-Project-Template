@@ -8,8 +8,8 @@ from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from torchmetrics import MetricCollection
 from tqdm import tqdm
 
-from .alias import TORCH_DTYPE, ModelOutput, PhaseStr
 from .models import BaseModel
+from .types import TORCH_DTYPE, ModelOutput, PhaseStr
 from .utils import is_distributed, is_main_process, reduce_tensor
 
 try:

@@ -17,8 +17,8 @@ from omegaconf import OmegaConf
 from torch import Tensor
 from wandb.sdk.wandb_run import Run as WandbRun
 
-from ..alias import PathLike, PhaseStr
 from ..config import ExperimentConfig, LogParamsConfig
+from ..types import PathLike, PhaseStr
 from .torch_utils import is_main_process
 from .utils import get_cmd, get_git_hash
 
