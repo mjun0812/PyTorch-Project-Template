@@ -4,7 +4,7 @@ cd $(dirname $0)
 cd ../
 
 PYTHON="3.11"
-CUDA_VERSION="12.1.1"
+CUDA_VERSION="12.4.0"
 
 DESCRIPTION=$(cat <<< "CUDA + Python Docker
 同階層にpoetry, requirements.txtを置くと自動でパッケージがインストールされます．
