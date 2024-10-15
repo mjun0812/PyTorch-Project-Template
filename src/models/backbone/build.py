@@ -26,7 +26,7 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
         model_name = model_name.replace("torchvision_", "")
 
         weights = None
-        if cfg_backbone.imagenet_pretrained and cfg_backbone.imagenet_pretrained_weight is None:
+        if cfg_backbone.pretrained and cfg_backbone.pretrained_weight is None:
             weights = "DEFAULT"
 
         if model_name in ("resnet18", "resnet34"):
@@ -42,7 +42,7 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
 
         backbone = getattr(torchvision.models, model_name)(
             weights=weights,
-            norm_layer=FrozenBatchNorm2d if cfg_backbone.freeze_backbone else None,
+            norm_layer=FrozenBatchNorm2d if cfg_backbone.freeze else None,
             **args,
         )
         backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
@@ -50,16 +50,14 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
         backbone = create_internimage_model(
             model_name,
             features_only=True,
-            pretrained=cfg_backbone.imagenet_pretrained,
-            out_indices=cfg_backbone.use_backbone_features,
+            pretrained=cfg_backbone.pretrained,
             **args,
         )
         backbone_num_channels = [info["num_chs"] for info in backbone.feature_info]
     elif model_name in BACKBONE_REGISTRY._obj_map.keys():
         backbone = BACKBONE_REGISTRY.get(cfg_backbone.name)(
-            pretrained=cfg_backbone.imagenet_pretrained,
-            weight_path=cfg_backbone.imagenet_pretrained_weight,
-            out_indices=cfg_backbone.use_backbone_features,
+            pretrained=cfg_backbone.pretrained,
+            weight_path=cfg_backbone.pretrained_weight,
             **args,
         )
         backbone_num_channels = backbone.feature_channels
@@ -67,10 +65,14 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
         backbone = timm.create_model(
             cfg_backbone.name,
             features_only=True,
-            pretrained=cfg_backbone.imagenet_pretrained,
-            out_indices=cfg_backbone.use_backbone_features,
+            pretrained=cfg_backbone.pretrained,
             **args,
         )
         backbone_num_channels = backbone.feature_info.channels()
+
+    # freeze
+    if cfg_backbone.freeze:
+        for param in backbone.parameters():
+            param.requires_grad = False
 
     return backbone, backbone_num_channels

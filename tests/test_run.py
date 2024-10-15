@@ -228,7 +228,7 @@ def test_backbone():
     # swin transformer
     cfg = BackboneConfig(
         name="swin_tiny_patch4_window7_224_22k",
-        imagenet_pretrained=False,
+        pretrained=False,
         use_backbone_features=[0],
     )
     cfg = OmegaConf.structured(cfg)
