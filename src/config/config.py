@@ -1,11 +1,7 @@
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Optional
 
-
-@dataclass
-class BaseConfig:
-    def get(self, key: str, default: Optional[Any] = None) -> Any:
-        return getattr(self, key, default)
+from .base import BaseConfig
 
 
 @dataclass
