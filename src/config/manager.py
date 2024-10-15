@@ -30,6 +30,7 @@ class ConfigManager:
 
         # From Dataclass
         cfg = OmegaConf.structured(ExperimentConfig)
+        ConfigManager.recursive_set_struct(cfg, False)
         # From File
         cfg_from_file = ConfigManager.build_config_from_file(args.config)
         cfg = cls.merge(cfg, cfg_from_file)
