@@ -859,7 +859,14 @@ class InternImage(nn.Module):
             post_norm_block_ids = (
                 level2_post_norm_block_ids if level2_post_norm and (i == 2) else None
             )  # for InternImage-H/G
-            import torch_cpp as opsm
+
+            try:
+                import torch_cpp as opsm
+            except ImportError:
+                # Fallback to using the pure PyTorch implementation
+                from ..layers import dcnv3 as opsm
+
+                core_op = "DCNv3_pytorch"
 
             level = InternImageBlock(
                 core_op=getattr(opsm, core_op),
