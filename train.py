@@ -82,6 +82,8 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     evaluators = {}
     for phase in ["train", "val"]:
         evaluators[phase] = build_evaluator(cfg, phase)
+        if evaluators[phase] is not None:
+            evaluators[phase] = evaluators[phase].to(device)
     logger.info("Complete Build Evaluator")
 
     start_epoch = 0
