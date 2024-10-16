@@ -37,9 +37,20 @@ from test import do_test  # isort: skip
 def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger):
     fix_seed(cfg.seed + int(os.environ.get("LOCAL_RANK", -1)))
 
+    # ###### Switch Epoch based or Iter based training #######
+    if cfg.use_iter_loop:
+        cfg.epoch = cfg.max_iter // cfg.step_iter
+        if cfg.max_iter % cfg.step_iter != 0:
+            cfg.epoch += 1
+        cfg.save_interval = 1
+        cfg.val_interval = 1
+        logger.info(f"Iter based training ({cfg.epoch} iters)")
+    else:
+        logger.info(f"Epoch based training ({cfg.epoch} epochs)")
+
     # ###### Build Model #######
     logger.info("Building Model...")
-    model, model_ema = build_model(cfg, device, "train")
+    model = build_model(cfg, device, "train")
     # save initial model
     save_model(model, f"{output_dir}/models/model_init_0.pth")
     if is_main_process():
@@ -63,13 +74,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
 
     # ####### Build LR Scheduler #######
     logger.info("Building LR Scheduler...")
-    if cfg.use_iter_loop:
-        cfg.epoch = cfg.max_iter // cfg.step_iter
-        if cfg.max_iter % cfg.step_iter != 0:
-            cfg.epoch += 1
-        cfg.save_interval = 1
-        cfg.val_interval = 1
-    iter_lr_scheduler, lr_scheduler = build_lr_scheduler(cfg, optimizer)
+    iter_lr_scheduler, epoch_lr_scheduler = build_lr_scheduler(cfg, optimizer)
     logger.info("Complete Build LR Scheduler")
 
     # ####### Build Evaluator #######
@@ -88,25 +93,35 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         start_epoch = cfg.last_epoch - 1
         best_epoch = start_epoch
         load_model_weight(cfg.model.trained_weight, model)
-        if model_ema:
-            model_ema.load_state_dict(model.state_dict())
+        logger.info(f"Load model weight from {cfg.model.trained_weight}")
+
         optimizer.load_state_dict(
             torch.load(cfg.optimizer.checkpoint, map_location=device, weights_only=True)
         )
-        if lr_scheduler:
-            lr_scheduler.load_state_dict(
-                torch.load(cfg.lr_scheduler.checkpoint, map_location=device, weights_only=True)
+        logger.info(f"Load optimizer weight from {cfg.optimizer.checkpoint}")
+
+        if epoch_lr_scheduler:
+            epoch_lr_scheduler.load_state_dict(
+                torch.load(
+                    cfg.lr_scheduler.epoch_scheduler.checkpoint,
+                    map_location=device,
+                    weights_only=True,
+                )
+            )
+            logger.info(
+                f"Load epoch scheduler weight from {cfg.lr_scheduler.epoch_scheduler.checkpoint}"
             )
         if iter_lr_scheduler:
-            iter_lr_scheduler_path = (
-                output_dir / f"schedulers/iter_scheduler_epoch_{cfg.last_epoch}.pth"
-            )
             iter_lr_scheduler.load_state_dict(
-                torch.load(iter_lr_scheduler_path, map_location=device, weights_only=True)
+                torch.load(
+                    cfg.lr_scheduler.iter_scheduler.checkpoint,
+                    map_location=device,
+                    weights_only=True,
+                )
             )
-        logger.info(f"Load model weight from {cfg.model.trained_weight}")
-        logger.info(f"Load optimizer weight from {cfg.optimizer.checkpoint}")
-        logger.info("Complete Load Model Weight")
+            logger.info(
+                f"Load iter scheduler weight from {cfg.lr_scheduler.iter_scheduler.checkpoint}"
+            )
 
     trainer = Trainer(
         epochs=cfg.epoch,
@@ -115,7 +130,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         dataloaders=dataloaders,
         batched_transforms=batched_transform,
         optimizer=optimizer,
-        lr_scheduler=lr_scheduler,
+        epoch_lr_scheduler=epoch_lr_scheduler,
         evaluators=evaluators,
         use_clip_grad=cfg.use_clip_grad,
         clip_grad=cfg.clip_grad_norm,
@@ -132,28 +147,32 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         logger.info(f"Start Epoch {epoch+1}")
         logger.log_metric("Epoch", epoch + 1, epoch + 1)
 
-        result = trainer.do_one_epoch(phase="train", epoch=epoch, model=model, model_ema=model_ema)
-
+        result = trainer.do_one_epoch(phase="train", epoch=epoch, model=model)
         logger.log_metrics(result.epoch_losses, epoch + 1, "train")
         logger.log_metric("Learning Rate", result.lr, epoch + 1, "train")
         logger.log_artifact(f"{output_dir}/train.log")
         if (epoch + 1) % cfg.save_interval == 0:
             # Save Model Weight
+            # FSDPではmodel.state_dict()を呼び出した時に各プロセスの重みが集約されるので、
+            # 全てのプロセスでsave_modelを呼び出す
             weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
-            save_model(model, weight_path)
             cfg.model.trained_weight = str(weight_path)
+            save_model(model, weight_path)
             if is_main_process():
                 optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
-                save_optimizer(optimizer, optimizer_path)
                 cfg.optimizer.checkpoint = str(optimizer_path)
+                save_optimizer(optimizer, optimizer_path)
 
-                scheduler_path = output_dir / f"schedulers/scheduler_epoch_{epoch+1}.pth"
-                iter_scheduler_path = output_dir / f"schedulers/iter_scheduler_epoch_{epoch+1}.pth"
-                cfg.lr_scheduler.checkpoint = str(scheduler_path)
                 if iter_lr_scheduler is not None:
+                    iter_scheduler_path = (
+                        output_dir / f"schedulers/iter_scheduler_epoch_{epoch+1}.pth"
+                    )
+                    cfg.lr_scheduler.iter_scheduler.checkpoint = str(iter_scheduler_path)
                     save_lr_scheduler(iter_lr_scheduler, iter_scheduler_path)
-                if lr_scheduler is not None:
-                    save_lr_scheduler(lr_scheduler, scheduler_path)
+                if epoch_lr_scheduler is not None:
+                    scheduler_path = output_dir / f"schedulers/epoch_scheduler_epoch_{epoch+1}.pth"
+                    cfg.lr_scheduler.epoch_scheduler.checkpoint = str(scheduler_path)
+                    save_lr_scheduler(epoch_lr_scheduler, scheduler_path)
 
         cfg.last_epoch = epoch + 1
 

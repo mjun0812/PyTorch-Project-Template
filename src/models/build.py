@@ -24,7 +24,7 @@ MODEL_REGISTRY = Registry("MODEL")
 
 def build_model(
     cfg: ExperimentConfig, device: torch.device, phase: PhaseStr = "train"
-) -> tuple[BaseModel, ModelEmaV3]:
+) -> BaseModel:
     model = MODEL_REGISTRY.get(cfg.model.model)(cfg, phase=phase)
     model = model.to(device)
 
@@ -32,10 +32,6 @@ def build_model(
         load_model_weight(cfg.model.pre_trained_weight, model)
 
     log_model_parameters(model)
-
-    model_ema = None
-    if cfg.model.use_model_ema:
-        model_ema = create_model_ema(cfg, model)
 
     if is_distributed():
         if cfg.gpu.multi_strategy == "ddp":
@@ -49,10 +45,8 @@ def build_model(
     if cfg.use_compile and torch.__version__ >= "2.0.0":
         logger.info("Use Torch Compile")
         model = torch.compile(model, backend=cfg.compile_backend)
-        if model_ema:
-            model_ema = torch.compile(model_ema, backend=cfg.compile_backend)
 
-    return model, model_ema
+    return model
 
 
 def calc_model_parameters(model: nn.Module) -> tuple[int, int, int]:

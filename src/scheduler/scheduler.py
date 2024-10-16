@@ -1,4 +1,5 @@
 import math
+from typing import Optional, Sequence
 
 from torch import optim
 
@@ -186,5 +187,17 @@ class LinearLR(optim.lr_scheduler.LinearLR):
 
 
 class ChainedScheduler(optim.lr_scheduler.ChainedScheduler):
+    def __init__(
+        self,
+        schedulers: Sequence[optim.lr_scheduler._LRScheduler],
+        optimizer: Optional[optim.Optimizer] = None,
+        step_ranges: Sequence[int] | None = None,
+    ):
+        self.step_ranges = step_ranges
+        super().__init__(schedulers, optimizer)
+
     def step(self, epoch=None, metric=None):
-        super().step()
+        for scheduler, step_range in zip(self._schedulers, self.step_ranges):
+            if step_range and step_range[0] <= epoch < step_range[1]:
+                scheduler.step(epoch=epoch, metric=metric)
+        self._last_lr = [group["lr"] for group in self._schedulers[-1].optimizer.param_groups]

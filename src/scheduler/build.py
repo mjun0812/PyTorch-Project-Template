@@ -5,6 +5,7 @@ import torch
 from loguru import logger
 from timm.scheduler import CosineLRScheduler, create_scheduler_v2
 from torch import optim
+from torch.optim.lr_scheduler import _LRScheduler
 
 from ..config import ConfigManager, ExperimentConfig, LrSchedulerConfig
 from .scheduler import (
@@ -21,33 +22,23 @@ from .scheduler import (
 
 def build_lr_scheduler(
     cfg: ExperimentConfig, optimizer: optim.Optimizer
-) -> tuple[Optional[optim.lr_scheduler._LRScheduler], Optional[optim.lr_scheduler._LRScheduler]]:
-    iter_scheduler = None
+) -> tuple[Optional[_LRScheduler], Optional[_LRScheduler]]:
+    lr_schedulers_cfg = cfg.lr_scheduler
+    epoch_scheduler, iter_scheduler = None, None
 
-    lr_scheduler_name = cfg.lr_scheduler.scheduler
+    if lr_schedulers_cfg.epoch_scheduler:
+        epoch_scheduler = get_lr_scheduler(optimizer, lr_schedulers_cfg.epoch_scheduler, cfg.epoch)
+        logger.info(f"Epoch Scheduler: {lr_schedulers_cfg.epoch_scheduler.scheduler}")
+    if lr_schedulers_cfg.iter_scheduler:
+        iter_scheduler = get_lr_scheduler(optimizer, lr_schedulers_cfg.iter_scheduler, cfg.max_iter)
+        logger.info(f"Iter Scheduler: {lr_schedulers_cfg.iter_scheduler.scheduler}")
 
-    if lr_scheduler_name == "IterScheduler":
-        if cfg.lr_scheduler.args["iter_scheduler"]:
-            c = LrSchedulerConfig(**cfg.lr_scheduler.args["iter_scheduler"])
-            iter_scheduler = get_lr_scheduler(optimizer, c, cfg.epoch)
-        else:
-            iter_scheduler = None
-
-        if cfg.lr_scheduler.args["epoch_scheduler"]:
-            c = LrSchedulerConfig(**cfg.lr_scheduler.args["epoch_scheduler"])
-            scheduler = get_lr_scheduler(optimizer, c, cfg.epoch)
-        else:
-            scheduler = None
-    else:
-        scheduler = get_lr_scheduler(optimizer, cfg.lr_scheduler, cfg.epoch)
-
-    logger.info(f"LR Scheduler: {lr_scheduler_name}")
-    return iter_scheduler, scheduler
+    return iter_scheduler, epoch_scheduler
 
 
 def get_lr_scheduler(
-    optimizer: optim.Optimizer, cfg: LrSchedulerConfig, epoch: int
-) -> optim.lr_scheduler._LRScheduler:
+    optimizer: optim.Optimizer, cfg: LrSchedulerConfig, num_loop: int
+) -> _LRScheduler:
     lr_scheduler_name = cfg.scheduler
     args = cfg.get("args")
     if args and not isinstance(args, dict):
@@ -71,36 +62,36 @@ def get_lr_scheduler(
             noise_range_t = []
             for n in args["noise_range_t"]:
                 if isinstance(n, float):
-                    noise_range_t.append(round(n * epoch))
+                    noise_range_t.append(round(n * num_loop))
                 elif isinstance(n, int):
                     noise_range_t.append(n)
             args["noise_range_t"] = noise_range_t
-        scheduler = CosineLRScheduler(optimizer, t_initial=epoch, **args)
+        scheduler = CosineLRScheduler(optimizer, t_initial=num_loop, **args)
     elif lr_scheduler_name == "PolynomialLRDecay":
-        scheduler = PolynomialLRDecay(optimizer, max_decay_steps=epoch, **args)
+        scheduler = PolynomialLRDecay(optimizer, max_decay_steps=num_loop, **args)
     elif lr_scheduler_name == "MultiStepLR":
         milestones = []
         for m in args["milestones"]:
             if isinstance(m, float):
-                milestones.append(round(m * epoch))
+                milestones.append(round(m * num_loop))
             elif isinstance(m, int):
                 milestones.append(m)
         args["milestones"] = milestones
         scheduler = MultiStepLR(optimizer, **args)
     elif lr_scheduler_name == "StepLR":
         if isinstance(args["step_size"], float) and args["step_size"] <= 1:
-            args["step_size"] = round(args["step_size"] * epoch)
+            args["step_size"] = round(args["step_size"] * num_loop)
         scheduler = StepLR(optimizer, **args)
     elif lr_scheduler_name == "LinearLR":
         if args.get("total_iters") is None:
-            args["total_iters"] = epoch
+            args["total_iters"] = num_loop
         scheduler = LinearLR(optimizer, **args)
     elif lr_scheduler_name == "ChainedScheduler":
         schedulers = []
         for s in args["schedulers"]:
             s = LrSchedulerConfig(**s)
-            schedulers.append(get_lr_scheduler(optimizer, s, epoch))
-        scheduler = ChainedScheduler(schedulers)
+            schedulers.append(get_lr_scheduler(optimizer, s, num_loop))
+        scheduler = ChainedScheduler(schedulers, optimizer, args["step_ranges"])
     else:
         scheduler, _ = create_scheduler_v2(optimizer, sched=lr_scheduler_name, **args)
 

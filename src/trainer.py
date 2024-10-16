@@ -38,7 +38,7 @@ class BaseTrainer:
         dataloaders: dict[PhaseStr, torch.utils.data.DataLoader],
         batched_transforms: dict[PhaseStr, callable],
         optimizer: torch.optim.Optimizer,
-        lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
+        epoch_lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
         iter_lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         evaluators: Optional[dict[PhaseStr, MetricCollection]] = None,
         generate_input_evaluator: Optional[callable] = None,
@@ -55,7 +55,7 @@ class BaseTrainer:
         self.dataloaders = dataloaders
         self.batched_transforms = batched_transforms
         self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
+        self.epoch_lr_scheduler = epoch_lr_scheduler
         self.iter_lr_scheduler = iter_lr_scheduler
         self.evaluators = evaluators
         self.generate_input_evaluator = (
@@ -82,7 +82,6 @@ class BaseTrainer:
         phase: PhaseStr,
         epoch: int,
         model: BaseModel,
-        model_ema=None,
     ) -> EpochResult:
         hist_epoch_loss = HistoryEpochLoss()
         pbar = self._setup_progress_bar(phase)
@@ -100,7 +99,7 @@ class BaseTrainer:
                 ):
                     output: ModelOutput = model(data)
                 if phase == "train":
-                    self.backward(output, model, model_ema, i, epoch)
+                    self.backward(output, model, i, epoch)
 
             self.update_metrics_and_losses(phase, data, output, hist_epoch_loss)
             if is_main_process():
@@ -132,7 +131,7 @@ class BaseTrainer:
             data = self.batched_transforms[phase](data)
         return data
 
-    def backward(self, output: ModelOutput, model: BaseModel, model_ema, i: int, epoch: int):
+    def backward(self, output: ModelOutput, model: BaseModel, i: int, epoch: int):
         self.scaler.scale(output["losses"]["total_loss"]).backward()
         if self.use_clip_grad:
             self.scaler.unscale_(self.optimizer)
@@ -145,8 +144,6 @@ class BaseTrainer:
                 metric=output["losses"]["total_loss"].item(),
             )
         self.optimizer.zero_grad(set_to_none=True)
-        if model_ema:
-            model_ema.update(model)
 
     def update_metrics_and_losses(
         self, phase: PhaseStr, data: dict, output: ModelOutput, hist_epoch_loss: HistoryEpochLoss
@@ -173,8 +170,8 @@ class BaseTrainer:
             hist_epoch_loss[k] = v / len(self.dataloaders[phase])
 
         lr = self.optimizer.param_groups[0]["lr"]
-        if phase == "train" and self.lr_scheduler:
-            self.lr_scheduler.step(epoch=epoch, metric=hist_epoch_loss["total_loss"])
+        if phase == "train" and self.epoch_lr_scheduler:
+            self.epoch_lr_scheduler.step(epoch=epoch, metric=hist_epoch_loss["total_loss"])
 
         ret = EpochResult(epoch_losses=hist_epoch_loss, lr=lr)
         if self.evaluators[phase] is not None:

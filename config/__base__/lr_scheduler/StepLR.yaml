@@ -1,7 +1,9 @@
-name: StepLR
-scheduler: StepLR
-checkpoint: null
-args:
-  # 割合で指定，Epochで自動計算
-  step_size: 0.7
-  gamma: 0.1
+epoch_scheduler:
+  name: StepLR
+  scheduler: StepLR
+  checkpoint: null
+  args:
+    # 割合で指定，Epochで自動計算
+    step_size: 0.7
+    gamma: 0.1
+iter_scheduler: null

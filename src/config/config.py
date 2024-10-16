@@ -22,10 +22,6 @@ class ModelConfig(BaseConfig):
     use_sync_bn: bool = False
     find_unused_parameters: bool = False
 
-    use_model_ema: bool = False
-    model_ema_decay: float = 0.9998
-    model_ema_warmup: bool = False
-
     loss: LossConfig = field(default_factory=LossConfig)
 
 
@@ -51,6 +47,12 @@ class LrSchedulerConfig(BaseConfig):
     scheduler: str = "StepLR"
     checkpoint: Optional[str] = None
     args: Optional[dict] = None
+
+
+@dataclass
+class LrSchedulersConfig(BaseConfig):
+    iter_scheduler: Optional[LrSchedulerConfig] = None
+    epoch_scheduler: Optional[LrSchedulerConfig] = None
 
 
 @dataclass
@@ -163,7 +165,7 @@ class ExperimentConfig(BaseConfig):
 
     model: ModelConfig = field(default_factory=ModelConfig)
     optimizer: OptimizerConfig = field(default_factory=OptimizerConfig)
-    lr_scheduler: LrSchedulerConfig = field(default_factory=LrSchedulerConfig)
+    lr_scheduler: LrSchedulersConfig = field(default_factory=LrSchedulersConfig)
 
     # dataset
     train_dataset: DatasetConfig = field(default_factory=DatasetConfig)

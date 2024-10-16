@@ -36,7 +36,8 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
 
         return_layers = {}
         backbone_num_channels = []
-        for i, num_feat in enumerate(cfg_backbone.use_backbone_features):
+        use_backbone_features = args.pop("out_indices", [])
+        for i, num_feat in enumerate(use_backbone_features):
             return_layers[f"layer{num_feat}"] = str(i)
             backbone_num_channels.append(resnet_backbone_num_channels[num_feat])
 

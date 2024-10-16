@@ -1,7 +1,9 @@
-name: PolyLRScheduler_timm
-scheduler: poly
-checkpoint: null
-args:
-  num_epochs: ${epoch}
-  min_lr: 1e-6
-  k_decay: 1.0
+epoch_scheduler:
+  name: PolyLRScheduler_timm
+  scheduler: poly
+  checkpoint: null
+  args:
+    num_epochs: ${epoch}
+    min_lr: 1e-6
+    k_decay: 1.0
+iter_scheduler: null

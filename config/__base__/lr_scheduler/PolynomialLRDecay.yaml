@@ -1,6 +1,8 @@
-name: PolynomialLRDecay
-scheduler: PolynomialLRDecay
-checkpoint: null
-args:
-  end_learning_rate: 1e-4
-  power: 0.9
+epoch_scheduler:
+  name: PolynomialLRDecay
+  scheduler: PolynomialLRDecay
+  checkpoint: null
+  args:
+    end_learning_rate: 1e-4
+    power: 0.9
+iter_scheduler: null

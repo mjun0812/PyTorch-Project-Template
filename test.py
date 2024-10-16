@@ -26,7 +26,7 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     logger.info("Complete Load Dataset")
 
     logger.info("Building Model...")
-    model, _ = build_model(cfg, device, "test")
+    model = build_model(cfg, device, "test")
     load_model_weight(cfg.model.trained_weight, model)
     model.eval()
     model.requires_grad_(False)

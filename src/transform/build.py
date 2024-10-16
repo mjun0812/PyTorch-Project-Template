@@ -1,6 +1,6 @@
 import inspect
-import warnings
 
+import kornia.augmentation as K
 import torchvision.transforms.v2 as T
 from omegaconf import OmegaConf
 
@@ -8,10 +8,6 @@ from ..config import ExperimentConfig, TransformConfig
 from ..types import PhaseStr
 from ..utils import Registry
 from .compose import BatchedTransformCompose
-
-with warnings.catch_warnings():
-    import kornia.augmentation as K
-
 
 TRANSFORM_REGISTRY = Registry("TRANSFORM")
 BATCHED_TRANSFORM_REGISTRY = Registry("BATCHED_TRANSFORM")

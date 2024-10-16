@@ -1,10 +1,12 @@
-name: CosineAnnealingWarmRestarts
-scheduler: CosineAnnealingWarmRestarts
-checkpoint: null
-args:
-  # T_0を周期とするコサインカーブで減衰して、
-  # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
-  # 局所最適を脱出してもっと良いパラメータを探索します
-  T_0: 20
-  T_mult: 2
-  eta_min: 1e-6
+epoch_scheduler:
+  name: CosineAnnealingWarmRestarts
+  scheduler: CosineAnnealingWarmRestarts
+  checkpoint: null
+  args:
+    # T_0を周期とするコサインカーブで減衰して、
+    # あるところまで減衰したところで再び高いlearning rateに戻すような挙動により
+    # 局所最適を脱出してもっと良いパラメータを探索します
+    T_0: 20
+    T_mult: 2
+    eta_min: 1e-6
+iter_scheduler: null

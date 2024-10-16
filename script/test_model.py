@@ -22,9 +22,7 @@ torch.use_deterministic_algorithms = True
 def main(cfg: ExperimentConfig):
     cfg.batch = 2
     cfg.model.pre_trained_weight = None
-    model, _ = build_model(
-        cfg, device=torch.device("cpu" if cfg.use_cpu else "cuda:0"), phase="train"
-    )
+    model = build_model(cfg, device=torch.device("cpu" if cfg.use_cpu else "cuda:0"), phase="train")
     model.eval()
     model.requires_grad_(False)
     print(model)

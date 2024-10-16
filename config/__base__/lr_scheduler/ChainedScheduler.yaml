@@ -1,17 +1,22 @@
-name: ChainedScheduler
-scheduler: ChainedScheduler
-checkpoint: null
-args:
-  schedulers:
-    - name: LinearLR
-      scheduler: LinearLR
-      args:
-        start_factor: 0.00066667
-        end_factor: 1e-3
-        total_iters: 1
-    - name: MultiStepLR
-      scheduler: MultiStepLR
-      args:
-        # 割合で指定，Epochで自動計算
-        milestones: [0.66, 0.90]
-        gamma: 0.1
+epoch_scheduler:
+  name: ChainedScheduler
+  scheduler: ChainedScheduler
+  checkpoint: null
+  args:
+    step_ranges:
+      - [0, 10]
+      - [10, 10000]
+    schedulers:
+      - name: LinearLR
+        scheduler: LinearLR
+        args:
+          start_factor: 0.00066667
+          end_factor: 1e-3
+          total_iters: 1
+      - name: MultiStepLR
+        scheduler: MultiStepLR
+        args:
+          # 割合で指定，Epochで自動計算
+          milestones: [0.66, 0.90]
+          gamma: 0.1
+iter_scheduler: null

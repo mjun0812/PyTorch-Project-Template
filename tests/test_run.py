@@ -28,7 +28,13 @@ plt.rcParams.update(
 
 
 def test_train_test_resume():
-    common_options = ["use_cpu=true", "mlflow.use=false", "output=/tmp/test"]
+    common_options = [
+        "use_cpu=true",
+        "mlflow.use=false",
+        "output=/tmp/test",
+        "epoch=2",
+        "val_interval=1",
+    ]
     print("start training test")
     process = subprocess.run(
         ["python", "train.py", "config/dummy.yaml"] + common_options,
@@ -59,7 +65,7 @@ def test_train_test_resume():
     print("start resume test")
     cmd = output_cmd.replace("test.py", "train.py").split(" ")
     process = subprocess.run(
-        cmd + common_options + ["epoch=5"],
+        cmd + ["epoch=3"],
         stdout=subprocess.PIPE,
     )
     assert process.returncode == 0
@@ -105,7 +111,7 @@ def test_dataloader():
 
 
 def test_lr_scheduler():
-    from src.config import LrSchedulerConfig
+    from src.config import LrSchedulersConfig
     from src.scheduler import build_lr_scheduler
 
     config_dir = os.path.join(os.path.dirname(__file__), "../config/__base__/lr_scheduler")
@@ -118,7 +124,7 @@ def test_lr_scheduler():
     base_cfg.epoch = 100
     for config_path in config_dir.glob("*.yaml"):
         scheduler_cfg = OmegaConf.load(config_path)
-        scheduler_cfg = LrSchedulerConfig(**scheduler_cfg)
+        scheduler_cfg = LrSchedulersConfig(**scheduler_cfg)
         base_cfg.lr_scheduler = scheduler_cfg
         print(f"config: {base_cfg.lr_scheduler}")
 
@@ -141,14 +147,22 @@ def test_lr_scheduler():
             lrs.append(optimizer.param_groups[0]["lr"])
             x.append(epoch + 1)
 
+        scheduler_name = ""
+        if scheduler_cfg.epoch_scheduler is not None:
+            scheduler_name += f"{scheduler_cfg.epoch_scheduler.name}"
+        if scheduler_cfg.iter_scheduler is not None:
+            if scheduler_name:
+                scheduler_name += "_"
+            scheduler_name += f"{scheduler_cfg.iter_scheduler.name}"
+
         fig = plt.figure(figsize=(6, 6))
-        fig.suptitle(scheduler_cfg.name, fontsize=16)
+        fig.suptitle(scheduler_name, fontsize=16)
         ax1 = fig.add_subplot(1, 1, 1)
         ax1.scatter(x, lrs, s=1)
         ax1.plot(x, lrs)
         ax1.set_xlabel("epoch")
         ax1.set_ylabel("lr")
-        fig.savefig(f"{os.path.dirname(__file__)}/../doc/lr_scheduler/{scheduler_cfg.name}.png")
+        fig.savefig(f"{os.path.dirname(__file__)}/../doc/lr_scheduler/{scheduler_name}.png")
 
 
 def test_optimizer():
@@ -210,7 +224,7 @@ def test_backbone():
     from src.models import build_backbone
 
     # resnet18
-    cfg = BackboneConfig(name="resnet18", use_backbone_features=[1, 2, 3])
+    cfg = BackboneConfig(name="resnet18", args={"out_indices": [1, 2, 3]})
     cfg = OmegaConf.structured(cfg)
     print(cfg)
     backbone, channels = build_backbone(cfg)
@@ -218,7 +232,7 @@ def test_backbone():
     print(channels)
 
     # resnet18 from torchvision
-    cfg = BackboneConfig(name="torchvision_resnet18", use_backbone_features=[1, 2, 3])
+    cfg = BackboneConfig(name="torchvision_resnet18", args={"out_indices": [1, 2, 3]})
     cfg = OmegaConf.structured(cfg)
     print(cfg)
     backbone, channels = build_backbone(cfg)
@@ -229,7 +243,7 @@ def test_backbone():
     cfg = BackboneConfig(
         name="swin_tiny_patch4_window7_224_22k",
         pretrained=False,
-        use_backbone_features=[0],
+        args={"out_indices": [0]},
     )
     cfg = OmegaConf.structured(cfg)
     print(cfg)

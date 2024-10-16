@@ -1,8 +1,10 @@
-name: MultiStepLR
-scheduler: MultiStepLR
-checkpoint: null
-args:
-  # 割合で指定した場合はEpochで自動計算
-  # 数字で指定した場合は指定Epoch
-  milestones: [0.5, 0.75]
-  gamma: 0.1
+epoch_scheduler:
+  name: MultiStepLR
+  scheduler: MultiStepLR
+  checkpoint: null
+  args:
+    # 割合で指定した場合はEpochで自動計算
+    # 数字で指定した場合は指定Epoch
+    milestones: [0.5, 0.75]
+    gamma: 0.1
+iter_scheduler: null
