@@ -8,7 +8,7 @@ from .base import BaseConfig
 class LossConfig(BaseConfig):
     name: str = "BaseLoss"
     loss: str = "BaseLoss"
-    args: dict = field(default_factory=dict)
+    args: Optional[dict] = None
 
 
 @dataclass
