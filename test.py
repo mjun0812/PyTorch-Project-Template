@@ -55,7 +55,6 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     metrics = results.metrics
     metrics.update({"Speed/ms": inference_speed * 1000, "fps": 1.0 / inference_speed})
     for name, value in metrics.items():
-        logger.info(f"{name}: {value}")
         if isinstance(value, torch.Tensor) and value.dim() == 0:
             metrics[name] = value.item()
     logger.log_metrics(metrics, None, "test")
