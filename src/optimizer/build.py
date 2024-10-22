@@ -4,7 +4,7 @@ from timm.optim import create_optimizer_v2
 from torch import optim
 
 from ..config import ConfigManager, ExperimentConfig, OptimizerGroupConfig
-from ..utils import check_model_parallel, get_world_size
+from ..utils import get_world_size, is_model_parallel
 from .lion import Lion
 
 
@@ -20,7 +20,7 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
         lr = adjust_learning_rate(lr, cfg.batch)
 
     target_model = model
-    if check_model_parallel(model):
+    if is_model_parallel(model):
         target_model = model.module
 
     if cfg.optimizer.group is not None:

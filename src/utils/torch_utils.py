@@ -164,7 +164,7 @@ def reduce_tensor(tensor, n=1) -> torch.Tensor:
     return rt / n
 
 
-def check_model_parallel(model: torch.nn.Module) -> bool:
+def is_model_parallel(model: torch.nn.Module) -> bool:
     """check model is parallel or single
 
     Args:
@@ -174,6 +174,18 @@ def check_model_parallel(model: torch.nn.Module) -> bool:
         bool: parallel = True, single = False
     """
     return isinstance(model, torch.nn.DataParallel) or isinstance(model, DistributedDataParallel)
+
+
+def is_model_compiled(model: torch.nn.Module) -> bool:
+    """check model is compiled or not using torch.compile
+
+    Args:
+        model (torch.nn.Module): Model object
+
+    Returns:
+        bool: compiled = True, not compiled = False
+    """
+    return hasattr(model, "_orig_mod")
 
 
 def load_model_weight(weight_path: str, model: torch.nn.Module):
@@ -186,44 +198,48 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     if not weight_path:
         return
 
-    if check_model_parallel(model):
+    if is_model_parallel(model):
         model = model.module
+    if is_model_compiled(model):
+        model = model._orig_mod
+
     device = next(model.parameters()).device
     model_state_dict = model.state_dict()
 
-    check_point = torch.load(weight_path, map_location=device, weights_only=True)
-    # for torch.compile model
-    checkpoint_state_dict = {}
-    for k, v in check_point.items():
-        checkpoint_state_dict[k.replace("_orig_mod.", "").replace("module.", "")] = v
+    checkpoint = torch.load(weight_path, map_location=device, weights_only=True)
 
     unmatch = []
-    for k in list(checkpoint_state_dict.keys()):
+    for k in list(checkpoint.keys()):
         if k in model_state_dict:
             shape_model = tuple(model_state_dict[k].shape)
-            shape_checkpoint = tuple(checkpoint_state_dict[k].shape)
+            shape_checkpoint = tuple(checkpoint[k].shape)
             if shape_model != shape_checkpoint:
-                checkpoint_state_dict.pop(k)
+                checkpoint.pop(k)
                 unmatch.append(k)
 
-    missing, unexpexted = model.load_state_dict(checkpoint_state_dict, strict=False)
+    missing, unexpexted = model.load_state_dict(checkpoint, strict=False)
 
     logger.info(f"Load model weight from {weight_path}")
-    logger.info(f"Missing model key: {missing}")
-    logger.info(f"Unmatch model key: {unmatch}")
-    logger.info(f"Unexpected model key: {unexpexted}")
+    logger.info(f"Missing weight key: {missing}")
+    logger.info(f"Unmatch weight's shape key: {unmatch}")
+    logger.info(f"Unexpected weight key: {unexpexted}")
+
+
+def remove_compile_prefix(state_dict: dict):
+    compile_prefix = "_orig_mod."  # torch.compileすると、重みに_orig_mod.がつくので削除
+    for k in state_dict.keys():
+        if k.startswith(compile_prefix):
+            state_dict[k.replace(compile_prefix, "")] = state_dict.pop(k)
 
 
 def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
-    if check_model_parallel(model):
+    if is_model_parallel(model):
         model = model.module
+    if is_model_compiled(model):
+        model = model._orig_mod
     state_dict = model.state_dict()  # For FSDP
 
-    compile_prefix = "_orig_mod."  # torch.compileすると、重みに_orig_mod.がつくので削除
     if is_main_process():
-        for k in state_dict.keys():
-            if k.startswith(compile_prefix):
-                state_dict[k.replace(compile_prefix, "")] = state_dict.pop(k)
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
 
@@ -255,7 +271,7 @@ def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=
 
     if prefix:
         prefix = "_" + prefix
-    if check_model_parallel(model):
+    if is_model_parallel(model):
         model = model.module
 
     device = next(model.parameters()).device
