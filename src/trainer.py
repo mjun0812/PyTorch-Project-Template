@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from .models import BaseModel
 from .types import TORCH_DTYPE, ModelOutput, PhaseStr
-from .utils import is_distributed, is_main_process, reduce_tensor
+from .utils import get_world_size, is_distributed, is_main_process, reduce_tensor
 
 try:
     from torch import GradScaler
@@ -76,6 +76,11 @@ class BaseTrainer:
             self.scaler = ShardedGradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
         else:
             self.scaler = GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
+
+        for phase in ["train", "val"]:
+            total_iters = len(self.dataloaders[phase]) * self.epochs
+            logger.info(f"Total {phase} Iterations per GPU: {total_iters}")
+            logger.info(f"Total {phase} Iterations per World: {total_iters * get_world_size()}")
 
     def do_one_epoch(
         self,

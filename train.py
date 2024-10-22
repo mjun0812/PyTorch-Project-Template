@@ -16,6 +16,7 @@ from src.trainer import Trainer
 from src.utils import (
     Logger,
     create_symlink,
+    cuda_info,
     fix_seed,
     get_local_rank,
     is_distributed,
@@ -149,7 +150,6 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     logger.info("Start Training")
     for epoch in range(start_epoch, cfg.epoch):
         logger.phase = "train"
-        logger.info(f"Start Epoch {epoch+1}")
         logger.log_metric("Epoch", epoch + 1, epoch + 1)
 
         result = trainer.do_one_epoch(phase="train", epoch=epoch, model=model)
@@ -272,6 +272,7 @@ def main(cfg: ExperimentConfig) -> None:
 
     logger.info("\n" + ConfigManager.pretty_text(cfg))
     logger.log_artifacts(output_dir)
+    cuda_info(logger=logger)
 
     try:
         do_train(cfg, device, output_dir, logger)
