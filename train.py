@@ -176,6 +176,10 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
                     cfg.lr_scheduler.epoch_scheduler.checkpoint = str(scheduler_path)
                     save_lr_scheduler(epoch_lr_scheduler, scheduler_path)
 
+            cfg.last_epoch = epoch + 1
+            if is_main_process():
+                ConfigManager.dump(cfg, output_dir / "config.yaml")
+
         if (epoch + 1) % cfg.val_interval == 0:
             result = trainer.do_one_epoch(phase="val", epoch=epoch, model=model)
             logger.log_metrics(result.epoch_losses, epoch + 1, "val")
@@ -189,10 +193,6 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
                 best_loss = result.epoch_losses["total_loss"]
                 best_epoch = epoch + 1
                 logger.info(f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}")
-
-        cfg.last_epoch = epoch + 1
-        if is_main_process():
-            ConfigManager.dump(cfg, output_dir / "config.yaml")
 
     # Finish Training Process
     weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
