@@ -2,7 +2,7 @@ import os
 import random
 import time
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -11,6 +11,8 @@ from torch import distributed as dist
 from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel
 from torchinfo import summary
+
+from ..types import PathLike
 
 
 def worker_init_fn(worker_id: int):
@@ -258,7 +260,13 @@ def save_lr_scheduler(
     logger.info(f"Saving lr_scheduler at {str(file_path)}")
 
 
-def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=""):
+def save_model_info(
+    output_dir: Optional[PathLike],
+    model: torch.nn.Module,
+    input_size: Optional[list[int]] = None,
+    input_data: Optional[list[torch.Tensor]] = None,
+    prefix: str = "",
+):
     """Output PyTorch Model Summary to log.
 
     Args:
@@ -273,6 +281,8 @@ def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=
         prefix = "_" + prefix
     if is_model_parallel(model):
         model = model.module
+    if is_model_compiled(model):
+        model = model._orig_mod
 
     device = next(model.parameters()).device
 
@@ -287,3 +297,4 @@ def save_model_info(output_dir, model, input_size=None, input_data=None, prefix=
     with open(os.path.join(output_dir, f"model_summary{prefix}.log"), "a") as f:
         print(model, file=f)
         print(model_summary, file=f)
+    return model_summary

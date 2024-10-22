@@ -54,8 +54,9 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     # save initial model
     save_model(model, f"{output_dir}/models/model_init_0.pth")
     if is_main_process():
-        # Model構造を出力
-        save_model_info(str(output_dir), model)
+        model_summary = save_model_info(str(output_dir), model)
+        logger.info(f"model architecture:\n{model}")
+        logger.info(f"model summary:\n{model_summary}")
     logger.info("Complete Build Model")
 
     # ####### Build Dataset and Dataloader #######
@@ -124,6 +125,8 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
             logger.info(
                 f"Load iter scheduler weight from {cfg.lr_scheduler.iter_scheduler.checkpoint}"
             )
+    # save initial model
+    save_model(model, f"{output_dir}/models/model_init_{start_epoch}.pth")
 
     trainer = Trainer(
         epochs=cfg.epoch,
