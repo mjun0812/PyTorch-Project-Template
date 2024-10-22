@@ -218,7 +218,12 @@ def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
     if check_model_parallel(model):
         model = model.module
     state_dict = model.state_dict()  # For FSDP
+
+    compile_prefix = "_orig_mod."  # torch.compileすると、重みに_orig_mod.がつくので削除
     if is_main_process():
+        for k in state_dict.keys():
+            if k.startswith(compile_prefix):
+                state_dict[k.replace(compile_prefix, "")] = state_dict.pop(k)
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
 
