@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
+# NVIDIA CUDA imageはdevel: 4.31GB, runtime: 1.95GBなので、
+# ビルド時にはdevelを使い、実行時にはruntimeを使う
 ARG BUILDER_IMAGE="nvcr.io/nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04"
 ARG BASE_IMAGE="nvcr.io/nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04"
 
