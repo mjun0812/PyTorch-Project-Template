@@ -1,7 +1,9 @@
 import os
 import sys
 from collections import defaultdict
+from contextlib import contextmanager
 from pathlib import Path
+from pprint import pformat
 from typing import Literal, Optional, Union
 
 import matplotlib
@@ -88,6 +90,7 @@ class Logger:
             logger.add(log_path, level=level.upper())
         return logger
 
+    # ########## MLflow ##########
     def setup_mlflow(self, run_name: str, experiment_name: str):
         mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
         mlflow.set_tracking_uri(mlflow_uri)
@@ -105,6 +108,26 @@ class Logger:
         self.log_params({"output_dir": self.output_dir, "hostname": os.uname()[1]})
         return mlflow_run
 
+    def get_mlflow_run_uri(self) -> str:
+        if not self.use_mlflow:
+            return ""
+        run = mlflow.get_run(self.mlflow_run.info.run_id)
+        artifact_uri = run.info.artifact_uri
+
+        if artifact_uri.startswith("file:"):
+            return artifact_uri.replace("file:", "")
+        else:
+            tracking_uri = mlflow.get_tracking_uri()
+            return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
+
+    @contextmanager
+    def mlflow_safe_operation(self, operation_name: str):
+        try:
+            yield
+        except Exception as e:
+            self.logger.warning(f"Failed to {operation_name} on MLflow: {e}")
+
+    # ########## Wandb ##########
     def setup_wandb(self, project_name: str, run_name: str) -> WandbRun:
         Path("result/wandb").mkdir(parents=True, exist_ok=True)
         wandb.require("core")
@@ -113,6 +136,12 @@ class Logger:
             name=run_name,
             dir="result",
         )
+
+    def get_wandb_run_uri(self) -> str:
+        if self.use_wandb:
+            return wandb.run.get_url()
+        else:
+            return ""
 
     def info(self, message):
         self.logger.info(message)
@@ -129,24 +158,6 @@ class Logger:
     def debug(self, message):
         self.logger.debug(message)
 
-    def get_mlflow_run_uri(self) -> str:
-        if not self.use_mlflow:
-            return ""
-        run = mlflow.get_run(self.mlflow_run.info.run_id)
-        artifact_uri = run.info.artifact_uri
-
-        if artifact_uri.startswith("file:"):
-            return artifact_uri.replace("file:", "")
-        else:
-            tracking_uri = mlflow.get_tracking_uri()
-            return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
-
-    def get_wandb_run_uri(self) -> str:
-        if self.use_wandb:
-            return wandb.run.get_url()
-        else:
-            return ""
-
     def log_metric(
         self,
         name: str,
@@ -162,7 +173,8 @@ class Logger:
 
         self.logger.info(f"{phase.capitalize()} {name}: {metric}")
         if self.use_mlflow:
-            mlflow.log_metric(f"{phase}/{name}", metric, step)
+            with self.mlflow_safe_operation("log_metric"):
+                mlflow.log_metric(f"{phase}/{name}", metric, step)
         if self.use_wandb:
             wandb.log({f"{phase}/{name}": metric}, step=step)
 
@@ -186,33 +198,39 @@ class Logger:
             self.logger.info(f"{phase.capitalize()} {name}: {value}")
 
         if self.use_mlflow:
-            mlflow.log_metrics(log_metrics, step)
+            with self.mlflow_safe_operation("log_metrics"):
+                mlflow.log_metrics(log_metrics, step)
         if self.use_wandb:
             wandb.log(log_metrics, step=step)
 
     def log_params(self, parameters: dict):
         if self.use_mlflow:
-            mlflow.log_params(parameters)
+            with self.mlflow_safe_operation("log_params"):
+                mlflow.log_params(parameters)
         if self.use_wandb:
             wandb.config.update(parameters)
 
     def log_tag(self, key: str, value: str):
         if self.use_mlflow:
-            mlflow.set_tag(key, value)
+            with self.mlflow_safe_operation("log_tag"):
+                mlflow.set_tag(key, value)
         if self.use_wandb:
             wandb.run.tags[key] = value
 
     def log_figure(self, fig: matplotlib.figure.Figure, path: Union[str, Path]):
         if self.use_mlflow:
-            mlflow.log_figure(fig, str(path))
+            with self.mlflow_safe_operation("log_figure"):
+                mlflow.log_figure(fig, str(path))
 
     def log_artifact(self, path: Union[str, Path]):
         if self.use_mlflow:
-            mlflow.log_artifact(str(path))
+            with self.mlflow_safe_operation("log_artifact"):
+                mlflow.log_artifact(str(path))
 
     def log_artifacts(self, path: Union[str, Path]):
         if self.use_mlflow:
-            mlflow.log_artifacts(str(path))
+            with self.mlflow_safe_operation("log_artifacts"):
+                mlflow.log_artifacts(str(path))
 
     def log_result_dir(self, path: Union[str, Path], ignore_dirs: list[str] = ["models"]):
         """重みファイル(models以下)以外をartifactにする
@@ -233,23 +251,20 @@ class Logger:
                         continue
                 if ignore:
                     continue
-                mlflow.log_artifacts(target)
+                with self.mlflow_safe_operation("log_artifacts"):
+                    mlflow.log_artifacts(target)
             else:
-                mlflow.log_artifact(target)
+                with self.mlflow_safe_operation("log_artifact"):
+                    mlflow.log_artifact(target)
 
     def log_table(self, dict_data):
         if self.use_mlflow:
-            mlflow.log_table(data=dict_data)
+            with self.mlflow_safe_operation("log_table"):
+                mlflow.log_table(data=dict_data)
 
     def log_history_figure(self):
+        self.logger.info(f"Histories:\n{pformat(self.histories)}")
         metrics_names = list(self.histories.keys())
-        # サンプル不足でのグラフ描画エラーの処理
-        # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
-        # なので、x軸を補間することで、グラフを合わせる
-        x = np.arange(self.last_epoch)
-        val_x = np.linspace(0, self.last_epoch, len(self.histories[metrics_names[0]]["val"]))
-        for name in metrics_names:
-            self.histories[name]["val"] = np.interp(x, val_x, self.histories[name]["val"])
 
         for metric in metrics_names:
             labels = []
@@ -257,7 +272,23 @@ class Logger:
             for k, v in self.histories[metric].items():
                 labels.append(f"{metric}_{k}")
                 data.append(v)
-            fig = self.plot_graph(metric, labels, data)
+            if not data:
+                continue
+            max_length = max([len(d) for d in data])
+
+            # サンプル不足でのグラフ描画エラーの処理
+            # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
+            # なので、x軸を補間することで、グラフを合わせる
+            interpolated_data = []
+            for d in data:
+                if len(d) < max_length:
+                    x = np.linspace(0, max_length - 1, len(d))
+                    interp_data = np.interp(np.arange(max_length), x, d)
+                    interpolated_data.append(interp_data)
+                else:
+                    interpolated_data.append(d)
+
+            fig = self.plot_graph(metric, labels, interpolated_data)
             fig_path = os.path.join(self.output_dir, f"{metric}.png".replace(" ", "_"))
             fig.savefig(fig_path)
             plt.close()
@@ -269,8 +300,10 @@ class Logger:
             1, 1, figsize=(9, 6), tight_layout=True, subplot_kw=dict(title=title)
         )
         for label, d in zip(labels, data):
-            ax.plot(d, label=label)
+            ax.plot(range(len(d)), d, label=label)
         ax.legend()
+        ax.set_xlabel("Epoch")
+        ax.set_xlim(0, len(data[0]) - 1)  # x軸の範囲を設定
         return fig
 
     def log_config(self, cfg: ExperimentConfig, params: LogParamsConfig):

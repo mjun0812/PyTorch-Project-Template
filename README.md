@@ -12,8 +12,8 @@ PyTorchのProjectテンプレートです．
 ## Environments
 
 - Python 3.11
-- CUDA 12.1
-- PyTorch 2.4.0
+- CUDA 12.4
+- PyTorch 2.5.0
 
 ## Install
 

@@ -65,10 +65,14 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libgl1-mesa-dev \
     libglib2.0-0 \
     libsm6 \
-    build-essential
+    build-essential \
+    tzdata
 
 RUN locale-gen ja_JP.UTF-8 \
-    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+    && ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
+    && echo "Asia/Tokyo" > /etc/timezone \
+    && dpkg-reconfigure -f noninteractive tzdata
 COPY ./docker/zshrc /etc/zsh/zshrc
 COPY --chmod=755 ./docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
