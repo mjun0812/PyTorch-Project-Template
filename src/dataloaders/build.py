@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any
 
 import torch
 from loguru import logger
@@ -8,13 +8,9 @@ from torch.utils.data.distributed import DistributedSampler
 from ..config import DatasetConfig, ExperimentConfig
 from ..transform import build_transforms
 from ..types import DatasetOutput, PhaseStr
-from ..utils import (
-    Registry,
-    is_distributed,
-    worker_init_fn,
-)
+from ..utils import Registry, get_free_shm_size, is_distributed, worker_init_fn
 from .iteratable_dataloader import IterBasedDataloader
-from .tensor_cache import BYTES_PER_GIB, TensorCache, get_shm_size
+from .tensor_cache import BYTES_PER_GIB, TensorCache
 
 DATASET_REGISTRY = Registry("DATASET")
 
@@ -28,7 +24,7 @@ def build_dataset(
     cache = None
     if phase == "train" and cfg.use_ram_cache:
         assert (
-            cfg.ram_cache_size_gb <= get_shm_size() / BYTES_PER_GIB / 8
+            cfg.ram_cache_size_gb <= get_free_shm_size() / BYTES_PER_GIB
         ), "RAM Cache size is too large"
         cache = TensorCache(size_limit_gb=cfg.ram_cache_size_gb)
         logger.info(f"Use RAM Cache: {cfg.ram_cache_size_gb}GB")

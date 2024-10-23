@@ -261,3 +261,15 @@ def create_symlink(target: PathLike, dst: PathLike):
 
     # Create the symlink
     abs_dst.symlink_to(relative_target)
+
+
+def get_shm_size() -> int:
+    stats = os.statvfs("/dev/shm")
+    shm_bytes = stats.f_bsize * stats.f_blocks
+    return shm_bytes
+
+
+def get_free_shm_size() -> int:
+    stats = os.statvfs("/dev/shm")
+    free_shm_bytes = stats.f_bsize * stats.f_bavail
+    return free_shm_bytes

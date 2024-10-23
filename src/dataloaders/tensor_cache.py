@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 import torch
@@ -48,9 +47,3 @@ class TensorCache:
                 size = self._calc_elm_size(self.cache[key])
                 del self.cache[key]
                 self.current_cache_size.value -= size
-
-
-def get_shm_size() -> int:
-    stats = os.statvfs("/dev/shm")
-    shm_bytes = stats.f_bsize * stats.f_blocks
-    return shm_bytes

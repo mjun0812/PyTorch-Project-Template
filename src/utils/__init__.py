@@ -31,5 +31,7 @@ from .utils import (
     post_slack,
     create_symlink,
     HidePrints,
+    get_shm_size,
+    get_free_shm_size,
 )
 from .registry import Registry
