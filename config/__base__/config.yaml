@@ -10,7 +10,8 @@ max_iter: 160000
 
 batch: 16
 num_worker: 4
-use_ram_cache: False
+use_ram_cache: True
+ram_cache_size_gb: 16
 
 seed: 42
 
@@ -18,7 +19,7 @@ seed: 42
 gpu:
   use: 0
   multi: False
-  use_cudnn: False
+  use_cudnn: True
   multi_strategy: "ddp" # "ddp" or "dp" or "fsdp"
   use_tf32: True
   fsdp:
@@ -50,10 +51,14 @@ mlflow:
 wandb:
   use: False
   project_name: "pytorch-project-template"
-  
+
 log_params:
   - name: "Epoch"
     value: "epoch"
+  - name: "use_iter_loop"
+    value: "use_iter_loop"
+  - name: "Iter"
+    value: "max_iter"
   - name: "Batch"
     value: "batch"
   - name: "GPU Ids"
@@ -74,5 +79,11 @@ log_params:
     value: "test_dataset.name"
   - name: "Loss"
     value: "model.loss.name"
-  - name: "dtype"
+  - name: "use_cudnn"
+    value: "gpu.use_cudnn"
+  - name: "use_tf32"
+    value: "gpu.use_tf32"
+  - name: "use_amp"
+    value: "use_amp"
+  - name: "amp_dtype"
     value: "amp_dtype"

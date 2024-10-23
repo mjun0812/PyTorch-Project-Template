@@ -27,9 +27,11 @@ def build_dataset(
     # Use RAM Cache
     cache = None
     if phase == "train" and cfg.use_ram_cache:
-        cache_size_gb = int(get_shm_size() / BYTES_PER_GIB) / 8
-        cache = TensorCache(size_limit_gb=cache_size_gb)
-        logger.info(f"Use RAM Cache: {cache_size_gb}GB")
+        assert (
+            cfg.ram_cache_size_gb <= get_shm_size() / BYTES_PER_GIB / 8
+        ), "RAM Cache size is too large"
+        cache = TensorCache(size_limit_gb=cfg.ram_cache_size_gb)
+        logger.info(f"Use RAM Cache: {cfg.ram_cache_size_gb}GB")
 
     cfg_dataset: DatasetConfig = cfg.get(f"{phase}_dataset")
     dataset = DATASET_REGISTRY.get(cfg_dataset.dataset)(cfg, transforms, phase=phase, cache=cache)

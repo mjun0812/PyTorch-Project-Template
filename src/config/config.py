@@ -135,6 +135,7 @@ class ExperimentConfig(BaseConfig):
     batch: int = 32
     num_worker: int = 4
     use_ram_cache: bool = True
+    ram_cache_size_gb: int = 16
 
     seed: int = 42
 

@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from collections import defaultdict
@@ -15,7 +16,7 @@ import numpy as np
 import wandb
 from dotenv import load_dotenv
 from loguru import logger
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 from torch import Tensor
 from wandb.sdk.wandb_run import Run as WandbRun
 
@@ -307,7 +308,15 @@ class Logger:
         return fig
 
     def log_config(self, cfg: ExperimentConfig, params: LogParamsConfig):
-        log_params = {p.name: OmegaConf.select(cfg, p.value) for p in params}
+        log_params = {}
+        for p in params:
+            value = OmegaConf.select(cfg, p.value)
+            if isinstance(value, (list, tuple, ListConfig)):
+                log_params[p.name] = value
+            elif isinstance(value, (DictConfig, dict)):
+                log_params[p.name] = json.dumps(value, ensure_ascii=False)
+            else:
+                log_params[p.name] = value
         self.log_params(log_params)
 
     def close(self, status="FINISHED"):
