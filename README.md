@@ -8,6 +8,8 @@ PyTorchのProjectテンプレートです．
 - PyTorchのDistributed Data Parallel(DDP), Data Parallel, Fully Shared Distributed Parallel(FSDP)によるマルチGPU Training
 - [MLflow](https://mlflow.org)と[wandb](https://www.wandb.jp)を使った実験管理
 - [OmegaConf](https://github.com/omry/omegaconf)を使ったコンフィグ管理
+- データセットの一部をRAMにキャッシュする機能
+- 学習の再開機能
 
 ## Environments
 
@@ -108,6 +110,39 @@ gpu:
 
 学習結果は`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]`以下のディレクトリに保存されます．
 
+#### Train Option: RAM Cache
+
+データセットの一部をRAMにキャッシュする機能があります。キャッシュは`torch.Tensor`のみ対応しています。
+
+```bash
+./docker/run.sh python train.py config/model/ResNet.yaml gpu.use=1 use_ram_cache=true ram_cache_size_gb=16
+```
+
+この機能を使うには、datasetの実装を以下のように工夫する必要があります。
+
+```python
+if self.cache is not None and idx in self.cache:
+    image = self.cache.get(idx)
+else:
+    image = read_image(str(image_path), mode=ImageReadMode.RGB)
+    if self.cache is not None:
+        self.cache.set(idx, image)
+```
+
+#### Train Option: Resume Training
+
+学習の終了後、もしくは学習を中断した場合に、
+結果のディレクトリに保存されている`config.yaml`である、
+`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]/config.yaml`を指定して実行すると，学習を再開できます。
+この時、元のepochが100だった場合でも、`epoch=150`をコマンドラインで指定して実行すると、configが上書きされて150epochまで学習が継続されます。
+
+```bash
+./docker/run.sh python train.py config/config.yaml # 100epochまで完了
+
+# 上記の結果を利用して学習を再開 or 継続
+./docker/run.sh python train.py result/ImageNet/hoge_hoge/config.yaml epoch=150 gpu.use=7 # 150epochまで学習を継続
+```
+
 ### Test
 
 評価を行うスクリプトは`test.py`です．
@@ -145,7 +180,7 @@ gpu:
 ./script/run_notebook.sh
 ```
 
-### Test
+### Regression Test
 
 ```bash
 ./docker/run.sh ./script/run_test.sh
