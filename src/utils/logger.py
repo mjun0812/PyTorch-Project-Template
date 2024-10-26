@@ -216,7 +216,7 @@ class Logger:
             with self.mlflow_safe_operation("log_tag"):
                 mlflow.set_tag(key, value)
         if self.use_wandb:
-            wandb.run.tags[key] = value
+            wandb.run.tags.append(value)
 
     def log_figure(self, fig: matplotlib.figure.Figure, path: Union[str, Path]):
         if self.use_mlflow:
