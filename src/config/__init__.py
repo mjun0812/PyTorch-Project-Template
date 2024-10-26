@@ -1,19 +1,17 @@
 from .config import (
-    DatasetConfig,
     EvaluatorConfig,
     EvaluatorsConfig,
     ExperimentConfig,
     GPUConfig,
     LogParamsConfig,
-    LossConfig,
     LrSchedulerConfig,
     LrSchedulersConfig,
     MlflowConfig,
-    ModelConfig,
     OptimizerConfig,
     OptimizerGroupConfig,
-    TransformConfig,
 )
+from .config_dataset import DatasetConfig, TransformConfig
+from .config_model import LossConfig, ModelConfig
 from .manager import ConfigManager
 from .optional import BackboneConfig
 
