@@ -323,4 +323,4 @@ class Logger:
         if self.use_mlflow:
             mlflow.end_run(status=status)
         if self.use_wandb:
-            wandb.finish()
+            wandb.finish(exit_code=0 if status == "FINISHED" else 1)
