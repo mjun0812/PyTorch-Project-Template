@@ -118,6 +118,7 @@ class ExperimentConfig(BaseConfig):
 
     use_clip_grad: bool = True
     clip_grad_norm: float = 10
+    gradient_accumulation_steps: int = 1
 
     adjust_lr: bool = False
 

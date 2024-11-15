@@ -37,6 +37,7 @@ compile_backend: "inductor"
 
 use_clip_grad: True
 clip_grad_norm: 10
+gradient_accumulation_steps: 1
 
 adjust_lr: False
 

@@ -48,6 +48,7 @@ class BaseTrainer:
         use_amp: bool = False,
         amp_init_scale: int = 2**16,
         amp_dtype: str = "fp16",
+        gradient_accumulation_steps: int = 1,
     ) -> None:
         self.epochs = epochs
         self.device = device
@@ -77,6 +78,10 @@ class BaseTrainer:
         else:
             self.scaler = GradScaler(init_scale=amp_init_scale, enabled=self.use_amp)
 
+        self.gradient_accumulation_steps = gradient_accumulation_steps
+        if self.gradient_accumulation_steps > 1:
+            logger.info(f"Gradient Accumulation Steps: {self.gradient_accumulation_steps}")
+
         for phase in ["train", "val"]:
             total_iters = len(self.dataloaders[phase]) * self.epochs
             logger.info(f"Total {phase} Iterations per GPU: {total_iters}")
@@ -85,12 +90,12 @@ class BaseTrainer:
     def do_one_epoch(
         self,
         phase: PhaseStr,
-        epoch: int,
+        current_epoch: int,
         model: BaseModel,
     ) -> EpochResult:
         hist_epoch_loss = HistoryEpochLoss()
         pbar = self._setup_progress_bar(phase)
-        self._set_model_phase(model, phase, epoch)
+        self._set_model_phase(model, phase, current_epoch)
         self.optimizer.zero_grad(set_to_none=True)
 
         for i, data in pbar:
@@ -104,13 +109,13 @@ class BaseTrainer:
                 ):
                     output: ModelOutput = model(data)
                 if phase == "train":
-                    self.backward(output, model, i, epoch)
+                    self.backward(output, model, i, current_epoch)
 
             self.update_metrics_and_losses(phase, data, output, hist_epoch_loss)
             if is_main_process():
-                self._update_pbar(pbar, epoch, output["losses"])
+                self._update_pbar(pbar, current_epoch, output["losses"])
 
-        return self.after_epoch(phase, epoch, hist_epoch_loss)
+        return self.after_epoch(phase, current_epoch, hist_epoch_loss)
 
     def _setup_progress_bar(self, phase: PhaseStr):
         progress_bar = enumerate(self.dataloaders[phase])
@@ -136,19 +141,21 @@ class BaseTrainer:
             data = self.batched_transforms[phase](data)
         return data
 
-    def backward(self, output: ModelOutput, model: BaseModel, i: int, epoch: int):
-        self.scaler.scale(output["losses"]["total_loss"]).backward()
-        if self.use_clip_grad:
-            self.scaler.unscale_(self.optimizer)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), self.clip_grad)
-        self.scaler.step(self.optimizer)
-        self.scaler.update()
-        if self.iter_lr_scheduler:
-            self.iter_lr_scheduler.step(
-                epoch=i + epoch * len(self.dataloaders["train"]),
-                metric=output["losses"]["total_loss"].item(),
-            )
-        self.optimizer.zero_grad(set_to_none=True)
+    def backward(self, output: ModelOutput, model: BaseModel, iter_idx: int, epoch: int):
+        total_loss = output["losses"]["total_loss"] / self.gradient_accumulation_steps
+        self.scaler.scale(total_loss).backward()
+        if (iter_idx + 1) % self.gradient_accumulation_steps == 0:
+            if self.use_clip_grad:
+                self.scaler.unscale_(self.optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), self.clip_grad)
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+            if self.iter_lr_scheduler:
+                self.iter_lr_scheduler.step(
+                    epoch=iter_idx + epoch * len(self.dataloaders["train"]),
+                    metric=output["losses"]["total_loss"].item(),
+                )
+            self.optimizer.zero_grad(set_to_none=True)
 
     def update_metrics_and_losses(
         self, phase: PhaseStr, data: dict, output: ModelOutput, hist_epoch_loss: HistoryEpochLoss

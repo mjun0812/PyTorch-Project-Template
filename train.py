@@ -145,6 +145,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         use_amp=cfg.use_amp,
         amp_init_scale=cfg.amp_init_scale,
         amp_dtype=cfg.amp_dtype,
+        gradient_accumulation_steps=cfg.gradient_accumulation_steps,
     )
 
     logger.info("Start Training")
@@ -152,7 +153,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         logger.phase = "train"
         logger.log_metric("Epoch", epoch + 1, epoch + 1)
 
-        result = trainer.do_one_epoch(phase="train", epoch=epoch, model=model)
+        result = trainer.do_one_epoch(phase="train", current_epoch=epoch, model=model)
         logger.log_metrics(result.epoch_losses, epoch + 1, "train")
         logger.log_metric("Learning Rate", result.lr, epoch + 1, "train")
         logger.log_artifact(f"{output_dir}/train.log")
@@ -184,7 +185,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
                 ConfigManager.dump(cfg, output_dir / "config.yaml")
 
         if (epoch + 1) % cfg.val_interval == 0:
-            result = trainer.do_one_epoch(phase="val", epoch=epoch, model=model)
+            result = trainer.do_one_epoch(phase="val", current_epoch=epoch, model=model)
             logger.log_metrics(result.epoch_losses, epoch + 1, "val")
             logger.log_metrics(result.metrics, epoch + 1, "val")
             logger.log_metric("Learning Rate", result.lr, epoch + 1, "val")
