@@ -46,7 +46,7 @@ tag: null
 
 mlflow:
   use: True
-  ignore_artifact_dirs: ["models"]
+  ignore_artifact_dirs: ["models", "optimizers", "schedulers"]
   experiment_name: "pytorch-project-template"
 
 wandb:
