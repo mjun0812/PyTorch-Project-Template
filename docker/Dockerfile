@@ -2,8 +2,8 @@
 
 # NVIDIA CUDA imageはdevel: 4.31GB, runtime: 1.95GBなので、
 # ビルド時にはdevelを使い、実行時にはruntimeを使う
-ARG BUILDER_IMAGE
-ARG BASE_IMAGE
+ARG BUILDER_IMAGE="nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04"
+ARG BASE_IMAGE="nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04"
 
 FROM $BUILDER_IMAGE AS builder
 

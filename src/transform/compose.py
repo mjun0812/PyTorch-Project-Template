@@ -1,3 +1,5 @@
+import kornia
+import torch
 from omegaconf import OmegaConf
 
 from ..config import TransformConfig
@@ -78,12 +80,21 @@ class BatchedTransformCompose:
                 args.pop("assign_label")
             return registry.get(config.name)(**args)
 
+    def to(self, device: torch.device):
+        for t in self.transforms:
+            if isinstance(t, torch.nn.Module):
+                t.to(device)
+
     def __call__(self, data):
         for i, t in enumerate(self.transforms):
-            data["image"] = t(data["image"])
-            if self.assign_labels[i]:
-                for k in self.assign_labels:
-                    data[k] = t(data[k], t._params)
+            # Korniaの場合
+            if isinstance(t, kornia.augmentation.AugmentationBase2D):
+                data["image"] = t(data["image"])
+                if self.assign_labels[i]:
+                    for k in self.assign_labels:
+                        data[k] = t(data[k], t._params)
+            else:
+                data = t(data)
         return data
 
     def __repr__(self):
