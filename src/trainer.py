@@ -98,6 +98,12 @@ class BaseTrainer:
         self._set_model_phase(model, phase, current_epoch)
         self.optimizer.zero_grad(set_to_none=True)
 
+        # For ScheduleFree Optimizer
+        if phase == "train" and getattr(self.optimizer, "train", False):
+            self.optimizer.train()
+        elif phase == "val" and getattr(self.optimizer, "eval", False):
+            self.optimizer.eval()
+
         for i, data in pbar:
             with torch.set_grad_enabled(phase == "train"):
                 data = self.prepare_input(data, phase)

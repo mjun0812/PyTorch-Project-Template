@@ -3,7 +3,10 @@ from typing import Optional, Sequence
 
 from torch import optim
 
+from .build import SCHEDULER_REGISTRY
 
+
+@SCHEDULER_REGISTRY.register()
 class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
     """https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup"""
 
@@ -115,6 +118,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
             param_group["lr"] = lr
 
 
+@SCHEDULER_REGISTRY.register()
 class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
     """Polynomial learning rate decay until step reach to max_decay_step
 
@@ -161,31 +165,37 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
                 param_group["lr"] = lr
 
 
+@SCHEDULER_REGISTRY.register()
 class ReduceLROnPlateau(optim.lr_scheduler.ReduceLROnPlateau):
     def step(self, epoch=None, metric=None):
         super().step(metric, epoch=None)
 
 
+@SCHEDULER_REGISTRY.register()
 class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts):
     def step(self, epoch=None, metric=None):
         super().step(epoch=epoch)
 
 
+@SCHEDULER_REGISTRY.register()
 class MultiStepLR(optim.lr_scheduler.MultiStepLR):
     def step(self, epoch=None, metric=None):
         super().step()
 
 
+@SCHEDULER_REGISTRY.register()
 class StepLR(optim.lr_scheduler.StepLR):
     def step(self, epoch=None, metric=None):
         super().step()
 
 
+@SCHEDULER_REGISTRY.register()
 class LinearLR(optim.lr_scheduler.LinearLR):
     def step(self, epoch=None, metric=None):
         super().step()
 
 
+@SCHEDULER_REGISTRY.register()
 class ChainedScheduler(optim.lr_scheduler.ChainedScheduler):
     def __init__(
         self,

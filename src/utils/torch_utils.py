@@ -22,11 +22,11 @@ def worker_init_fn(worker_id: int):
         worker_id (int): random seed value
     """
     # random
-    # random.seed(random.getstate()[1][0] + worker_id)
+    random.seed(random.getstate()[1][0] + worker_id)
     # Numpy
     np.random.seed(np.random.get_state()[1][0] + worker_id)
-    # torch.manual_seed(np.random.get_state()[1][0] + worker_id + 1)
-    # torch.cuda.manual_seed_all(np.random.get_state()[1][0] + worker_id)
+    torch.manual_seed(np.random.get_state()[1][0] + worker_id + 1)
+    torch.cuda.manual_seed_all(np.random.get_state()[1][0] + worker_id)
 
 
 def fix_seed(seed: int) -> int:
@@ -227,7 +227,7 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     logger.info(f"Unexpected weight key: {unexpexted}")
 
 
-def remove_compile_prefix(state_dict: dict):
+def remove_compile_prefix_from_weight(state_dict: dict):
     compile_prefix = "_orig_mod."  # torch.compileすると、重みに_orig_mod.がつくので削除
     for k in state_dict.keys():
         if k.startswith(compile_prefix):

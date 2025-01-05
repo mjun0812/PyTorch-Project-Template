@@ -13,10 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 """PyTorch implementation of the Lion optimizer."""
+
 import torch
 from torch.optim.optimizer import Optimizer
 
+from .build import OPTIMIZER_REGISTRY
 
+
+@OPTIMIZER_REGISTRY.register()
 class Lion(Optimizer):
     r"""Implements Lion algorithm."""
 

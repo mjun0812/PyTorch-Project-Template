@@ -2,14 +2,18 @@
 
 # NVIDIA CUDA imageはdevel: 4.31GB, runtime: 1.95GBなので、
 # ビルド時にはdevelを使い、実行時にはruntimeを使う
-ARG BUILDER_IMAGE="nvcr.io/nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04"
-ARG BASE_IMAGE="nvcr.io/nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04"
+ARG BUILDER_IMAGE
+ARG BASE_IMAGE
 
 FROM $BUILDER_IMAGE AS builder
 
 ARG PYTHON
 ENV UV_PYTHON_INSTALL_DIR="/opt/python" \
     UV_PYTHON=${PYTHON} \
+    # インストール後にソースファイルをバイトコードにコンパイルする
+    UV_COMPILE_BYTECODE=1 \
+    # wheelからパッケージをコピーしてインストールする
+    UV_LINK_MODE=copy \
     DEBIAN_FRONTEND=noninteractive
 
 # apt packageのミラー先を日本に変更して高速化
@@ -28,22 +32,18 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=uv.lock,target=uv.lock \
-    uv sync --frozen
+    uv sync --frozen --no-install-project --no-dev
 
 
 FROM $BASE_IMAGE AS production
 
-COPY --from=builder /bin/uv /bin/uv
 COPY --from=builder /opt/python /opt/python
 COPY --from=builder /.venv /.venv
 
-ARG PYTHON
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=ja_JP.UTF-8 \
     TZ=Asia/Tokyo \
     PATH="/.venv/bin:$PATH" \
-    UV_PYTHON_INSTALL_DIR="/opt/python" \
-    UV_PYTHON=${PYTHON} \
     # 標準出力・標準エラーのストリームのバッファリングを行わない
     PYTHONUNBUFFERED=1 \
     # .pycファイルを生成しない

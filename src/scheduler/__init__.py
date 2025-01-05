@@ -1,3 +1,6 @@
-from .build import build_lr_scheduler, get_lr_scheduler
+import src.scheduler as mod
 
-__all__ = ["build_lr_scheduler", "get_lr_scheduler"]
+from ..utils import import_submodules
+from .build import SCHEDULER_REGISTRY, build_lr_scheduler, get_lr_scheduler
+
+import_submodules(mod)

@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
+from typing import Optional
 
 import torch
 import torch.distributed as dist
@@ -13,6 +14,7 @@ from src.models import build_model
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
 from src.trainer import Trainer
+from src.types import PathLike
 from src.utils import (
     Logger,
     create_symlink,
@@ -33,6 +35,56 @@ from src.utils import (
 )
 
 from test import do_test  # isort: skip
+
+
+def save_state(
+    epoch: int,
+    output_dir: PathLike,
+    cfg: ExperimentConfig,
+    model: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    epoch_lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
+    iter_lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
+):
+    # FSDPではmodel.state_dict()を呼び出した時に各プロセスの重みが集約されるので、
+    # 全てのプロセスでsave_modelを呼び出す
+    weight_path = output_dir / "models" / f"model_epoch_{epoch}.pth"
+    save_model(model, weight_path)
+
+    # Create symlink to the latest model
+    final_model_path = output_dir / "models/model_final.pth"
+    create_symlink(weight_path, final_model_path)
+
+    if is_main_process():
+        optimizer_path = output_dir / "optimizers" / f"optimizer_epoch_{epoch}.pth"
+        save_optimizer(optimizer, optimizer_path)
+        cfg.optimizer.checkpoint = str(optimizer_path)
+
+        # Create symlink to the latest optimizer
+        final_optimizer_path = output_dir / "optimizers/optimizer_final.pth"
+        create_symlink(optimizer_path, final_optimizer_path)
+
+        if epoch_lr_scheduler:
+            epoch_scheduler_path = output_dir / "schedulers" / f"epoch_scheduler_epoch_{epoch}.pth"
+            save_lr_scheduler(epoch_lr_scheduler, epoch_scheduler_path)
+            cfg.lr_scheduler.epoch_scheduler.checkpoint = str(epoch_scheduler_path)
+
+            # Create symlink to the latest epoch scheduler
+            final_epoch_scheduler_path = output_dir / "schedulers/epoch_scheduler_final.pth"
+            create_symlink(epoch_scheduler_path, final_epoch_scheduler_path)
+
+        if iter_lr_scheduler:
+            iter_scheduler_path = output_dir / "schedulers" / f"iter_scheduler_epoch_{epoch}.pth"
+            save_lr_scheduler(iter_lr_scheduler, iter_scheduler_path)
+            cfg.lr_scheduler.iter_scheduler.checkpoint = str(iter_scheduler_path)
+
+            # Create symlink to the latest iter scheduler
+            final_iter_scheduler_path = output_dir / "schedulers/iter_scheduler_final.pth"
+            create_symlink(iter_scheduler_path, final_iter_scheduler_path)
+
+        cfg.last_epoch = epoch
+        cfg.model.trained_weight = str(weight_path)
+        ConfigManager.dump(cfg, output_dir / "config.yaml")
 
 
 def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger):
@@ -99,6 +151,9 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         load_model_weight(cfg.model.trained_weight, model)
         logger.info(f"Load model weight from {cfg.model.trained_weight}")
 
+        # For ScheduleFree Optimizer
+        if getattr(optimizer, "eval", None):
+            optimizer.eval()
         optimizer.load_state_dict(
             torch.load(cfg.optimizer.checkpoint, map_location=device, weights_only=True)
         )
@@ -158,38 +213,16 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         logger.log_metric("Learning Rate", result.lr, epoch + 1, "train")
         logger.log_artifact(f"{output_dir}/train.log")
         if (epoch + 1) % cfg.save_interval == 0:
-            # Save Model Weight
-            # FSDPではmodel.state_dict()を呼び出した時に各プロセスの重みが集約されるので、
-            # 全てのプロセスでsave_modelを呼び出す
-            weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
-            cfg.model.trained_weight = str(weight_path)
-            save_model(model, weight_path)
-            if is_main_process():
-                optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
-                cfg.optimizer.checkpoint = str(optimizer_path)
-                save_optimizer(optimizer, optimizer_path)
-
-                if iter_lr_scheduler is not None:
-                    iter_scheduler_path = (
-                        output_dir / f"schedulers/iter_scheduler_epoch_{epoch+1}.pth"
-                    )
-                    cfg.lr_scheduler.iter_scheduler.checkpoint = str(iter_scheduler_path)
-                    save_lr_scheduler(iter_lr_scheduler, iter_scheduler_path)
-                if epoch_lr_scheduler is not None:
-                    scheduler_path = output_dir / f"schedulers/epoch_scheduler_epoch_{epoch+1}.pth"
-                    cfg.lr_scheduler.epoch_scheduler.checkpoint = str(scheduler_path)
-                    save_lr_scheduler(epoch_lr_scheduler, scheduler_path)
-
-            cfg.last_epoch = epoch + 1
-            if is_main_process():
-                ConfigManager.dump(cfg, output_dir / "config.yaml")
+            save_state(
+                epoch + 1, output_dir, cfg, model, optimizer, epoch_lr_scheduler, iter_lr_scheduler
+            )
 
         if (epoch + 1) % cfg.val_interval == 0:
             result = trainer.do_one_epoch(phase="val", current_epoch=epoch, model=model)
+
             logger.log_metrics(result.epoch_losses, epoch + 1, "val")
             logger.log_metrics(result.metrics, epoch + 1, "val")
             logger.log_metric("Learning Rate", result.lr, epoch + 1, "val")
-
             weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
             save_model(model, weight_path)
             if is_main_process() and result.epoch_losses["total_loss"] < best_loss:
@@ -199,28 +232,25 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
                 logger.info(f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}")
 
     # Finish Training Process
-    weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
-    save_model(model, weight_path)
+    save_state(epoch + 1, output_dir, cfg, model, optimizer, epoch_lr_scheduler, iter_lr_scheduler)
     if is_main_process():
+        logger.log_artifact(output_dir / "models/model_final.pth")
+        logger.log_artifact(output_dir / "optimizers/optimizer_final.pth")
+        if epoch_lr_scheduler:
+            logger.log_artifact(output_dir / "schedulers/epoch_scheduler_final.pth")
+        if iter_lr_scheduler:
+            logger.log_artifact(output_dir / "schedulers/iter_scheduler_final.pth")
+
         try:
             logger.log_history_figure()
         except Exception:
             logger.error(f"Cannot draw graph. {traceback.format_exc()}")
-        optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch+1}.pth"
-        if not optimizer_path.exists():
-            save_optimizer(optimizer, optimizer_path)
-        create_symlink(weight_path, output_dir / "models/model_final.pth")
-        create_symlink(optimizer_path, output_dir / "optimizers/optimizer_final.pth")
-        cfg.model.trained_weight = str(weight_path)
-        cfg.optimizer.checkpoint = str(optimizer_path)
-        logger.log_artifact(output_dir / "models/model_final.pth")
 
 
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig) -> None:
     # Set Local Rank for Multi GPU Training
     local_rank = get_local_rank()
-
     # set Device
     device = set_device(
         cfg.gpu.use,
@@ -230,12 +260,11 @@ def main(cfg: ExperimentConfig) -> None:
         verbose=local_rank in [-1, 0],
         allow_tf32=cfg.gpu.use_tf32,
     )
-
     # DDP Mode
     if cfg.gpu.multi:
         dist.init_process_group(backend="nccl", init_method="env://")
 
-    # make Output dir
+    # create output dir
     prefix = f"{cfg.model.name}_{cfg.train_dataset.name}"
     prefix += "_" + cfg.tag if cfg.tag else ""
     output_dir = None
@@ -247,11 +276,10 @@ def main(cfg: ExperimentConfig) -> None:
         )
 
     # Logging
-    level = "INFO" if is_main_process() else "ERROR"
     logger = Logger(
         output_dir,
         "train",
-        level,
+        level="INFO" if is_main_process() else "ERROR",
         use_mlflow=cfg.mlflow.use,
         use_wandb=cfg.wandb.use,
         mlflow_experiment_name=cfg.mlflow.experiment_name,
@@ -270,7 +298,6 @@ def main(cfg: ExperimentConfig) -> None:
             f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
             f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
         )
-
     logger.info("\n" + ConfigManager.pretty_text(cfg))
     logger.log_artifacts(output_dir)
     cuda_info(logger=logger)
@@ -283,7 +310,7 @@ def main(cfg: ExperimentConfig) -> None:
                 f"host: {os.uname()[1]}",
                 f"output: {output_dir}",
                 f"last epoch: {cfg.last_epoch}",
-                f"resume cmd: python train.py {str(output_dir / 'config.yaml')}",
+                f"resume cmd: python train.py {output_dir / 'config.yaml'}",
                 f"mlflow_url: {logger.get_mlflow_run_uri()}",
                 f"train error: {e}\n{traceback.format_exc()}",
             ]
@@ -307,8 +334,8 @@ def main(cfg: ExperimentConfig) -> None:
         f"tag: {cfg.tag}",
         f"model: {cfg.model.name}",
         f"train dataset: {cfg.train_dataset.name}",
-        f"train output: {str(output_dir)}",
-        f"test cmd: python test.py {str(output_dir / 'config.yaml')}",
+        f"train output: {output_dir}",
+        f"test cmd: python test.py {output_dir / 'config.yaml'}",
         f"mlflow_url: {logger.get_mlflow_run_uri()}",
         f"wandb_url: {logger.get_wandb_run_uri()}",
     ]

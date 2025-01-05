@@ -1,6 +1,6 @@
 epoch_scheduler:
-  name: CosineLRScheduler
-  scheduler: CosineLRScheduler
+  name: CosineLRScheduler_timm
+  scheduler: CosineLRScheduler_timm
   checkpoint: null
   args:
     lr_min: 1e-6

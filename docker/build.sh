@@ -4,7 +4,7 @@ cd $(dirname $0)
 cd ../
 
 PYTHON="3.11"
-CUDA_VERSION="12.4.0"
+CUDA_VERSION="12.4.1"
 
 DESCRIPTION=$(cat <<< "CUDA + Python Docker
 同階層にpoetry, requirements.txtを置くと自動でパッケージがインストールされます．
@@ -28,8 +28,8 @@ done
 
 IMAGE_NAME=$(basename $(pwd))
 IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
-BUILDER_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-devel-ubuntu22.04"
-BASE_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn8-runtime-ubuntu22.04"
+BUILDER_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu22.04"
+BASE_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn-runtime-ubuntu22.04"
 
 mkdir -p result
 

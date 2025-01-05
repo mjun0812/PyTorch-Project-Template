@@ -4,8 +4,9 @@ from timm.optim import create_optimizer_v2
 from torch import optim
 
 from ..config import ConfigManager, ExperimentConfig, OptimizerGroupConfig
-from ..utils import get_world_size, is_model_parallel
-from .lion import Lion
+from ..utils import Registry, get_world_size, is_model_parallel
+
+OPTIMIZER_REGISTRY = Registry("OPTIMIZER")
 
 
 def adjust_learning_rate(base_lr: float, batch_size: int):
@@ -14,7 +15,7 @@ def adjust_learning_rate(base_lr: float, batch_size: int):
 
 
 def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Optimizer:
-    optimizer_cls = cfg.optimizer.optimizer
+    optimizer_cls_name = cfg.optimizer.optimizer
     lr = cfg.optimizer.lr
     if cfg.adjust_lr:
         lr = adjust_learning_rate(lr, cfg.batch)
@@ -34,20 +35,10 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
     else:
         args = {}
 
-    if optimizer_cls == "AdamW":
-        optimizer = optim.AdamW(parameters, lr=lr, **args)
-    elif optimizer_cls == "Adam":
-        optimizer = optim.Adam(parameters, lr=lr, **args)
-    elif optimizer_cls == "NesterovMomentum":
-        optimizer = optim.SGD(parameters, lr=lr, **args)
-    elif optimizer_cls == "Momentum":
-        optimizer = optim.SGD(parameters, lr=lr, **args)
-    elif optimizer_cls == "SGD":
-        optimizer = optim.SGD(parameters, lr=lr, **args)
-    elif optimizer_cls == "Lion":
-        optimizer = Lion(parameters, lr=lr, **args)
+    if "timm" not in optimizer_cls_name:
+        optimizer = OPTIMIZER_REGISTRY.get(optimizer_cls_name)(parameters, lr=lr, **args)
     else:
-        optimizer = create_optimizer_v2(target_model, opt=optimizer_cls, lr=lr, **args)
+        optimizer = create_optimizer_v2(target_model, opt=optimizer_cls_name, lr=lr, **args)
 
     if cfg.optimizer.checkpoint is not None:
         optimizer.load_state_dict(

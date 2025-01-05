@@ -5,14 +5,14 @@ description = ""
 authors = [{ name = "Junya Morioka", email = "mjun@mjunya.com" }]
 requires-python = ">=3.11"
 dependencies = [
-    "torch==2.5.0+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
-    "torch==2.5.0; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
-    "torchvision==0.20.0+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
-    "torchvision==0.20.0; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
+    "torch==2.5.1+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "torch==2.5.1; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
+    "torchvision==0.20.1+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "torchvision==0.20.1; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
     "numpy<2.0.0",
-    "timm>=1.0.8",
-    "kornia>=0.7.3",
-    "mlflow>=2.15.1",
+    "timm>=1.0.11",
+    "kornia>=0.7.4",
+    "mlflow>=2.17.2",
     "torchmetrics>=1.4.1",
     "tqdm>=4.66.5",
     "matplotlib>=3.9.2",
@@ -27,6 +27,7 @@ dependencies = [
     "natsort>=8.4.0",
     "torch-cpp; sys_platform == 'linux' and platform_machine == 'x86_64'",
     "wandb>=0.17.7",
+    "schedulefree>=1.4",
 ]
 
 [tool.uv]
@@ -73,35 +74,41 @@ target-version = "py311"
 select = [
     "E", # pycodestyle errors
     "W", # pycodestyle warnings
-    "F", # flake8
+    "F", # pyflakes
+    "B", # flake8-bugbear
     "I", # isort
 ]
 ignore = [
-    "G004",   # `logging-f-string` : loggingでf-stringを使いたいので無視する
-    "COM812",
-    "COM819",
-    "D100",
-    "D203",
-    "D213",
-    "D300",
-    "D212",
-    "D400",
-    "D415",
-    "E111",
-    "E114",
-    "E117",
-    "ISC001",
-    "ISC002",
-    "Q000",
-    "Q001",
-    "Q002",
-    "Q003",
-    "W191",
-    "B007",
-    "B905",
+    "B007",   # ループ変数が未使用です
+    "B008",   # メソッドの引数に関数を渡しています
+    "B905",   # `zip()`にstrict=Trueパラメータが必要です
+    "COM812", # 後続のカンマが欠落しています
+    "COM819", # 末尾のカンマが禁止されている箇所に存在します
+    "D100",   # モジュールのdocstringが見つかりません
+    "D203",   # クラスdocstringの前に1行空行が必要です
+    "D212",   # マルチラインdocstringの概要は最初の行にある必要があります
+    "D213",   # マルチラインdocstringの概要は2行目から始める必要があります
+    "D300",   # docstringは三重引用符を使用する必要があります
+    "D400",   # docstringの最初の行は終止符で終わる必要があります
+    "D415",   # docstringの最初の行はピリオドで終わる必要があります
+    "E111",   # インデントが不正です
+    "E114",   # インデントが不正です(コメント行)
+    "E117",   # 過剰なインデントです
+    "E501",   # line too long, handled by black
+    "G004",   # loggingでf-stringを使いたいので無視する
+    "ISC001", # 不適切なソート順序です（import文）
+    "ISC002", # import文の間に余分な改行があります
+    "Q000",   # シングルクォートとダブルクォートの使用が一貫していません
+    "Q001",   # シングルクォートを使用する必要があります
+    "Q002",   # ダブルクォートを使用する必要があります
+    "Q003",   # docstringにはダブルクォートを使用する必要があります
 ]
 fixable = ["ALL"]
 unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+# ファイルごとのエラー除外
+"__init__.py" = ["F401"] # __all__の定義を無視する
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

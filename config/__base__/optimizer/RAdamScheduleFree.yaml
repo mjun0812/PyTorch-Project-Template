@@ -1,0 +1,7 @@
+name: RAdamScheduleFree
+optimizer: RAdamWScheduleFree
+lr: 1e-4
+args:
+  betas: [0.9, 0.999]
+group: null
+checkpoint: null
