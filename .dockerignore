@@ -2,3 +2,4 @@ result
 outputs
 model_zoo
 dataset
+**/.venv
