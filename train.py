@@ -49,11 +49,11 @@ def save_state(
 ):
     # FSDPではmodel.state_dict()を呼び出した時に各プロセスの重みが集約されるので、
     # 全てのプロセスでsave_modelを呼び出す
-    weight_path = output_dir / "models" / f"model_epoch_{epoch}.pth"
+    weight_path = f"{output_dir}/models" / f"model_epoch_{epoch}.pth"
     save_model(model, weight_path)
 
     # Create symlink to the latest model
-    final_model_path = output_dir / "models/model_final.pth"
+    final_model_path = f"{output_dir}/models/model_final.pth"
     create_symlink(weight_path, final_model_path)
 
     if is_main_process():
