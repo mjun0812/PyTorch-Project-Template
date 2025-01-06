@@ -6,6 +6,7 @@ from typing import Optional
 
 import torch
 import torch.distributed as dist
+from torch.distributed.elastic.multiprocessing.errors import record
 
 from src.config import ConfigManager, ExperimentConfig
 from src.dataloaders import build_dataset
@@ -87,6 +88,7 @@ def save_state(
         ConfigManager.dump(cfg, output_dir / "config.yaml")
 
 
+@record
 def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger):
     fix_seed(cfg.seed + int(os.environ.get("LOCAL_RANK", -1)))
 
