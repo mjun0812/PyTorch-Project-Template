@@ -52,11 +52,11 @@ def save_state(
     weight_path = f"{output_dir}/models/model_epoch_{epoch}.pth"
     save_model(model, weight_path)
 
-    # Create symlink to the latest model
-    final_model_path = f"{output_dir}/models/model_final.pth"
-    create_symlink(weight_path, final_model_path)
-
     if is_main_process():
+        # Create symlink to the latest model
+        final_model_path = f"{output_dir}/models/model_final.pth"
+        create_symlink(weight_path, final_model_path)
+
         optimizer_path = output_dir / "optimizers" / f"optimizer_epoch_{epoch}.pth"
         save_optimizer(optimizer, optimizer_path)
         cfg.optimizer.checkpoint = str(optimizer_path)
