@@ -200,10 +200,10 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     if not weight_path:
         return
 
-    if is_model_parallel(model):
-        model = model.module
     if is_model_compiled(model):
         model = model._orig_mod
+    if is_model_parallel(model):
+        model = model.module
 
     device = next(model.parameters()).device
     model_state_dict = model.state_dict()
