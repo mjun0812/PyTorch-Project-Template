@@ -246,7 +246,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         try:
             logger.log_history_figure()
         except Exception:
-            logger.error(f"Cannot draw graph. {traceback.format_exc()}")
+            logger.exception(f"Cannot draw graph. {traceback.format_exc()}")
 
 
 @ConfigManager.argparse
@@ -316,7 +316,7 @@ def main(cfg: ExperimentConfig) -> None:
                 f"mlflow_url: {logger.get_mlflow_run_uri()}",
                 f"train error: {e}\n{traceback.format_exc()}",
             ]
-            logger.error("\n".join(message))
+            logger.exception("\n".join(message))
             post_slack(channel="#error", message="\n".join(message))
             logger.log_result_dir(output_dir, ignore_dirs=cfg.mlflow.ignore_artifact_dirs)
             if is_distributed():
@@ -362,7 +362,7 @@ def main(cfg: ExperimentConfig) -> None:
     except (Exception, KeyboardInterrupt) as e:
         if is_main_process():
             messages += [f"Test Error: {e}\n{traceback.format_exc()}\n"]
-            logger.error("\n".join(messages))
+            logger.exception("\n".join(messages))
             post_slack(channel="#error", message="\n".join(messages))
         logger.close("FAILED")
         sys.exit(1)
