@@ -148,8 +148,8 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     # ####### Resume Training #######
     if cfg.last_epoch > 0:
         logger.info(f"Resume Training from Epoch {cfg.last_epoch}")
-        start_epoch = cfg.last_epoch - 1
-        best_epoch = start_epoch
+        start_epoch = cfg.last_epoch
+        best_epoch = cfg.last_epoch
         load_model_weight(cfg.model.trained_weight, model)
         logger.info(f"Load model weight from {cfg.model.trained_weight}")
 
