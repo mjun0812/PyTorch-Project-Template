@@ -51,6 +51,7 @@ docker run \
     --rm \
     --shm-size=128g \
     --hostname $(hostname) \
+    --host net \
     --ipc=host \
     --ulimit memlock=-1 \
     $USE_JUPYTER \
