@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: PolyLRScheduler_timm
-  scheduler: poly
+  scheduler: poly_timm
   checkpoint: null
   args:
     num_epochs: ${epoch}
