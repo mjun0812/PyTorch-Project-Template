@@ -1,6 +1,7 @@
 import os
 import random
 import time
+from collections import OrderedDict
 from pathlib import Path
 from typing import Optional, Union
 
@@ -190,33 +191,35 @@ def is_model_compiled(model: torch.nn.Module) -> bool:
     return hasattr(model, "_orig_mod")
 
 
-def remove_compile_prefix_from_weight(state_dict: dict):
+def remove_compile_prefix_from_weight(state_dict: OrderedDict) -> OrderedDict:
     """torch.compileすると、重みに_orig_mod.がつくので削除
 
     Args:
         state_dict (dict): state_dict
 
     Returns:
-        dict: state_dict
+        OrderedDict: state_dict
     """
     compile_prefix = "_orig_mod."
-    for k in state_dict.keys():
+    keys = list(state_dict.keys())  # キーのリストを作成
+    for k in keys:
         if k.startswith(compile_prefix):
             state_dict[k.replace(compile_prefix, "")] = state_dict.pop(k)
     return state_dict
 
 
-def remove_parallel_prefix_from_weight(state_dict: dict):
+def remove_parallel_prefix_from_weight(state_dict: OrderedDict) -> OrderedDict:
     """DataParallelすると、重みにmodule.がつくので削除
 
     Args:
-        state_dict (dict): state_dict
+        state_dict (OrderedDict): state_dict
 
     Returns:
-        dict: state_dict
+        OrderedDict: state_dict
     """
     parallel_prefix = "module."
-    for k in state_dict.keys():
+    keys = list(state_dict.keys())  # キーのリストを作成
+    for k in keys:
         if k.startswith(parallel_prefix):
             state_dict[k.replace(parallel_prefix, "")] = state_dict.pop(k)
     return state_dict
