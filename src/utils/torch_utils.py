@@ -241,10 +241,10 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
 
     device = next(model.parameters()).device
     model_state_dict = model.state_dict()
-    model_state_dict = remove_compile_prefix_from_weight(model_state_dict)
-    model_state_dict = remove_parallel_prefix_from_weight(model_state_dict)
 
     checkpoint = torch.load(weight_path, map_location=device, weights_only=True)
+    checkpoint = remove_compile_prefix_from_weight(checkpoint)
+    checkpoint = remove_parallel_prefix_from_weight(checkpoint)
 
     unmatch = []
     for k in list(checkpoint.keys()):
@@ -271,8 +271,6 @@ def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
     state_dict = model.state_dict()  # For FSDP
 
     if is_main_process():
-        state_dict = remove_compile_prefix_from_weight(state_dict)
-        state_dict = remove_parallel_prefix_from_weight(state_dict)
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
 
