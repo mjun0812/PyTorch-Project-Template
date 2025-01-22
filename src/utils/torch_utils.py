@@ -235,10 +235,10 @@ def remove_compile_prefix_from_weight(state_dict: dict):
 
 
 def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
-    if is_model_parallel(model):
-        model = model.module
     if is_model_compiled(model):
         model = model._orig_mod
+    if is_model_parallel(model):
+        model = model.module
     state_dict = model.state_dict()  # For FSDP
 
     if is_main_process():
