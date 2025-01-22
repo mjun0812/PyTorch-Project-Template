@@ -190,6 +190,38 @@ def is_model_compiled(model: torch.nn.Module) -> bool:
     return hasattr(model, "_orig_mod")
 
 
+def remove_compile_prefix_from_weight(state_dict: dict):
+    """torch.compileすると、重みに_orig_mod.がつくので削除
+
+    Args:
+        state_dict (dict): state_dict
+
+    Returns:
+        dict: state_dict
+    """
+    compile_prefix = "_orig_mod."
+    for k in state_dict.keys():
+        if k.startswith(compile_prefix):
+            state_dict[k.replace(compile_prefix, "")] = state_dict.pop(k)
+    return state_dict
+
+
+def remove_parallel_prefix_from_weight(state_dict: dict):
+    """DataParallelすると、重みにmodule.がつくので削除
+
+    Args:
+        state_dict (dict): state_dict
+
+    Returns:
+        dict: state_dict
+    """
+    parallel_prefix = "module."
+    for k in state_dict.keys():
+        if k.startswith(parallel_prefix):
+            state_dict[k.replace(parallel_prefix, "")] = state_dict.pop(k)
+    return state_dict
+
+
 def load_model_weight(weight_path: str, model: torch.nn.Module):
     """Load PreTrained or Continued Model
 
@@ -200,6 +232,8 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     if not weight_path:
         return
 
+    # DDP + torch.compileの場合、_orig_mod.module.nameになるので、
+    # _orig_mod　-> moduleの順に元モデルの参照を行う
     if is_model_compiled(model):
         model = model._orig_mod
     if is_model_parallel(model):
@@ -207,6 +241,8 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
 
     device = next(model.parameters()).device
     model_state_dict = model.state_dict()
+    model_state_dict = remove_compile_prefix_from_weight(model_state_dict)
+    model_state_dict = remove_parallel_prefix_from_weight(model_state_dict)
 
     checkpoint = torch.load(weight_path, map_location=device, weights_only=True)
 
@@ -227,13 +263,6 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     logger.info(f"Unexpected weight key: {unexpexted}")
 
 
-def remove_compile_prefix_from_weight(state_dict: dict):
-    compile_prefix = "_orig_mod."  # torch.compileすると、重みに_orig_mod.がつくので削除
-    for k in state_dict.keys():
-        if k.startswith(compile_prefix):
-            state_dict[k.replace(compile_prefix, "")] = state_dict.pop(k)
-
-
 def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
     if is_model_compiled(model):
         model = model._orig_mod
@@ -242,6 +271,8 @@ def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
     state_dict = model.state_dict()  # For FSDP
 
     if is_main_process():
+        state_dict = remove_compile_prefix_from_weight(state_dict)
+        state_dict = remove_parallel_prefix_from_weight(state_dict)
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
 
@@ -279,10 +310,10 @@ def save_model_info(
 
     if prefix:
         prefix = "_" + prefix
-    if is_model_parallel(model):
-        model = model.module
     if is_model_compiled(model):
         model = model._orig_mod
+    if is_model_parallel(model):
+        model = model.module
 
     device = next(model.parameters()).device
 
