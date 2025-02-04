@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from .models import BaseModel
 from .types import TORCH_DTYPE, ModelOutput, PhaseStr
-from .utils import get_world_size, is_distributed, is_world_main_process, reduce_tensor
+from .utils import get_world_size, is_distributed, is_local_main_process, reduce_tensor
 
 try:
     from torch import GradScaler
@@ -118,14 +118,14 @@ class BaseTrainer:
                     self.backward(output, model, i, current_epoch)
 
             self.update_metrics_and_losses(phase, data, output, hist_epoch_loss)
-            if is_world_main_process():
+            if is_local_main_process():
                 self._update_pbar(pbar, current_epoch, output["losses"])
 
         return self.after_epoch(phase, current_epoch, hist_epoch_loss)
 
     def _setup_progress_bar(self, phase: PhaseStr):
         progress_bar = enumerate(self.dataloaders[phase])
-        if is_world_main_process():
+        if is_local_main_process():
             progress_bar = tqdm(
                 progress_bar, total=len(self.dataloaders[phase]), dynamic_ncols=True
             )
