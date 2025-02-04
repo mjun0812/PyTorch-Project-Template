@@ -116,15 +116,15 @@ gpu:
 
 マルチノード・複数GPUを用いた学習を行う場合は，
 実行するコマンドの`python`を消して，
-前に`./multinode.sh [ノード数] [GPU数] [ノードランク] [マスターノードのホスト名:マスターノードのポート]`を入れ，
+前に`./multinode.sh [ノード数] [GPU数] [ジョブID] [ノードランク] [マスターノードのホスト名:マスターノードのポート]`を入れ，
 `gpu.use="0,1"`のように，Configの値を変更します．
 
 ```bash
 # Master Node
-./docker/run.sh ./multinode.sh 2 4 0 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
+./docker/run.sh ./multinode.sh 2 4 12345 0 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
 
 # Worker Node
-./docker/run.sh ./multinode.sh 2 4 1 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=4,5,6,7
+./docker/run.sh ./multinode.sh 2 4 12345 1 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=4,5,6,7
 ```
 
 学習結果は`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]`以下のディレクトリに保存されます．
