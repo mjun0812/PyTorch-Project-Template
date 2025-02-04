@@ -18,6 +18,7 @@ from .torch_utils import (
     get_local_rank,
     save_lr_scheduler,
     save_optimizer,
+    get_global_rank,
 )
 from .utils import (
     JsonEncoder,

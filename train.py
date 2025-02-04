@@ -297,8 +297,11 @@ def main(cfg: ExperimentConfig) -> None:
     if is_distributed():
         logger.info("Use Distributed Data Parallel Training")
         logger.info(
-            f"hostname={os.uname()[1]}, LOCAL_RANK={local_rank}, "
-            f"RANK={dist.get_rank()}, WORLD_SIZE={dist.get_world_size()}"
+            f"hostname={os.uname()[1]}, "
+            f"LOCAL_RANK={local_rank}, "
+            f"LOCAL_WORLD_SIZE={os.environ.get('LOCAL_WORLD_SIZE')}, "
+            f"RANK={dist.get_rank()}, "
+            f"WORLD_SIZE={dist.get_world_size()}"
         )
     logger.info("\n" + ConfigManager.pretty_text(cfg))
     logger.log_artifacts(output_dir)

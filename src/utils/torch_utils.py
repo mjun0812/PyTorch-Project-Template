@@ -137,18 +137,22 @@ def is_distributed():
     return False
 
 
-def is_main_process() -> bool:
-    return not is_distributed() or dist.get_rank() == 0
-
-
 def get_local_rank() -> int:
     return int(os.environ.get("LOCAL_RANK", -1))
+
+
+def get_global_rank() -> int:
+    return int(os.environ.get("RANK", -1))
 
 
 def get_world_size() -> int:
     if not is_distributed():
         return 1
     return dist.get_world_size()
+
+
+def is_main_process() -> bool:
+    return not is_distributed() or get_global_rank() == 0
 
 
 def reduce_tensor(tensor, n=1) -> torch.Tensor:
