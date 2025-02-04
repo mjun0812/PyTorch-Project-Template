@@ -141,8 +141,12 @@ def get_local_rank() -> int:
     return int(os.environ.get("LOCAL_RANK", -1))
 
 
-def get_global_rank() -> int:
+def get_world_rank() -> int:
     return int(os.environ.get("RANK", -1))
+
+
+def get_local_size() -> int:
+    return int(os.environ.get("LOCAL_WORLD_SIZE", 1))
 
 
 def get_world_size() -> int:
@@ -151,8 +155,16 @@ def get_world_size() -> int:
     return dist.get_world_size()
 
 
-def is_main_process() -> bool:
-    return not is_distributed() or get_global_rank() == 0
+def is_local_main_process() -> bool:
+    return not is_distributed() or get_local_rank() == 0
+
+
+def is_world_main_process() -> bool:
+    return not is_distributed() or get_world_rank() == 0
+
+
+def is_multi_node() -> bool:
+    return is_distributed() and (get_local_size() != get_world_size())
 
 
 def reduce_tensor(tensor, n=1) -> torch.Tensor:
@@ -277,14 +289,14 @@ def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
         model = model.module
     state_dict = model.state_dict()  # For FSDP
 
-    if is_main_process():
+    if is_world_main_process():
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving model at {str(file_path)}")
 
 
 def save_optimizer(optimizer: torch.optim.Optimizer, file_path: Union[str, Path]):
     state_dict = optimizer.state_dict()
-    if is_main_process():
+    if is_world_main_process():
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving optimizer at {str(file_path)}")
 

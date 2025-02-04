@@ -22,8 +22,13 @@ from src.utils import (
     cuda_info,
     fix_seed,
     get_local_rank,
+    get_local_size,
+    get_world_rank,
+    get_world_size,
     is_distributed,
-    is_main_process,
+    is_local_main_process,
+    is_multi_node,
+    is_world_main_process,
     load_model_weight,
     make_output_dirs,
     make_result_dirs,
@@ -52,7 +57,7 @@ def save_state(
     weight_path = f"{output_dir}/models/model_epoch_{epoch}.pth"
     save_model(model, weight_path)
 
-    if is_main_process():
+    if is_world_main_process():
         # Create symlink to the latest model
         final_model_path = f"{output_dir}/models/model_final.pth"
         create_symlink(weight_path, final_model_path)
@@ -108,7 +113,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     model = build_model(cfg, device, "train")
     # save initial model
     save_model(model, f"{output_dir}/models/model_init_0.pth")
-    if is_main_process():
+    if is_world_main_process():
         model_summary = save_model_info(str(output_dir), model)
         logger.info(f"model architecture:\n{model}")
         logger.info(f"model summary:\n{model_summary}")
@@ -227,7 +232,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
             logger.log_metric("Learning Rate", result.lr, epoch + 1, "val")
             weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
             save_model(model, weight_path)
-            if is_main_process() and result.epoch_losses["total_loss"] < best_loss:
+            if is_world_main_process() and result.epoch_losses["total_loss"] < best_loss:
                 create_symlink(weight_path, output_dir / "models/model_best.pth")
                 best_loss = result.epoch_losses["total_loss"]
                 best_epoch = epoch + 1
@@ -235,7 +240,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
 
     # Finish Training Process
     save_state(epoch + 1, output_dir, cfg, model, optimizer, epoch_lr_scheduler, iter_lr_scheduler)
-    if is_main_process():
+    if is_world_main_process():
         logger.log_artifact(output_dir / "models/model_final.pth")
         logger.log_artifact(output_dir / "optimizers/optimizer_final.pth")
         if epoch_lr_scheduler:
@@ -270,7 +275,7 @@ def main(cfg: ExperimentConfig) -> None:
     prefix = f"{cfg.model.name}_{cfg.train_dataset.name}"
     prefix += "_" + cfg.tag if cfg.tag else ""
     output_dir = None
-    if is_main_process():
+    if is_world_main_process():
         output_dir = make_output_dirs(
             Path(cfg.output) / cfg.train_dataset.name,
             prefix=prefix,
@@ -281,7 +286,7 @@ def main(cfg: ExperimentConfig) -> None:
     logger = Logger(
         output_dir,
         "train",
-        level="INFO" if is_main_process() else "ERROR",
+        level="INFO" if is_local_main_process() else "ERROR",
         use_mlflow=cfg.mlflow.use,
         use_wandb=cfg.wandb.use,
         mlflow_experiment_name=cfg.mlflow.experiment_name,
@@ -291,18 +296,27 @@ def main(cfg: ExperimentConfig) -> None:
     if cfg.tag:
         logger.log_tag("tag", cfg.tag)
         logger.log_params({"tag": cfg.tag})
-    if is_main_process():
+    if is_world_main_process():
         # Save config
         ConfigManager.dump(cfg, output_dir / "config.yaml")
     if is_distributed():
         logger.info("Use Distributed Data Parallel Training")
-        logger.info(
-            f"hostname={os.uname()[1]}, "
-            f"LOCAL_RANK={local_rank}, "
-            f"LOCAL_WORLD_SIZE={os.environ.get('LOCAL_WORLD_SIZE')}, "
-            f"RANK={dist.get_rank()}, "
-            f"WORLD_SIZE={dist.get_world_size()}"
-        )
+        if is_multi_node():
+            logger.info("Multi Node Multi GPU Training")
+            logger.info(
+                f"hostname={os.uname()[1]}, "
+                f"LOCAL_RANK={local_rank}, "
+                f"LOCAL_WORLD_SIZE={get_local_size()}, "
+                f"WORLD_RANK={get_world_rank()}, "
+                f"WORLD_SIZE={get_world_size()}"
+            )
+        else:
+            logger.info("Single Node Multi GPU Training")
+            logger.info(
+                f"hostname={os.uname()[1]}, "
+                f"LOCAL_RANK={local_rank}, "
+                f"LOCAL_WORLD_SIZE={get_local_size()}"
+            )
     logger.info("\n" + ConfigManager.pretty_text(cfg))
     logger.log_artifacts(output_dir)
     cuda_info(logger=logger)
@@ -310,7 +324,7 @@ def main(cfg: ExperimentConfig) -> None:
     try:
         do_train(cfg, device, output_dir, logger)
     except (Exception, KeyboardInterrupt) as e:
-        if is_main_process():
+        if is_world_main_process():
             message = [
                 f"host: {os.uname()[1]}",
                 f"output: {output_dir}",
@@ -327,7 +341,7 @@ def main(cfg: ExperimentConfig) -> None:
         logger.close("FAILED")
         sys.exit(1)
 
-    if not is_main_process():
+    if not is_world_main_process():
         return
     # Clean Up multi gpu process
     if is_distributed():
@@ -363,7 +377,7 @@ def main(cfg: ExperimentConfig) -> None:
     try:
         do_test(cfg, output_result_dir, device, logger)
     except (Exception, KeyboardInterrupt) as e:
-        if is_main_process():
+        if is_world_main_process():
             messages += [f"Test Error: {e}\n{traceback.format_exc()}\n"]
             logger.exception("\n".join(messages))
             post_slack(channel="#error", message="\n".join(messages))

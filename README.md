@@ -6,6 +6,7 @@ PyTorchのProjectテンプレートです．
 
 - Docker + uvで環境構築
 - PyTorchのDistributed Data Parallel(DDP), Data Parallel, Fully Shared Distributed Parallel(FSDP)によるマルチGPU Training
+- Multi Node Multi GPU Trainingのサポート
 - [MLflow](https://mlflow.org)と[wandb](https://www.wandb.jp)を使った実験管理
 - [OmegaConf](https://github.com/omry/omegaconf)を使ったコンフィグ管理
 - データセットの一部をRAMにキャッシュする機能
@@ -15,7 +16,7 @@ PyTorchのProjectテンプレートです．
 
 - Python 3.11
 - CUDA 12.4
-- PyTorch 2.5.0
+- PyTorch 2.5.1
 
 ## Install
 
@@ -100,12 +101,30 @@ gpu:
 ./docker/run.sh python train.py config/model/ResNet.yaml
 ```
 
-複数GPUを用いた学習を行う場合は，実行するコマンドの`python`を消して，
+#### Single Node Multi GPU Training
+
+シングルノード・複数GPUを用いた学習を行う場合は，
+実行するコマンドの`python`を消して，
 前に`./torchrun.sh [GPU数]`を入れ，`gpu.use="0,1"`のように，Configの値を変更します．
 この時，GPUのIDの順番は`nvidia-smi`コマンドで並ぶPCIeの順番になっています．
 
 ```bash
 ./docker/run.sh ./torchrun.sh 4 train.py config/model/ResNet.yaml gpu.use="0,1,2,3"
+```
+
+#### Multi Node Multi GPU Training
+
+マルチノード・複数GPUを用いた学習を行う場合は，
+実行するコマンドの`python`を消して，
+前に`./multinode.sh [ノード数] [GPU数] [ノードランク] [マスターノードのホスト名:マスターノードのポート]`を入れ，
+`gpu.use="0,1"`のように，Configの値を変更します．
+
+```bash
+# Master Node
+./docker/run.sh ./multinode.sh 2 4 0 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
+
+# Worker Node
+./docker/run.sh ./multinode.sh 2 4 1 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=4,5,6,7
 ```
 
 学習結果は`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]`以下のディレクトリに保存されます．

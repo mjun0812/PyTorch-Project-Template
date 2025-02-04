@@ -22,7 +22,7 @@ from wandb.sdk.wandb_run import Run as WandbRun
 
 from ..config import ExperimentConfig, LogParamsConfig
 from ..types import PathLike, PhaseStr
-from .torch_utils import is_main_process
+from .torch_utils import is_world_main_process
 from .utils import get_cmd, get_git_hash
 
 matplotlib.use("Agg")
@@ -66,7 +66,7 @@ class Logger:
         log_path = output_dir / f"{self.phase}.log" if output_dir is not None else None
         self.logger = self.setup_logger(log_path, level)
 
-        if is_main_process():
+        if is_world_main_process():
             with open(Path(output_dir) / "cmd_histry.log", "a") as f:
                 print(get_cmd(), file=f)  # Execute CLI command history
 
@@ -87,7 +87,7 @@ class Logger:
     def setup_logger(self, log_path: Optional[Union[str, Path]] = None, level: str = "INFO"):
         logger.remove()
         logger.add(sys.stdout, level=level.upper())
-        if log_path and is_main_process():
+        if log_path and is_world_main_process():
             logger.add(log_path, level=level.upper())
         return logger
 
