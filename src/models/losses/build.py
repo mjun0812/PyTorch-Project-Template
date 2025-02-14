@@ -1,5 +1,5 @@
-from ..config import ExperimentConfig
-from ..utils import Registry
+from ...config import ExperimentConfig
+from ...utils import Registry
 from .base import BaseLoss
 
 LOSS_REGISTRY = Registry("LOSS")
