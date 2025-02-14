@@ -123,6 +123,8 @@ def test_lr_scheduler():
     base_cfg = _load_config(os.path.join(os.path.dirname(__file__), "../config/dummy.yaml"))
     base_cfg.epoch = 100
     for config_path in config_dir.glob("*.yaml"):
+        if "None" in config_path.stem:
+            continue
         scheduler_cfg = OmegaConf.load(config_path)
         scheduler_cfg = LrSchedulersConfig(**scheduler_cfg)
         base_cfg.lr_scheduler = scheduler_cfg

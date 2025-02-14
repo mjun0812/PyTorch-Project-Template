@@ -3,11 +3,11 @@ epoch_scheduler:
   scheduler: cosine_timm
   checkpoint: null
   args:
-    lr_min: 1e-6
-    warmup_t: 5
-    warmup_lr_init: 1e-4
+    min_lr: 1e-6
+    warmup_epochs: 5
+    warmup_lr: 1e-4
     cycle_decay: 0.1
-    noise_range_t: [0.8, 0.9]
+    noise: [0.8, 0.9]
     # warmup終了時の学習率をlrと同じにする
     warmup_prefix: false
     cycle_limit: 1

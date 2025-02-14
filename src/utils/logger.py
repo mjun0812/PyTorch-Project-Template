@@ -307,7 +307,7 @@ class Logger:
             ax.plot(range(len(d)), d, label=label)
         ax.legend()
         ax.set_xlabel("Epoch")
-        ax.set_xlim(0, len(data[0]) - 1)  # x軸の範囲を設定
+        ax.set_xlim(0, len(data[0]))  # x軸の範囲を設定
         return fig
 
     def log_config(self, cfg: ExperimentConfig, params: LogParamsConfig):

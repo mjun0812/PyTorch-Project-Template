@@ -1,5 +1,5 @@
 name: Lamb_timm
-optimizer: lamb
+optimizer: lamb_timm
 lr: 1e-4
 args:
   weight_decay: 1e-4

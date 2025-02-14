@@ -38,6 +38,7 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
     if "timm" not in optimizer_cls_name:
         optimizer = OPTIMIZER_REGISTRY.get(optimizer_cls_name)(parameters, lr=lr, **args)
     else:
+        optimizer_cls_name = optimizer_cls_name.replace("_timm", "")
         optimizer = create_optimizer_v2(target_model, opt=optimizer_cls_name, lr=lr, **args)
 
     if cfg.optimizer.checkpoint is not None:

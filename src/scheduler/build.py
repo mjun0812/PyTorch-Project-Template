@@ -74,12 +74,13 @@ def get_lr_scheduler(
             schedulers.append(get_lr_scheduler(optimizer, s, num_loop))
         args["schedulers"] = schedulers
 
+    print(args)
     if "timm" in lr_scheduler_name:
         scheduler, _ = create_scheduler_v2(
-            optimizer, sched=lr_scheduler_name.replace("_timm", ""), **args
+            optimizer=optimizer, sched=lr_scheduler_name.replace("_timm", ""), **args
         )
     else:
-        scheduler = SCHEDULER_REGISTRY.get(lr_scheduler_name)(optimizer, **args)
+        scheduler = SCHEDULER_REGISTRY.get(lr_scheduler_name)(optimizer=optimizer, **args)
 
     if cfg.checkpoint is not None:
         scheduler.load_state_dict(torch.load(cfg.checkpoint, map_location="cpu", weights_only=True))
