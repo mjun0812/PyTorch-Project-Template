@@ -74,7 +74,6 @@ def get_lr_scheduler(
             schedulers.append(get_lr_scheduler(optimizer, s, num_loop))
         args["schedulers"] = schedulers
 
-    print(args)
     if "timm" in lr_scheduler_name:
         scheduler, _ = create_scheduler_v2(
             optimizer=optimizer, sched=lr_scheduler_name.replace("_timm", ""), **args

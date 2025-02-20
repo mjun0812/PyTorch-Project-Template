@@ -1,8 +1,29 @@
+from typing import Literal
+
 import torch
 import torch.nn as nn
 
+NormLayerTypes = Literal[
+    "BatchNorm2d", "GroupNorm", "InstanceNorm2d", "LayerNorm", "FrozenBatchNorm2d", "Identity"
+]
 
-def build_norm_layer(input_dim, norm_type="BatchNorm2d", **kwargs):
+
+def get_norm_layer(norm_type: NormLayerTypes) -> nn.Module:
+    if norm_type == "BatchNorm2d":
+        return nn.BatchNorm2d
+    elif norm_type == "GroupNorm":
+        return nn.GroupNorm
+    elif norm_type == "InstanceNorm2d":
+        return nn.InstanceNorm2d
+    elif norm_type == "LayerNorm":
+        return nn.LayerNorm
+    elif norm_type == "FrozenBatchNorm2d":
+        return FrozenBatchNorm2d
+    elif norm_type == "Identity":
+        return nn.Identity
+
+
+def build_norm_layer(input_dim, norm_type: NormLayerTypes, **kwargs):
     if norm_type == "BatchNorm2d":
         return nn.BatchNorm2d(input_dim, **kwargs)
     elif norm_type == "GroupNorm":
@@ -55,3 +76,13 @@ class FrozenBatchNorm2d(torch.nn.Module):
         scale = w * (rv + eps).rsqrt()
         bias = b - rm * scale
         return x * scale + bias
+
+
+NormLayers = [
+    nn.BatchNorm2d,
+    nn.GroupNorm,
+    nn.InstanceNorm2d,
+    nn.LayerNorm,
+    FrozenBatchNorm2d,
+    nn.Identity,
+]
