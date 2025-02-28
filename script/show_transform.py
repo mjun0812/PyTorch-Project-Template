@@ -19,6 +19,7 @@ rightkeys = (83, 109, 100, 65363, 2555904)
 def main(cfg: ExperimentConfig):
     cfg.batch = 2
     phase = "train"
+    cfg.use_cpu = True
     data = build_dataset(cfg, phase)
     _, dataloader, batched_transforms = data
 

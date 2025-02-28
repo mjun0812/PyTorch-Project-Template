@@ -98,8 +98,11 @@ gpu:
 `train.py`では`config`以下のyamlファイルを指定します．
 
 ```bash
+./docker/run.sh python train.py [config file path]
 ./docker/run.sh python train.py config/model/ResNet.yaml
 ```
+
+学習結果は`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]`以下のディレクトリに保存されます．
 
 #### Single Node Multi GPU Training
 
@@ -121,13 +124,11 @@ gpu:
 
 ```bash
 # Master Node
-./docker/run.sh ./multinode.sh 2 4 12345 0 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
+./docker/run.sh ./multinode.sh 2 4 12345 0 localhost:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
 
 # Worker Node
 ./docker/run.sh ./multinode.sh 2 4 12345 1 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=4,5,6,7
 ```
-
-学習結果は`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]`以下のディレクトリに保存されます．
 
 #### Train Option: RAM Cache
 
@@ -199,7 +200,7 @@ else:
 ./script/run_notebook.sh
 ```
 
-### Regression Test
+### Test Source
 
 ```bash
 ./docker/run.sh ./script/run_test.sh
@@ -221,4 +222,82 @@ MLflowの結果を集計し、`./doc/result_csv`以下に保存する。
 
 ```bash
 ./docker/run.sh python script/aggregate_mlflow.py [dataset_name or all]
+```
+
+### 実装済みモジュールの確認
+
+```bash
+python script/show_options.py
+
+DATASET_REGISTRY
+Registry of DATASET:
+╒══════════════╤════════════════════════════════════════════════╕
+│ Names        │ Objects                                        │
+╞══════════════╪════════════════════════════════════════════════╡
+│ DummyDataset │ <class 'src.dataloaders.dataset.DummyDataset'> │
+╘══════════════╧════════════════════════════════════════════════╛
+EVALUATOR_REGISTRY
+Registry of EVALUATOR:
+╒════════════════╤══════════════════════════════════════════════════╕
+│ Names          │ Objects                                          │
+╞════════════════╪══════════════════════════════════════════════════╡
+│ DummyEvaluator │ <class 'src.evaluator.evaluator.DummyEvaluator'> │
+╘════════════════╧══════════════════════════════════════════════════╛
+MODEL_REGISTRY
+Registry of MODEL:
+╒════════════╤═══════════════════════════════════════╕
+│ Names      │ Objects                               │
+╞════════════╪═══════════════════════════════════════╡
+│ DummyModel │ <class 'src.models.model.DummyModel'> │
+╘════════════╧═══════════════════════════════════════╛
+BACKBONE_REGISTRY
+['bat_resnext26ts',
+ 'beit_base_patch16_224',
+ 'beit_base_patch16_384',
+ 'beit_large_patch16_224',
+...
+```
+
+## Structure
+
+```bash
+.//
+├── config/            # 実験とモデルの設定ファイル
+│   └── __base__/      # 基本設定ファイル
+├── dataset/           # データセットを保存するディレクトリ（Dockerコンテナにマウント）
+├── doc/               # ドキュメントファイルと実験結果
+├── docker/            # Dockerセットアップとユーティリティスクリプト
+├── etc/               # その他のファイル
+├── notebook/          # 探索と分析用のJupyterノートブック
+├── result/            # 学習結果、チェックポイント、ログ
+├── script/            # 様々なタスク用のユーティリティスクリプト
+│   ├── aggregate_mlflow.py  # MLflow結果を集計するスクリプト
+│   ├── clean_result.py      # resultディレクトリをクリーンアップ
+│   ├── edit_configs.py      # 設定ファイルの一括編集
+│   ├── show_*.py            # 様々な情報を表示するスクリプト
+│   ├── run_mlflow.sh        # MLflow UIを起動
+│   ├── run_notebook.sh      # JupyterLabを起動
+│   └── run_test.sh          # テストを実行
+├── src/               # ソースコード
+│   ├── config/        # 設定の処理
+│   ├── dataloaders/   # データ読み込みユーティリティ
+│   ├── evaluator/     # モデル評価コード
+│   ├── models/        # モデル定義
+│   ├── optimizer/     # 最適化アルゴリズム
+│   ├── scheduler/     # 学習率スケジューラ
+│   ├── transform/     # データ変換
+│   ├── utils/         # ユーティリティ関数
+│   ├── sampler.py     # データサンプリングユーティリティ
+│   ├── tester.py      # テストループの実装
+│   ├── trainer.py     # 学習ループの実装
+│   └── types.py       # 型定義
+├── tests/             # テストコード
+├── README.md
+├── template.env       # 環境変数のテンプレート
+├── train.py
+├── test.py
+├── torchrun.sh        # 単一ノードでの分散学習用スクリプト
+├── multinode.sh       # マルチノード分散学習用スクリプト
+├── pyproject.toml
+└── uv.lock
 ```

@@ -85,7 +85,7 @@ class MemoryEfficientSwish(nn.Module):
         return memory_efficient_swish_fn(x)
 
 
-ActivationLayer = [
+ActivationLayers = [
     nn.ReLU,
     nn.GELU,
     nn.GLU,

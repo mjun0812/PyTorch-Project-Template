@@ -1,0 +1,61 @@
+import torch
+from omegaconf import OmegaConf
+
+from src.config import BackboneConfig
+from src.models.backbone import get_available_backbones
+from src.models.backbone.build import build_backbone
+
+
+def test_available_backbones():
+    """利用可能なバックボーンモデルのリストをテスト"""
+    available_backbones = get_available_backbones()
+    assert len(available_backbones) > 0
+    print(available_backbones[:10])
+
+
+def test_torchvision_backbone():
+    """torchvisionモデルの構築をテスト"""
+    cfg = BackboneConfig(
+        name="torchvision_resnet18",
+        pretrained=False,  # テスト高速化のため事前学習なし
+        args=OmegaConf.create({"out_indices": [1, 2, 3, 4]}),
+    )
+
+    backbone, channels = build_backbone(cfg)
+
+    # モデルが入力を処理できるか確認（小さいサイズの入力を使用）
+    dummy_input = torch.randn(1, 3, 224, 224)
+    outputs = backbone(dummy_input)
+    assert len(outputs) == 4
+
+
+def test_timm_backbone():
+    """timmモデルの構築をテスト（GPUなしでも実行可能）"""
+    cfg = BackboneConfig(
+        name="resnet18",
+        pretrained=False,  # テスト高速化のため事前学習なし
+        args=OmegaConf.create({"out_indices": [1, 2, 3, 4]}),
+    )
+
+    backbone, channels = build_backbone(cfg)
+
+    # モデルが入力を処理できるか確認（小さいサイズの入力を使用）
+    dummy_input = torch.randn(1, 3, 224, 224)
+    outputs = backbone(dummy_input)
+    assert len(outputs) == 4
+
+
+def test_internimage_backbone():
+    """InternImageモデルの構築をテスト"""
+    cfg = BackboneConfig(
+        name="internimage_t_1k_224",
+        pretrained=False,  # テスト高速化のため事前学習なし
+        args=OmegaConf.create({"out_indices": [1, 2, 3, 4]}),
+    )
+
+    backbone, channels = build_backbone(cfg)
+
+    # モデルが入力を処理できるか確認（小さいサイズの入力を使用）
+    dummy_input = torch.randn(1, 3, 224, 224)
+    outputs = backbone(dummy_input)
+    assert len(outputs) == 4
