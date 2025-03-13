@@ -5,6 +5,36 @@ import torch.nn.functional as F
 
 
 class MaxPool2dSame(nn.Module):
+    """MaxPool2dSameは、"SAME"パディングを使用するMaxPooling層です。
+    この層は、入力の空間サイズに基づいて適切なパディングを自動的に計算します。
+    ただし、出力サイズは入力サイズとは異なる場合があります：
+    stride=1の場合: 出力サイズは入力サイズと同じになります
+    stride>1の場合: 出力サイズは入力サイズをstrideで割った値（切り上げ）に近くなります
+
+    Args:
+        kernel_size: カーネルサイズ。整数または2要素のタプル/リスト
+        stride: ストライド。デフォルトはNone（kernel_sizeと同じ値）
+        padding: 追加のパディング。デフォルトは0
+        dilation: カーネル要素間の間隔。デフォルトは1
+        return_indices: 最大値のインデックスを返すかどうか。デフォルトはFalse
+        ceil_mode: 出力サイズの計算に切り上げを使用するかどうか。デフォルトはFalse
+
+    Examples:
+        # stride=1の場合、出力サイズは入力サイズと同じ
+        >>> m = MaxPool2dSame(kernel_size=3, stride=1)
+        >>> input = torch.randn(1, 3, 32, 32)
+        >>> output = m(input)
+        >>> print(output.shape)
+        torch.Size([1, 3, 32, 32])
+
+        # stride=2の場合、出力サイズは約半分になる
+        >>> m = MaxPool2dSame(kernel_size=3, stride=2)
+        >>> input = torch.randn(1, 3, 32, 32)
+        >>> output = m(input)
+        >>> print(output.shape)
+        torch.Size([1, 3, 16, 16])
+    """
+
     def __init__(
         self,
         kernel_size,
