@@ -101,6 +101,9 @@ class ExperimentConfig(BaseConfig):
     use_ram_cache: bool = True
     ram_cache_size_gb: int = 16
 
+    metric_for_best_model: str = "total_loss"
+    greater_is_better: bool = False
+
     seed: int = 42
 
     # device config

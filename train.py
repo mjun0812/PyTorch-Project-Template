@@ -148,7 +148,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     logger.info("Complete Build Evaluator")
 
     start_epoch = 0
-    best_loss = 1e8
+    best_metric = 1e8
     best_epoch = 0
     # ####### Resume Training #######
     if cfg.last_epoch > 0:
@@ -230,13 +230,31 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
             logger.log_metrics(result.epoch_losses, epoch + 1, "val")
             logger.log_metrics(result.metrics, epoch + 1, "val")
             logger.log_metric("Learning Rate", result.lr, epoch + 1, "val")
-            weight_path = f"{output_dir}/models/model_epoch_{epoch+1}.pth"
+            weight_path = f"{output_dir}/models/model_epoch_{epoch + 1}.pth"
             save_model(model, weight_path)
-            if is_world_main_process() and result.epoch_losses["total_loss"] < best_loss:
-                create_symlink(weight_path, output_dir / "models/model_best.pth")
-                best_loss = result.epoch_losses["total_loss"]
-                best_epoch = epoch + 1
-                logger.info(f"Save model at best val loss({best_loss:.4f}) in Epoch {best_epoch}")
+
+            if is_world_main_process():
+                # Get metric for best model
+                if result.metrics.get(cfg.metric_for_best_model, None) is not None:
+                    metric_value = result.metrics[cfg.metric_for_best_model]
+                elif result.epoch_losses.get(cfg.metric_for_best_model, None) is not None:
+                    metric_value = result.epoch_losses[cfg.metric_for_best_model]
+                else:
+                    raise ValueError(
+                        f"Metric for best model not found: {cfg.metric_for_best_model} "
+                        f"not in {result.epoch_losses.keys()} {result.metrics.keys()}"
+                    )
+
+                # Update best model
+                if (cfg.greater_is_better and metric_value > best_metric) or (
+                    not cfg.greater_is_better and metric_value < best_metric
+                ):
+                    create_symlink(weight_path, output_dir / "models/model_best.pth")
+                    best_metric = metric_value
+                    best_epoch = epoch + 1
+                    logger.info(
+                        f"Save model at best {cfg.metric_for_best_model}({best_metric:.4f}) in Epoch {best_epoch}"
+                    )
 
     # Finish Training Process
     save_state(epoch + 1, output_dir, cfg, model, optimizer, epoch_lr_scheduler, iter_lr_scheduler)

@@ -10,8 +10,17 @@ max_iter: 160000
 
 batch: 16
 num_worker: 4
+
+# RAM Cache
+# データセットの一部をRAMにキャッシュする
 use_ram_cache: True
 ram_cache_size_gb: 16
+
+# ベストモデルを保存するための指標
+# モデルの評価指標が大きいほうが良い場合は greater_is_better: True
+# 小さいほうが良い場合は greater_is_better: False
+metric_for_best_model: total_loss
+greater_is_better: False
 
 seed: 42
 
