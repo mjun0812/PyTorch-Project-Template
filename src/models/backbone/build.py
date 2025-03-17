@@ -11,7 +11,6 @@ from ..layers import FrozenBatchNorm2d
 BACKBONE_REGISTRY = Registry("BACKBONE")
 
 TIMM_MODEL_LIST = timm.list_models()
-TIMM_MODEL_LIST.append("hf_hub:mjun0812/resnext101d_32x4d")
 
 
 def get_available_backbones() -> list[str]:
@@ -29,7 +28,7 @@ def get_available_backbones() -> list[str]:
     torchvision_models = [f"torchvision_{model}" for model in torchvision_models]
 
     all_models = custom_models + timm_models + torchvision_models
-    return sorted(all_models)
+    return all_models
 
 
 def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:

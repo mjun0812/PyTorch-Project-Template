@@ -29,3 +29,4 @@ from .swin_transformer import (
     swin_tiny_patch4_window7_224_22k,
     swin_tiny_patch4_window7_224_22kto1k,
 )
+from .hf_model import resnext101d_32x4d
