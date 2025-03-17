@@ -87,22 +87,27 @@ class GPUConfig(BaseConfig):
 
 @dataclass
 class ExperimentConfig(BaseConfig):
+    # Epoch Based Training
     epoch: int = 100
     last_epoch: int = 0
-    val_interval: int = 5
-    save_interval: int = 5
 
+    # Iteration Based Training
     use_iter_loop: bool = False
     step_iter: int = 1000
     max_iter: int = 10000
 
-    batch: int = 32
-    num_worker: int = 4
-    use_ram_cache: bool = True
-    ram_cache_size_gb: int = 16
-
+    # Validation and Save Config
+    val_interval: int = 5
+    save_interval: int = 5
     metric_for_best_model: str = "total_loss"
     greater_is_better: bool = False
+
+    # DataLoader Config
+    batch: int = 32
+    num_worker: int = 4
+    sampler: Optional[str] = None
+    use_ram_cache: bool = True
+    ram_cache_size_gb: int = 16
 
     seed: int = 42
 

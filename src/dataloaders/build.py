@@ -20,38 +20,41 @@ def build_dataset(
 ) -> tuple[Dataset, DataLoader, Any]:
     transforms, batched_transform = build_transforms(cfg, phase)
 
-    # Use RAM Cache
+    # Build RAM Cache
     cache = None
     if phase == "train" and cfg.use_ram_cache:
-        assert (
-            cfg.ram_cache_size_gb <= get_free_shm_size() / BYTES_PER_GIB
-        ), "RAM Cache size is too large"
+        assert cfg.ram_cache_size_gb <= get_free_shm_size() / BYTES_PER_GIB, (
+            "RAM Cache size is too large"
+        )
         cache = TensorCache(size_limit_gb=cfg.ram_cache_size_gb)
         logger.info(f"Use RAM Cache: {cfg.ram_cache_size_gb}GB")
 
+    # Build Dataset
     cfg_dataset: DatasetConfig = cfg.get(f"{phase}_dataset")
     dataset = DATASET_REGISTRY.get(cfg_dataset.dataset)(cfg, transforms, phase=phase, cache=cache)
-
     phase_cap = phase.capitalize()
     logger.info(f"{phase_cap} {cfg_dataset.name} Dataset sample num: {len(dataset)}")
     logger.info(f"{phase_cap} transform: {transforms}")
     if batched_transform is not None:
         logger.info(f"{phase_cap} batched transform: {batched_transform}")
 
+    # Build Sampler
+    sampler = None
+    if is_distributed():
+        sampler = DistributedSampler(dataset, shuffle=(phase == "train"))
+
+    # Build Dataloader
     common_kwargs = {
         "pin_memory": True,
         "num_workers": cfg.num_worker,
         "batch_size": cfg.batch,
-        "sampler": None,
+        "sampler": sampler,
         "worker_init_fn": worker_init_fn,
         "drop_last": phase == "train",
-        "shuffle": phase == "train",
+        # 分散学習ではshuffleをFalseにする
+        "shuffle": phase == "train" and not is_distributed(),
     }
-    if is_distributed():
-        common_kwargs["shuffle"] = False
-        common_kwargs["sampler"] = DistributedSampler(dataset, shuffle=(phase == "train"))
     dataloader = DataLoader(dataset, **common_kwargs)
-
     if phase == "train" and cfg.use_iter_loop:
         dataloader = IterBasedDataloader(dataloader, cfg.max_iter, cfg.step_iter)
 
