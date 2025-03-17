@@ -20,7 +20,6 @@ torch.use_deterministic_algorithms = True
 
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig):
-    cfg.batch = 2
     cfg.model.pre_trained_weight = None
     model = build_model(cfg, device=torch.device("cpu" if cfg.use_cpu else "cuda:0"), phase="train")
     model.eval()

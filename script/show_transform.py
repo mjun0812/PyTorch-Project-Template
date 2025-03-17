@@ -17,8 +17,7 @@ rightkeys = (83, 109, 100, 65363, 2555904)
 
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig):
-    cfg.batch = 2
-    phase = "train"
+    phase = cfg.get("phase", "train")
     cfg.use_cpu = True
     data = build_dataset(cfg, phase)
     _, dataloader, batched_transforms = data
@@ -43,8 +42,11 @@ def main(cfg: ExperimentConfig):
         image = np.transpose(image, (1, 2, 0))  # (H, W, C)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-        if "bbox" in data:
-            bbox = data["bbox"][0].numpy()
+        if "bbox" in data or "boxes" in data:
+            if "bbox" in data:
+                bbox = data["bbox"][0].numpy()
+            else:
+                bbox = data["boxes"][0].numpy()
             for box in bbox:
                 cv2.rectangle(
                     image,
