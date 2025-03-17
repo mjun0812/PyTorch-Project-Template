@@ -36,6 +36,7 @@ class BaseTrainer:
         device: torch.device,
         datasets: dict[PhaseStr, torch.utils.data.Dataset],
         dataloaders: dict[PhaseStr, torch.utils.data.DataLoader],
+        samplers: dict[PhaseStr, Optional[torch.utils.data.Sampler]],
         batched_transforms: dict[PhaseStr, callable],
         optimizer: torch.optim.Optimizer,
         epoch_lr_scheduler: torch.optim.lr_scheduler._LRScheduler,
@@ -54,6 +55,7 @@ class BaseTrainer:
         self.device = device
         self.datasets = datasets
         self.dataloaders = dataloaders
+        self.samplers = samplers
         self.batched_transforms = batched_transforms
         self.optimizer = optimizer
         self.epoch_lr_scheduler = epoch_lr_scheduler
@@ -135,7 +137,8 @@ class BaseTrainer:
         model.train(phase == "train")
         if is_distributed():
             model.module.phase = phase
-            self.dataloaders[phase].sampler.set_epoch(epoch)
+            if self.samplers[phase] is not None:
+                self.samplers[phase].set_epoch(epoch)
         else:
             model.phase = phase
 

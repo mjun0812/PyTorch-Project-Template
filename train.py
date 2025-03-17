@@ -121,10 +121,10 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
 
     # ####### Build Dataset and Dataloader #######
     logger.info("Loading Dataset...")
-    datasets, dataloaders, batched_transform = {}, {}, {}
+    datasets, dataloaders, batched_transform, samplers = {}, {}, {}, {}
     for phase in ["train", "val"]:
-        datasets[phase], dataloaders[phase], batched_transform[phase] = build_dataset(
-            cfg, phase=phase
+        datasets[phase], dataloaders[phase], batched_transform[phase], samplers[phase] = (
+            build_dataset(cfg, phase=phase)
         )
     logger.info("Complete Load Dataset")
 
@@ -196,6 +196,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         device=device,
         datasets=datasets,
         dataloaders=dataloaders,
+        samplers=samplers,
         batched_transforms=batched_transform,
         optimizer=optimizer,
         epoch_lr_scheduler=epoch_lr_scheduler,

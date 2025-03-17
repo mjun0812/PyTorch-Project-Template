@@ -22,7 +22,7 @@ from src.utils import (
 
 def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logger: Logger):
     logger.info("Loading Dataset...")
-    _, dataloader, batched_transform = build_dataset(cfg, phase="test")
+    _, dataloader, batched_transform, _ = build_dataset(cfg, phase="test")
     logger.info("Complete Load Dataset")
 
     logger.info("Building Model...")
@@ -50,7 +50,7 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     results = tester.do_test()
 
     inference_speed = results.inference_speed
-    logger.info(f"Speed/ms: {inference_speed*1000:.5f}ms")
+    logger.info(f"Speed/ms: {inference_speed * 1000:.5f}ms")
     logger.info(f"FPS: {1.0 / inference_speed:.2f}")
     metrics = results.metrics
     metrics.update({"Speed/ms": inference_speed * 1000, "fps": 1.0 / inference_speed})
