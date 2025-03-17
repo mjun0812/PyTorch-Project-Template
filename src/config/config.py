@@ -105,7 +105,7 @@ class ExperimentConfig(BaseConfig):
     # DataLoader Config
     batch: int = 32
     num_worker: int = 4
-    sampler: Optional[str] = None
+    batch_sampler: Optional[str] = None
     use_ram_cache: bool = True
     ram_cache_size_gb: int = 16
 

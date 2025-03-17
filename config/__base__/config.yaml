@@ -22,6 +22,7 @@ num_worker: 4
 # データセットの一部をRAMにキャッシュする
 use_ram_cache: True
 ram_cache_size_gb: 16
+batch_sampler: null
 
 seed: 42
 
