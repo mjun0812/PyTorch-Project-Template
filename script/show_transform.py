@@ -20,7 +20,8 @@ def main(cfg: ExperimentConfig):
     phase = cfg.get("phase", "train")
     cfg.use_cpu = True
     data = build_dataset(cfg, phase)
-    _, dataloader, batched_transforms = data
+    dataloader = data[1]
+    batched_transforms = data[2]
 
     denormalize = T.Normalize(
         mean=[-0.485 / 0.229, -0.456 / 0.224, -0.406 / 0.225],

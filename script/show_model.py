@@ -30,7 +30,9 @@ def main(cfg: ExperimentConfig):
         print(f"Phase: {phase}")
         model.phase = phase
 
-        _, dataloader, batched_transforms = build_dataset(cfg, phase)
+        data = build_dataset(cfg, phase)
+        dataloader = data[1]
+        batched_transforms = data[2]
 
         data = next(iter(dataloader))
         if batched_transforms:
