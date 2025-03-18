@@ -4,7 +4,7 @@ import torch
 from loguru import logger
 from torch.utils.data import BatchSampler, DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
-from torch.utils.data.sampler import RandomSampler, Sampler
+from torch.utils.data.sampler import RandomSampler, Sampler, SequentialSampler
 
 from ..config import DatasetConfig, ExperimentConfig
 from ..transform import build_transforms
@@ -46,7 +46,7 @@ def build_dataset(
     elif phase == "train":
         sampler = RandomSampler(dataset)
     else:
-        sampler = None
+        sampler = SequentialSampler(dataset)
 
     if cfg.batch_sampler is not None:
         batch_sampler = SAMPLER_REGISTRY.get(cfg.batch_sampler)(
