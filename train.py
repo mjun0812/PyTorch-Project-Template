@@ -148,8 +148,11 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     logger.info("Complete Build Evaluator")
 
     start_epoch = 0
-    best_metric = 1e8
     best_epoch = 0
+    if cfg.greater_is_better:
+        best_metric = 0
+    else:
+        best_metric = 1e8
     # ####### Resume Training #######
     if cfg.last_epoch > 0:
         logger.info(f"Resume Training from Epoch {cfg.last_epoch}")
