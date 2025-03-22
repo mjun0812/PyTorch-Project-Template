@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Literal
 
 import torch
@@ -8,11 +9,11 @@ NormLayerTypes = Literal[
 ]
 
 
-def get_norm_layer(norm_type: NormLayerTypes) -> nn.Module:
+def get_norm_layer(norm_type: NormLayerTypes, **kwargs) -> nn.Module:
     if norm_type == "BatchNorm2d":
         return nn.BatchNorm2d
     elif norm_type == "GroupNorm":
-        return nn.GroupNorm
+        return partial(nn.GroupNorm, **kwargs)
     elif norm_type == "InstanceNorm2d":
         return nn.InstanceNorm2d
     elif norm_type == "LayerNorm":
@@ -27,13 +28,15 @@ def build_norm_layer(input_dim, norm_type: NormLayerTypes, **kwargs):
     if norm_type == "BatchNorm2d":
         return nn.BatchNorm2d(input_dim, **kwargs)
     elif norm_type == "GroupNorm":
-        return nn.GroupNorm(32, input_dim, **kwargs)
+        return nn.GroupNorm(num_channels=input_dim, **kwargs)
     elif norm_type == "InstanceNorm2d":
         return nn.InstanceNorm2d(input_dim, **kwargs)
     elif norm_type == "LayerNorm":
         return nn.LayerNorm(input_dim, **kwargs)
     elif norm_type == "FrozenBatchNorm2d":
         return FrozenBatchNorm2d(input_dim, **kwargs)
+    elif norm_type == "Identity":
+        return nn.Identity()
     elif norm_type is None:
         return nn.Identity()
 
