@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: MultiStepLR
-  scheduler: MultiStepLR
+  class_name: MultiStepLR
   checkpoint: null
   args:
     # 割合で指定した場合はEpochで自動計算

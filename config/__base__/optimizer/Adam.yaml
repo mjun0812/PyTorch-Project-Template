@@ -1,5 +1,5 @@
 name: Adam
-optimizer: Adam
+class_name: Adam
 lr: 1e-3
 args: null
 group: null

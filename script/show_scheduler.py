@@ -1,31 +1,21 @@
-import os
-import random
-import sys
-
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.config import ConfigManager, ExperimentConfig
 from src.optimizer import build_optimizer
 from src.scheduler import build_lr_scheduler
-
-random.seed(42)
-np.random.seed(42)
-torch.manual_seed(42)
-torch.cuda.manual_seed(42)
-torch.backends.cudnn.deterministic = True
-torch.use_deterministic_algorithms = True
 
 
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig):
     dummy_model = torch.nn.Linear(1, 1)
-    optimizer = build_optimizer(cfg, dummy_model)
-    iter_lr_scheduler, epoch_lr_scheduler = build_lr_scheduler(cfg, optimizer)
+    optimizer = build_optimizer(cfg.optimizer, dummy_model)
+    iter_lr_scheduler, epoch_lr_scheduler = build_lr_scheduler(
+        cfg.lr_scheduler, optimizer, cfg.epoch, cfg.max_iter, cfg.max_iter
+    )
 
     print(cfg.optimizer)
     print(cfg.lr_scheduler)

@@ -1,35 +1,27 @@
 import torch
-from loguru import logger
 from timm.optim import create_optimizer_v2
 from torch import optim
 
-from ..config import ConfigManager, ExperimentConfig, OptimizerGroupConfig
-from ..utils import Registry, get_world_size, is_model_parallel
+from ..config import ConfigManager, OptimizerConfig, OptimizerGroupConfig
+from ..utils import Registry, is_model_parallel
 
 OPTIMIZER_REGISTRY = Registry("OPTIMIZER")
 
 
-def adjust_learning_rate(base_lr: float, batch_size: int):
-    world_size = get_world_size()
-    return base_lr * batch_size * world_size
-
-
-def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Optimizer:
-    optimizer_cls_name = cfg.optimizer.optimizer
-    lr = cfg.optimizer.lr
-    if cfg.adjust_lr:
-        lr = adjust_learning_rate(lr, cfg.batch)
+def build_optimizer(cfg: OptimizerConfig, model: torch.nn.Module) -> optim.Optimizer:
+    optimizer_cls_name = cfg.class_name
+    lr = cfg.lr
 
     target_model = model
     if is_model_parallel(model):
         target_model = model.module
 
-    if cfg.optimizer.group is not None:
-        parameters = get_param_group(target_model, cfg.optimizer.group, lr)
+    if cfg.group is not None:
+        parameters = get_param_group(target_model, cfg.group, lr)
     else:
         parameters = target_model.parameters()
 
-    args = cfg.optimizer.get("args")
+    args = cfg.get("args")
     if args is not None:
         args = ConfigManager.to_object(args.copy())
     else:
@@ -41,14 +33,8 @@ def build_optimizer(cfg: ExperimentConfig, model: torch.nn.Module) -> optim.Opti
         optimizer_cls_name = optimizer_cls_name.replace("_timm", "")
         optimizer = create_optimizer_v2(target_model, opt=optimizer_cls_name, lr=lr, **args)
 
-    if cfg.optimizer.checkpoint is not None:
-        optimizer.load_state_dict(
-            torch.load(cfg.optimizer.checkpoint, map_location="cpu", weights_only=True)
-        )
-
-    logger.info(f"Optimizer: {cfg.optimizer.optimizer}")
-    logger.info(f"Optimizer Group: {optimizer}")
-    logger.info(f"Learning Rate: {lr}")
+    if cfg.checkpoint is not None:
+        optimizer.load_state_dict(torch.load(cfg.checkpoint, map_location="cpu", weights_only=True))
 
     return optimizer
 

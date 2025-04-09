@@ -1,27 +1,25 @@
-import os
-import random
-import sys
-
-import numpy as np
 import torch
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from src.config import ConfigManager, ExperimentConfig
-from src.dataloaders import build_dataset
+from src.config import ConfigManager, DatasetConfig, ExperimentConfig
+from src.dataloaders import build_dataloader, build_dataset, build_sampler
 from src.models import build_model
-
-random.seed(42)
-np.random.seed(42)
-torch.manual_seed(42)
-torch.cuda.manual_seed(42)
-torch.backends.cudnn.deterministic = True
-torch.use_deterministic_algorithms = True
+from src.transform import (
+    build_batched_transform,
+    build_transforms,
+)
 
 
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig):
-    cfg.model.pre_trained_weight = None
-    model = build_model(cfg, device=torch.device("cpu" if cfg.use_cpu else "cuda:0"), phase="train")
+    cfg.model.checkpoint = None
+
+    if cfg.use_cpu or not torch.cuda.is_available():
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda:0")
+
+    model = build_model(cfg.model, phase="train")
+    model = model.to(device)
     model.eval()
     model.requires_grad_(False)
     print(model)
@@ -30,13 +28,21 @@ def main(cfg: ExperimentConfig):
         print(f"Phase: {phase}")
         model.phase = phase
 
-        data = build_dataset(cfg, phase)
-        dataloader = data[1]
-        batched_transforms = data[2]
+        cfg_dataset: DatasetConfig = cfg.dataset.get(phase)
+
+        transform = build_transforms(cfg_dataset.transforms)
+        if cfg_dataset.batch_transforms is not None:
+            batched_transform = build_batched_transform(cfg_dataset.batch_transforms)
+        else:
+            batched_transform = None
+
+        dataset = build_dataset(cfg_dataset, transform)
+        _, batch_sampler = build_sampler(dataset, phase, cfg.batch, cfg.dataset.batch_sampler)
+        dataloader = build_dataloader(dataset, cfg.num_worker, batch_sampler)
 
         data = next(iter(dataloader))
-        if batched_transforms:
-            data = batched_transforms(data)
+        if batched_transform is not None:
+            data = batched_transform(data)
         print(f"Data: {data}")
         y = model(data)
         print(f"Output: {y}")

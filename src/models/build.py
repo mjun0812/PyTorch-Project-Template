@@ -1,17 +1,16 @@
 from functools import partial
 
-import torch
 import torch.nn as nn
 from loguru import logger
 from timm.utils import ModelEmaV3
 from torch.distributed.fsdp import FullyShardedDataParallel
 from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload, MixedPrecision
-from torch.distributed.fsdp.wrap import _module_wrap_policy, size_based_auto_wrap_policy
+from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
 from torch.nn.parallel import DistributedDataParallel
 
-from ..config import ExperimentConfig
+from ..config import ExperimentConfig, ModelConfig
 from ..types import TORCH_DTYPE, PhaseStr
-from ..utils import Registry, get_local_rank, is_distributed, load_model_weight
+from ..utils import Registry, get_local_rank, load_model_weight
 from .base import BaseModel
 
 try:
@@ -22,30 +21,10 @@ except ImportError:
 MODEL_REGISTRY = Registry("MODEL")
 
 
-def build_model(
-    cfg: ExperimentConfig, device: torch.device, phase: PhaseStr = "train"
-) -> BaseModel:
-    model = MODEL_REGISTRY.get(cfg.model.model)(cfg, phase=phase)
-    model = model.to(device)
-
-    if cfg.model.pre_trained_weight:
-        load_model_weight(cfg.model.pre_trained_weight, model)
-
-    log_model_parameters(model)
-
-    if is_distributed():
-        if cfg.gpu.multi_strategy == "ddp":
-            model = setup_ddp_model(cfg, model)
-        elif cfg.gpu.multi_strategy == "fsdp":
-            model = setup_fsdp_model(cfg, model)
-    elif cfg.gpu.multi and cfg.gpu.multi_strategy == "dp" and torch.cuda.device_count() > 1:
-        logger.info("Use DataParallel Training")
-        model = nn.DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
-
-    if cfg.use_compile and torch.__version__ >= "2.0.0":
-        logger.info("Use Torch Compile")
-        model = torch.compile(model, backend=cfg.compile_backend)
-
+def build_model(cfg: ModelConfig, phase: PhaseStr = "train") -> BaseModel:
+    model = MODEL_REGISTRY.get(cfg.class_name)(cfg, phase)
+    if cfg.pre_trained_weight:
+        load_model_weight(cfg.pre_trained_weight, model)
     return model
 
 
@@ -77,9 +56,7 @@ def create_model_ema(cfg: ExperimentConfig, model: nn.Module) -> ModelEmaV3:
 def setup_ddp_model(cfg: ExperimentConfig, model: nn.Module) -> DistributedDataParallel:
     if cfg.model.use_sync_bn:
         model = convert_sync_batchnorm(model)
-        logger.info("Use Sync BatchNorm")
 
-    logger.info("Use DistributedDataParallel Training")
     return DistributedDataParallel(
         model,
         device_ids=[get_local_rank()],
@@ -89,7 +66,6 @@ def setup_ddp_model(cfg: ExperimentConfig, model: nn.Module) -> DistributedDataP
 
 
 def setup_fsdp_model(cfg: ExperimentConfig, model: nn.Module) -> FullyShardedDataParallel:
-    logger.info("Use FullyShardedDataParallel Training")
     amp_policy = None
     if cfg.use_amp:
         amp_policy = MixedPrecision(

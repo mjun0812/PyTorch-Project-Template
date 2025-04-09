@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: ChainedScheduler
-  scheduler: ChainedScheduler
+  class_name: ChainedScheduler
   checkpoint: null
   args:
     step_ranges:
@@ -8,13 +8,13 @@ epoch_scheduler:
       - [10, 10000]
     schedulers:
       - name: LinearLR
-        scheduler: LinearLR
+        class_name: LinearLR
         args:
           start_factor: 0.00066667
           end_factor: 1e-3
           total_iters: 1
       - name: MultiStepLR
-        scheduler: MultiStepLR
+        class_name: MultiStepLR
         args:
           # 割合で指定，Epochで自動計算
           milestones: [0.66, 0.90]

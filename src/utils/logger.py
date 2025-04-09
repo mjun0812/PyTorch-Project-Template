@@ -38,7 +38,6 @@ plt.rcParams.update(
     }
 )
 
-load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
 load_dotenv()
 
 
@@ -267,7 +266,7 @@ class Logger:
                 mlflow.log_table(data=dict_data)
 
     def log_history_figure(self):
-        self.logger.info(f"Histories:\n{pformat(self.histories)}")
+        self.logger.info(f"Histories:\n{pformat(dict(self.histories))}")
         metrics_names = list(self.histories.keys())
 
         for metric in metrics_names:

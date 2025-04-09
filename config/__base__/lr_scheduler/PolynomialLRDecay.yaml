@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: PolynomialLRDecay
-  scheduler: PolynomialLRDecay
+  class_name: PolynomialLRDecay
   checkpoint: null
   args:
     end_learning_rate: 1e-4

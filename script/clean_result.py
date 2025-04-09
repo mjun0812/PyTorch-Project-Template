@@ -19,7 +19,7 @@ def main():
 
     with open("config/__base__/config.yaml", "r") as f:
         config = yaml.safe_load(f)
-    experiment_name = config["mlflow"]["experiment_name"]
+    experiment_name = config["log"]["mlflow_experiment_name"]
 
     client = mlflow.tracking.MlflowClient()
     experiment_id = client.get_experiment_by_name(experiment_name).experiment_id

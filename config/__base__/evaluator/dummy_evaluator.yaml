@@ -1,7 +1,9 @@
 train: null
 val:
   - name: DummyEvaluator
+    class_name: DummyEvaluator
     args: null
 test:
   - name: DummyEvaluator
+    class_name: DummyEvaluator
     args: null

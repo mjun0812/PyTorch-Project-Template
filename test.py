@@ -5,10 +5,11 @@ from pathlib import Path
 import torch
 
 from src.config import ConfigManager, ExperimentConfig
-from src.dataloaders import build_dataset
+from src.dataloaders import build_dataloader, build_dataset, build_sampler
 from src.evaluator import build_evaluator
 from src.models import build_model
 from src.tester import Tester
+from src.transform import build_batched_transform, build_transforms
 from src.utils import (
     JsonEncoder,
     Logger,
@@ -22,18 +23,26 @@ from src.utils import (
 
 def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logger: Logger):
     logger.info("Loading Dataset...")
-    _, dataloader, batched_transform, _ = build_dataset(cfg, phase="test")
+    transform = build_transforms(cfg.dataset.test.transforms)
+    if cfg.dataset.test.batch_transforms is not None:
+        batched_transform = build_batched_transform(cfg.dataset.test.batch_transforms)
+    else:
+        batched_transform = None
+    dataset = build_dataset(cfg.dataset.test, transform)
+    _, batch_sampler = build_sampler(dataset, phase="test", batch_size=cfg.batch)
+    dataloader = build_dataloader(dataset, num_workers=cfg.num_worker, batch_sampler=batch_sampler)
     logger.info("Complete Load Dataset")
 
     logger.info("Building Model...")
-    model = build_model(cfg, device, "test")
-    load_model_weight(cfg.model.trained_weight, model)
+    model = build_model(cfg.model, "test")
+    load_model_weight(cfg.model.checkpoint, model)
+    model = model.to(device)
     model.eval()
     model.requires_grad_(False)
     logger.info("Complete Build model")
 
     logger.info("Building Evaluator...")
-    evaluator = build_evaluator(cfg, "test")
+    evaluator = build_evaluator(cfg.evaluator.test)
     if evaluator is not None:
         evaluator = evaluator.to(device)
     logger.info("Complete Build Evaluator")
@@ -69,20 +78,19 @@ def main(cfg: ExperimentConfig):
     # set Device
     device = set_device(cfg.gpu.use, use_cudnn=cfg.gpu.use_cudnn, is_cpu=cfg.use_cpu)
 
-    base_dir = Path(cfg.model.trained_weight).parents[1]
+    base_dir = Path(cfg.model.checkpoint).parents[1]
     output_dir = make_result_dirs(base_dir)
 
     ConfigManager.dump(cfg, output_dir / "config.yaml")
     logger = Logger(
         output_dir,
         "test",
-        "INFO",
-        use_mlflow=cfg.mlflow.use,
-        use_wandb=cfg.wandb.use,
-        mlflow_experiment_name=cfg.mlflow.experiment_name,
-        wandb_project_name=cfg.wandb.project_name,
+        use_mlflow=cfg.log.use_mlflow,
+        use_wandb=cfg.log.use_wandb,
+        mlflow_experiment_name=cfg.log.mlflow_experiment_name,
+        wandb_project_name=cfg.log.wandb_project_name,
     )
-    logger.log_config(cfg, cfg.log_params)
+    logger.log_config(cfg, cfg.log.log_params)
     if cfg.tag:
         logger.log_tag("tag", cfg.tag)
     logger.info("\n" + ConfigManager.pretty_text(cfg))
@@ -97,7 +105,7 @@ def main(cfg: ExperimentConfig):
         f"host: {os.uname()[1]}",
         f"tag: {cfg.tag}",
         f"model: {cfg.model.name}",
-        f"dataset: {cfg.test_dataset.name}",
+        f"dataset: {cfg.dataset.test.name}",
         f"save: {str(output_dir)}",
         f"mlflow_url: {logger.get_mlflow_run_uri()}",
         f"wandb_url: {logger.get_wandb_run_uri()}",
@@ -105,7 +113,7 @@ def main(cfg: ExperimentConfig):
     # Send Message to Slack
     post_slack(message="Finish Test\n" + "\n".join(messages))
     logger.info("Finish Test\n" + "\n".join(messages))
-    logger.log_result_dir(output_dir, ignore_dirs=cfg.mlflow.ignore_artifact_dirs)
+    logger.log_result_dir(output_dir, ignore_dirs=cfg.log.mlflow_ignore_artifact_dirs)
     logger.close()
 
 

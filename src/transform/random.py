@@ -7,7 +7,7 @@ import torchvision.transforms.v2.functional as TF
 
 from ..config import TransformConfig
 from .base import BaseTransform
-from .build import TRANSFORM_REGISTRY, get_transform
+from .build import TRANSFORM_REGISTRY, build_transform
 
 
 @TRANSFORM_REGISTRY.register()
@@ -20,8 +20,8 @@ class RandomSelect(BaseTransform):
     def __init__(
         self, transforms1: list[TransformConfig], transforms2: list[TransformConfig], p=0.5
     ):
-        self.transforms1 = T.Compose([get_transform(t) for t in transforms1])
-        self.transforms2 = T.Compose([get_transform(t) for t in transforms2])
+        self.transforms1 = T.Compose([build_transform(t) for t in transforms1])
+        self.transforms2 = T.Compose([build_transform(t) for t in transforms2])
         self.p = p
 
     def __call__(self, data: dict) -> dict:

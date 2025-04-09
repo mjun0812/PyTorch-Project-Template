@@ -1,5 +1,5 @@
 name: RAdamScheduleFree
-optimizer: RAdamScheduleFree
+class_name: RAdamScheduleFree
 lr: 1e-4
 args:
   betas: [0.9, 0.999]

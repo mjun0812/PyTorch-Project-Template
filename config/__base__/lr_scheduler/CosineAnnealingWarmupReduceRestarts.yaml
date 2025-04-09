@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: CosineAnnealingWarmupReduceRestarts
-  scheduler: CosineAnnealingWarmupReduceRestarts
+  class_name: CosineAnnealingWarmupReduceRestarts
   checkpoint: null
   args:
     # T_0を周期とするコサインカーブで減衰して、

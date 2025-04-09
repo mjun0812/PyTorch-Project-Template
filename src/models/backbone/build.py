@@ -1,16 +1,27 @@
+from dataclasses import dataclass
+from typing import Optional
+
 import timm
 import torch
 import torchvision
 from omegaconf import OmegaConf
 from torchvision.models._utils import IntermediateLayerGetter
 
-from ...config import BackboneConfig
 from ...utils import Registry
 from ..layers import FrozenBatchNorm2d
 
 BACKBONE_REGISTRY = Registry("BACKBONE")
 
 TIMM_MODEL_LIST = timm.list_models()
+
+
+@dataclass
+class BackboneConfig:
+    name: str
+    pretrained: bool = True
+    pretrained_weight: Optional[str] = None
+    freeze: bool = False
+    args: Optional[dict] = None
 
 
 def get_available_backbones() -> list[str]:

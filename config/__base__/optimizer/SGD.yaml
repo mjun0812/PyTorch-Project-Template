@@ -1,5 +1,5 @@
 name: SGD
-optimizer: SGD
+class_name: SGD
 lr: 1e-3
 args:
   weight_decay: 4e-5

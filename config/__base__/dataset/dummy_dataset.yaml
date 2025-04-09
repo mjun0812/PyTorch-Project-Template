@@ -1,19 +1,40 @@
-name: dummy_dataset
-dataset: DummyDataset # Class名
-
-train_transforms:
-  - name: DummyTransform
-    args: null
-  - name: ToTensor
-    args: null
-train_batch_transforms: null
-val_transforms:
-  - name: DummyTransform
-    args: null
-  - name: ToTensor
-    args: null
-test_transforms:
-  - name: DummyTransform
-    args: null
-  - name: ToTensor
-    args: null
+train:
+  name: dummy_dataset
+  class_name: DummyDataset
+  args:
+    path: data/train.csv
+  transforms:
+    - name: DummyTransform
+      class_name: DummyTransform
+      args: null
+    - name: ToTensor
+      class_name: ToTensor
+      args: null
+  batch_transforms: null
+val:
+  name: dummy_dataset
+  class_name: DummyDataset
+  args:
+    path: data/val.csv
+  transforms:
+    - name: DummyTransform
+      class_name: DummyTransform
+      args: null
+    - name: ToTensor
+      class_name: ToTensor
+      args: null
+  batch_transforms: null
+test:
+  name: dummy_dataset
+  class_name: DummyDataset
+  args:
+    path: data/test.csv
+  transforms:
+    - name: DummyTransform
+      class_name: DummyTransform
+      args: null
+    - name: ToTensor
+      class_name: ToTensor
+      args: null
+  batch_transforms: null
+batch_sampler: null

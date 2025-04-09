@@ -1,5 +1,5 @@
 name: AdamW
-optimizer: AdamW
+class_name: AdamW
 lr: 1e-3
 args:
   weight_decay: 1e-4

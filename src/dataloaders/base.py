@@ -2,23 +2,12 @@ from typing import Optional
 
 from torch.utils.data import Dataset
 
-from ..config import ExperimentConfig
-from ..types import PhaseStr
 from .tensor_cache import TensorCache
 
 
 class BaseDataset(Dataset):
-    def __init__(
-        self,
-        cfg: ExperimentConfig,
-        transforms=None,
-        phase: PhaseStr = "train",
-        cache: Optional[TensorCache] = None,
-    ):
-        self.cfg = cfg
-        self.transforms = transforms
-        self.phase = phase
-        self.cache = cache
+    def __init__(self, cfg: dict, transforms=None, cache: Optional[TensorCache] = None):
+        raise NotImplementedError
 
     def __len__(self):
         raise NotImplementedError

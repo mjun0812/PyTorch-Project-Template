@@ -1,34 +1,32 @@
 __base__: ./__base__/config.yaml
 
-optimizer:
-  __import__: ./__base__/optimizer/Momentum.yaml
-lr_scheduler:
-  __import__: ./__base__/lr_scheduler/CosineLRScheduler.yaml
-train_dataset:
-  __import__: ./__base__/dataset/dummy_dataset.yaml
-val_dataset:
-  __import__: ./__base__/dataset/dummy_dataset.yaml
-test_dataset:
-  __import__: ./__base__/dataset/dummy_dataset.yaml
-evaluator:
-  __import__: ./__base__/evaluator/dummy_evaluator.yaml
-
 epoch: 5
 val_interval: 1
 save_interval: 1
 batch: 8
 
-# MODEL Param
 model:
   name: DummyModel
-  model: DummyModel # Class名
+  class_name: DummyModel
+  args:
+    input_channels: 1
 
   pre_trained_weight: null
-  trained_weight: null
-
+  checkpoint: null
   use_sync_bn: false
   find_unused_parameters: false
 
   loss:
     name: DummyLoss
-    loss: DummyLoss # Class名
+    class_name: DummyLoss
+    args:
+      weight: 1.0
+
+dataset:
+  __import__: ./__base__/dataset/dummy_dataset.yaml
+optimizer:
+  __import__: ./__base__/optimizer/Momentum.yaml
+lr_scheduler:
+  __import__: ./__base__/lr_scheduler/CosineLRScheduler.yaml
+evaluator:
+  __import__: ./__base__/evaluator/dummy_evaluator.yaml

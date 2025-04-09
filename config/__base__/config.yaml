@@ -2,7 +2,7 @@
 epoch: 200
 
 # Iteration Based
-use_iter_loop: False
+use_iter_loop: false
 step_iter: 16000
 max_iter: 160000
 
@@ -10,97 +10,91 @@ max_iter: 160000
 save_interval: 5
 val_interval: 5
 # ベストモデルを保存するための指標
-# モデルの評価指標が大きいほうが良い場合は greater_is_better: True
-# 小さいほうが良い場合は greater_is_better: False
+# モデルの評価指標が大きいほうが良い場合は greater_is_better: true
+# 小さいほうが良い場合は greater_is_better: false
 metric_for_best_model: total_loss
-greater_is_better: False
+greater_is_better: false
 
 # DataLoader Config
 batch: 16
 num_worker: 4
 # RAM Cache
 # データセットの一部をRAMにキャッシュする
-use_ram_cache: True
+use_ram_cache: true
 ram_cache_size_gb: 16
-batch_sampler: null
 
 seed: 42
 
 # Device Params
 gpu:
   use: 0
-  multi: False
-  use_cudnn: True
+  multi: false
+  use_cudnn: true
   multi_strategy: "ddp" # "ddp" or "dp" or "fsdp"
-  use_tf32: True
+  use_tf32: true
   fsdp:
     min_num_params: 100000000
-    use_cpu_offload: False
-use_cpu: False
+    use_cpu_offload: false
+use_cpu: false
 
 # AutoMixedPrecision
-use_amp: False
+use_amp: false
 amp_init_scale: 65536
 amp_dtype: "fp16"
 
 # torch.compile
-use_compile: False
+use_compile: false
 compile_backend: "inductor"
 
-use_clip_grad: True
+use_clip_grad: true
 clip_grad_norm: 10
 gradient_accumulation_steps: 1
-
-adjust_lr: False
 
 output: ./result/
 tag: null
 
-mlflow:
-  use: True
-  ignore_artifact_dirs: ["models", "optimizers", "schedulers"]
-  experiment_name: "pytorch-project-template"
-
-wandb:
-  use: False
-  project_name: "pytorch-project-template"
-
-log_params:
-  - name: "Epoch"
-    value: "epoch"
-  - name: "use_iter_loop"
-    value: "use_iter_loop"
-  - name: "Iter"
-    value: "max_iter"
-  - name: "Batch"
-    value: "batch"
-  - name: "GPU Ids"
-    value: "gpu.use"
-  - name: "Model"
-    value: "model.name"
-  - name: "Optimizer"
-    value: "optimizer.name"
-  - name: "LR scheduler"
-    value: "lr_scheduler.name"
-  - name: "Learning Rate"
-    value: "optimizer.lr"
-  - name: "Train_Dataset"
-    value: "train_dataset.name"
-  - name: "Val_Dataset"
-    value: "val_dataset.name"
-  - name: "Test_Dataset"
-    value: "test_dataset.name"
-  - name: "Loss"
-    value: "model.loss.name"
-  - name: "use_cudnn"
-    value: "gpu.use_cudnn"
-  - name: "use_tf32"
-    value: "gpu.use_tf32"
-  - name: "use_amp"
-    value: "use_amp"
-  - name: "amp_dtype"
-    value: "amp_dtype"
-  - name: "metric_for_best_model"
-    value: "metric_for_best_model"
-  - name: "greater_is_better"
-    value: "greater_is_better"
+log:
+  use_mlflow: true
+  use_wandb: false
+  mlflow_experiment_name: "pytorch-project-template"
+  wandb_project_name: "pytorch-project-template"
+  mlflow_ignore_artifact_dirs: ["models", "optimizers", "schedulers"]
+  log_params:
+    - name: "Epoch"
+      value: "epoch"
+    - name: "use_iter_loop"
+      value: "use_iter_loop"
+    - name: "Iter"
+      value: "max_iter"
+    - name: "Batch"
+      value: "batch"
+    - name: "GPU Ids"
+      value: "gpu.use"
+    - name: "Model"
+      value: "model.name"
+    - name: "Optimizer"
+      value: "optimizer.name"
+    - name: "LR scheduler"
+      value: "lr_scheduler.name"
+    - name: "Learning Rate"
+      value: "optimizer.lr"
+    - name: "Train_Dataset"
+      value: "dataset.train.name"
+    - name: "Val_Dataset"
+      value: "dataset.val.name"
+    - name: "Test_Dataset"
+      value: "dataset.test.name"
+    - name: "Loss"
+      value: "model.loss.name"
+    - name: "use_cudnn"
+      value: "gpu.use_cudnn"
+    - name: "use_tf32"
+      value: "gpu.use_tf32"
+    - name: "use_amp"
+      value: "use_amp"
+    - name: "amp_dtype"
+      value: "amp_dtype"
+    - name: "metric_for_best_model"
+      value: "metric_for_best_model"
+    - name: "greater_is_better"
+      value: "greater_is_better"

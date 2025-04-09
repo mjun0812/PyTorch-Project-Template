@@ -1,5 +1,5 @@
 name: NesterovMomentum
-optimizer: NesterovMomentum
+class_name: NesterovMomentum
 lr: 1e-3
 args:
   momentum: 0.937

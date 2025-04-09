@@ -1,5 +1,5 @@
 name: Momentum
-optimizer: Momentum
+class_name: Momentum
 lr: 1e-3
 args:
   momentum: 0.937

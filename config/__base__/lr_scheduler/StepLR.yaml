@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: StepLR
-  scheduler: StepLR
+  class_name: StepLR
   checkpoint: null
   args:
     # 割合で指定，Epochで自動計算

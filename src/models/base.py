@@ -1,19 +1,19 @@
 import torch.nn as nn
 
-from ..config import ExperimentConfig
+from ..config import ModelConfig
 from ..types import ModelOutput, PhaseStr
 from .losses import build_loss
 
 
 class BaseModel(nn.Module):
-    def __init__(self, cfg: ExperimentConfig, phase: PhaseStr = "train"):
+    def __init__(self, cfg: ModelConfig, phase: PhaseStr = "train"):
         super().__init__()
         self.cfg = cfg
         self.phase = phase
 
         self.loss = None
         if self.phase in ["train", "val"]:
-            self.loss = build_loss(self.cfg)
+            self.loss = build_loss(self.cfg.loss)
 
     def train_forward(self, data: dict) -> ModelOutput:
         raise NotImplementedError

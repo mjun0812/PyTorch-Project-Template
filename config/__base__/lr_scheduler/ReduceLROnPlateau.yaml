@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: ReduceLROnPlateau
-  scheduler: ReduceLROnPlateau
+  class_name: ReduceLROnPlateau
   checkpoint: null
   args:
     # factor : 学習率の減衰率

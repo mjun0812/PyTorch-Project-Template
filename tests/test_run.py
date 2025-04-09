@@ -34,6 +34,7 @@ def test_train_test_resume():
         "output=/tmp/test",
         "epoch=2",
         "val_interval=1",
+        "use_ram_cache=false",
     ]
     print("start training test")
     process = subprocess.run(
@@ -87,18 +88,23 @@ def test_config():
 
 
 def test_dataloader():
-    from src.config import DatasetConfig
-    from src.dataloaders import build_dataset
-
-    cfg = _load_config(os.path.join(os.path.dirname(__file__), "../config/dummy.yaml"))
+    from src.config import DatasetsConfig
+    from src.dataloaders import build_dataloader, build_dataset, build_sampler
+    from src.transform import build_batched_transform, build_transforms
 
     config_dir = os.path.join(os.path.dirname(__file__), "../config/__base__/dataset")
     config_dir = Path(config_dir)
     for config_path in config_dir.glob("*.yaml"):
         dataset_cfg = OmegaConf.load(config_path)
-        dataset_cfg = DatasetConfig(**dataset_cfg)
-        cfg.test_dataset = dataset_cfg
-        dataset, dataloader, batched_transform = build_dataset(cfg, "test")
+        dataset_cfg = DatasetsConfig(**dataset_cfg)
+        transform = build_transforms(dataset_cfg.test.transforms)
+        dataset = build_dataset(dataset_cfg.test, transform)
+        _, batch_sampler = build_sampler(dataset, phase="test", batch_size=2)
+        dataloader = build_dataloader(dataset, num_workers=2, batch_sampler=batch_sampler)
+        if dataset_cfg.test.batch_transforms is not None:
+            batched_transform = build_batched_transform(dataset_cfg.test.batch_transforms)
+        else:
+            batched_transform = None
         print(f"config: {dataset_cfg}")
         print(f"dataset: {dataset}")
 
@@ -130,7 +136,9 @@ def test_lr_scheduler():
         base_cfg.lr_scheduler = scheduler_cfg
         print(f"config: {base_cfg.lr_scheduler}")
 
-        iter_scheduler, scheduler = build_lr_scheduler(base_cfg, optimizer)
+        iter_scheduler, scheduler = build_lr_scheduler(
+            base_cfg.lr_scheduler, optimizer, base_cfg.epoch, base_cfg.max_iter
+        )
 
         x = []
         lrs = []
@@ -191,12 +199,12 @@ def test_optimizer():
         cfg.optimizer = optimizer_cfg
         print(f"config: {optimizer_cfg}")
 
-        optimizer = build_optimizer(cfg, model)
+        optimizer = build_optimizer(cfg.optimizer, model)
         print(f"optimizer: {optimizer}")
 
         group = OptimizerGroupConfig(name="fc", divide=10)
         cfg.optimizer.group = [group]
-        optimizer = build_optimizer(cfg, model)
+        optimizer = build_optimizer(cfg.optimizer, model)
         print(f"grouped optimizer: {optimizer}")
 
 
@@ -204,11 +212,12 @@ def test_scripts():
     common_options = [
         os.path.join(os.path.dirname(__file__), "../config/dummy.yaml"),
         "use_cpu=true",
+        "use_ram_cache=false",
     ]
     scripts = [
-        "script/test_config.py",
-        "script/test_model.py",
-        "script/test_dataloader.py",
+        "script/show_config.py",
+        "script/show_model.py",
+        "script/show_dataloader.py",
     ]
 
     for script in scripts:
@@ -222,8 +231,8 @@ def test_scripts():
 
 
 def test_backbone():
-    from src.config import BackboneConfig
     from src.models import build_backbone
+    from src.models.backbone import BackboneConfig
 
     # resnet18
     cfg = BackboneConfig(name="resnet18", args={"out_indices": [1, 2, 3]})

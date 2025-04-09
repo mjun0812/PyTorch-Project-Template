@@ -1,9 +1,7 @@
 import torch
 from omegaconf import OmegaConf
 
-from src.config import BackboneConfig
-from src.models.backbone import get_available_backbones
-from src.models.backbone.build import build_backbone
+from src.models.backbone import BackboneConfig, build_backbone, get_available_backbones
 
 
 def test_available_backbones():

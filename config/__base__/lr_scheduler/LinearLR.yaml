@@ -1,6 +1,6 @@
 epoch_scheduler:
   name: LinearLR
-  scheduler: LinearLR
+  class_name: LinearLR
   checkpoint: null
   args:
     start_factor: 0.00066667
