@@ -1,19 +1,15 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from .base import BaseConfig
-from .config_dataset import DatasetConfig
-from .config_model import ModelConfig
-
 
 @dataclass
-class OptimizerGroupConfig(BaseConfig):
+class OptimizerGroupConfig:
     name: str
     divide: float
 
 
 @dataclass
-class OptimizerConfig(BaseConfig):
+class OptimizerConfig:
     name: str = "AdamW"
     optimizer: str = "AdamW"
     lr: float = 1e-3
@@ -23,7 +19,7 @@ class OptimizerConfig(BaseConfig):
 
 
 @dataclass
-class LrSchedulerConfig(BaseConfig):
+class LrSchedulerConfig:
     name: str = "StepLR"
     scheduler: str = "StepLR"
     checkpoint: Optional[str] = None
@@ -31,51 +27,89 @@ class LrSchedulerConfig(BaseConfig):
 
 
 @dataclass
-class LrSchedulersConfig(BaseConfig):
+class LrSchedulersConfig:
     iter_scheduler: Optional[LrSchedulerConfig] = None
     epoch_scheduler: Optional[LrSchedulerConfig] = None
 
 
 @dataclass
-class EvaluatorConfig(BaseConfig):
+class EvaluatorConfig:
     name: str = "BaseEvaluator"
     args: Optional[dict] = None
 
 
 @dataclass
-class EvaluatorsConfig(BaseConfig):
+class EvaluatorsConfig:
     train: Optional[list[EvaluatorConfig]] = None
     val: Optional[list[EvaluatorConfig]] = None
     test: Optional[list[EvaluatorConfig]] = None
 
 
 @dataclass
-class LogParamsConfig(BaseConfig):
+class TransformConfig:
+    name: str = "BaseTransform"
+    args: Optional[dict] = None
+
+
+@dataclass
+class DatasetConfig:
+    name: str = "BaseDataset"
+    dataset: str = "BaseDataset"
+
+    train_transforms: list[TransformConfig] = field(default_factory=list)
+    train_batch_transforms: Optional[list[TransformConfig]] = None
+    val_transforms: list[TransformConfig] = field(default_factory=list)
+    test_transforms: list[TransformConfig] = field(default_factory=list)
+
+
+@dataclass
+class LossConfig:
+    name: str = "BaseLoss"
+    loss: str = "BaseLoss"
+    args: Optional[dict] = None
+
+
+@dataclass
+class ModelConfig:
+    name: str = "BaseModel"
+    model: str = "BaseModel"
+
+    pre_trained_weight: Optional[str] = None
+    trained_weight: Optional[str] = None
+
+    use_sync_bn: bool = False
+    find_unused_parameters: bool = False
+
+    loss: LossConfig = field(default_factory=LossConfig)
+
+
+@dataclass
+class LogParamsConfig:
     name: str = "Model"
     value: str = "model.name"
 
 
 @dataclass
-class MlflowConfig(BaseConfig):
+class MlflowConfig:
     use: bool = False
     experiment_name: str = "pytorch-project-template"
     ignore_artifact_dirs: list[str] = field(default_factory=lambda: ["models"])
 
 
 @dataclass
-class WandbConfig(BaseConfig):
+class WandbConfig:
     use: bool = False
     project_name: str = "pytorch-project-template"
 
 
 @dataclass
-class FsdpConfig(BaseConfig):
+class FsdpConfig:
     min_num_params: int = 100000000
     use_cpu_offload: bool = False
 
 
 @dataclass
-class GPUConfig(BaseConfig):
+class GPUConfig:
     use: str | int = 0
     multi: bool = False
     use_cudnn: bool = True
@@ -86,7 +120,7 @@ class GPUConfig(BaseConfig):
 
 
 @dataclass
-class ExperimentConfig(BaseConfig):
+class ExperimentConfig:
     # Epoch Based Training
     epoch: int = 100
     last_epoch: int = 0
