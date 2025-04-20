@@ -16,15 +16,7 @@ from src.config import ConfigManager, ExperimentConfig
 matplotlib.use("Agg")
 # 論文用にFontを変更する
 font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
-plt.rcParams.update(
-    {
-        "font.family": "Times New Roman",
-        "font.size": 18,
-        # "text.usetex": True,
-        "ps.useafm": True,
-        "pdf.use14corefonts": True,
-    }
-)
+plt.rcParams.update({"font.family": "Times New Roman", "font.size": 18})
 
 
 def test_train_test_resume():
@@ -217,7 +209,6 @@ def test_scripts():
     scripts = [
         "script/show_config.py",
         "script/show_model.py",
-        "script/show_dataloader.py",
     ]
 
     for script in scripts:

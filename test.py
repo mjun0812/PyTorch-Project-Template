@@ -59,7 +59,7 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     results = tester.do_test()
 
     inference_speed = results.inference_speed
-    logger.info(f"Speed/ms: {inference_speed * 1000:.5f}ms")
+    logger.info(f"Speed(ms): {inference_speed * 1000:.5f}ms")
     logger.info(f"FPS: {1.0 / inference_speed:.2f}")
     metrics = results.metrics
     metrics.update({"Speed/ms": inference_speed * 1000, "fps": 1.0 / inference_speed})
@@ -73,7 +73,6 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
     tester.save_results(output_dir, results.targets, results.results)
 
 
-@ConfigManager.argparse
 def main(cfg: ExperimentConfig):
     # set Device
     device = set_device(cfg.gpu.use, use_cudnn=cfg.gpu.use_cudnn, is_cpu=cfg.use_cpu)
@@ -118,4 +117,5 @@ def main(cfg: ExperimentConfig):
 
 
 if __name__ == "__main__":
-    main()
+    cfg = ConfigManager.build()
+    main(cfg)

@@ -76,6 +76,8 @@ def get_lr_scheduler(
         scheduler = SCHEDULER_REGISTRY.get(cfg.class_name)(optimizer=optimizer, **args)
 
     if cfg.checkpoint is not None:
-        scheduler.load_state_dict(torch.load(cfg.checkpoint, map_location="cpu", weights_only=True))
+        scheduler.load_state_dict(
+            torch.load(cfg.checkpoint, map_location="cpu", weights_only=False)
+        )
 
     return scheduler

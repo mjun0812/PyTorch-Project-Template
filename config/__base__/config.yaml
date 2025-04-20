@@ -57,8 +57,8 @@ log:
   use_mlflow: true
   use_wandb: false
   mlflow_experiment_name: "pytorch-project-template"
-  wandb_project_name: "pytorch-project-template"
   mlflow_ignore_artifact_dirs: ["models", "optimizers", "schedulers"]
+  wandb_project_name: "pytorch-project-template"
   log_params:
     - name: "Epoch"
       value: "epoch"

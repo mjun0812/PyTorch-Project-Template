@@ -9,36 +9,164 @@ from typing import Literal, Optional, Union
 
 import matplotlib
 import matplotlib.figure
-import matplotlib.font_manager as font_manager  # noqa
-import matplotlib.pyplot as plt  # noqa
+import matplotlib.font_manager as font_manager
+import matplotlib.pyplot as plt
 import mlflow
+import mlflow.runs
 import numpy as np
 import wandb
 from dotenv import load_dotenv
 from loguru import logger
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from torch import Tensor
-from wandb.sdk.wandb_run import Run as WandbRun
 
 from ..config import ExperimentConfig, LogParamsConfig
 from ..types import PathLike, PhaseStr
-from .torch_utils import is_world_main_process
 from .utils import get_cmd, get_git_hash
 
 matplotlib.use("Agg")
 # 論文用にFontを変更する
 font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
-plt.rcParams.update(
-    {
-        "font.family": "Times New Roman",
-        "font.size": 18,
-        # "text.usetex": True,
-        "ps.useafm": True,
-        "pdf.use14corefonts": True,
-    }
-)
+plt.rcParams.update({"font.family": "Times New Roman", "font.size": 18})
 
 load_dotenv()
+
+
+class MlflowLogger:
+    def __init__(self, experiment_name: str, run_name: str) -> None:
+        self.run = self.setup(experiment_name, run_name)
+
+    def setup(self, experiment_name: str, run_name: str) -> mlflow.ActiveRun:
+        mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
+        mlflow.set_tracking_uri(mlflow_uri)
+        experiment = mlflow.set_experiment(experiment_name=experiment_name)
+        return mlflow.start_run(
+            experiment_id=experiment.experiment_id, run_name=run_name, description=""
+        )
+
+    def get_run_uri(self) -> str:
+        run = mlflow.get_run(self.run.info.run_id)
+        artifact_uri = run.info.artifact_uri
+
+        if artifact_uri.startswith("file:"):
+            return artifact_uri.replace("file:", "")
+        else:
+            tracking_uri = mlflow.get_tracking_uri()
+            return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
+
+    def log_metric(self, name: str, metric: Union[int, float, Tensor], step: int):
+        mlflow.log_metric(name, metric, step)
+
+    def log_metrics(self, metrics: dict, step: int):
+        mlflow.log_metrics(metrics, step)
+
+    def log_params(self, parameters: dict):
+        mlflow.log_params(parameters)
+
+    def log_tag(self, key: str, value: str):
+        mlflow.set_tag(key, value)
+
+    def log_artifact(self, path: Union[str, Path]):
+        mlflow.log_artifact(str(path))
+
+    def log_figure(self, fig: matplotlib.figure.Figure, path: Union[str, Path]):
+        mlflow.log_figure(fig, str(path))
+
+    def log_artifacts(self, path: Union[str, Path]):
+        mlflow.log_artifacts(str(path))
+
+    def log_table(self, dict_data):
+        mlflow.log_table(data=dict_data)
+
+    def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED"):
+        mlflow.end_run(status=status)
+
+
+class WandbLogger:
+    def __init__(self, project_name: str, run_name: str) -> None:
+        self.run = self.setup(project_name, run_name)
+
+    def setup(self, project_name: str, run_name: str) -> wandb.sdk.wandb_run.Run:
+        Path("result/wandb").mkdir(parents=True, exist_ok=True)
+        wandb.require("core")
+        return wandb.init(project=project_name, name=run_name, dir="result")
+
+    def get_run_uri(self) -> str:
+        return self.run.get_url()
+
+    def log_metric(self, name: str, metric: Union[int, float, Tensor], step: int):
+        wandb.log({name: metric}, step=step)
+
+    def log_metrics(self, metrics: dict, step: int):
+        wandb.log(metrics, step=step)
+
+    def log_params(self, parameters: dict):
+        wandb.config.update(parameters)
+
+    def log_tag(self, key: str, value: str):
+        wandb.run.tags.append(value)
+
+    def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED"):
+        wandb.finish(exit_code=0 if status == "FINISHED" else 1)
+
+
+def defaultdict_to_dict(d: defaultdict) -> dict:
+    return {k: defaultdict_to_dict(v) if isinstance(v, defaultdict) else v for k, v in d.items()}
+
+
+class MetricLogger:
+    def __init__(self) -> None:
+        self.histories = defaultdict(lambda: defaultdict(list))
+
+    def log_metric(self, metric_name: str, metric: Union[int, float, str], phase: PhaseStr):
+        self.histories[metric_name][phase].append(metric)
+
+    def log_metrics(self, metrics: dict[str, Union[int, float, str]], phase: PhaseStr):
+        for name, value in metrics.items():
+            self.log_metric(phase, name, value)
+
+    def _plot_graph(self, title, labels, data):
+        plt.gcf().clear()
+        fig, ax = plt.subplots(
+            1, 1, figsize=(9, 6), tight_layout=True, subplot_kw=dict(title=title)
+        )
+        for label, d in zip(labels, data):
+            ax.plot(range(len(d)), d, label=label)
+        ax.legend()
+        ax.set_xlabel("Step")
+        ax.set_xlim(0, len(data[0]))
+        return fig
+
+    def log_history_figure(self, output_dir: PathLike):
+        metrics_names = list(self.histories.keys())
+        output_dir = Path(output_dir)
+
+        for metric_name in metrics_names:
+            labels = []
+            data = []
+            for phase, v in self.histories[metric_name].items():
+                labels.append(f"{metric_name}_{phase}")
+                data.append(v)
+            if not data:
+                continue
+            max_length = max([len(d) for d in data])
+
+            # サンプル不足でのグラフ描画エラーの処理
+            # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
+            # なので、x軸を補間することで、グラフを合わせる
+            interpolated_data = []
+            for d in data:
+                if len(d) < max_length:
+                    x = np.linspace(0, max_length - 1, len(d))
+                    interp_data = np.interp(np.arange(max_length), x, d)
+                    interpolated_data.append(interp_data)
+                else:
+                    interpolated_data.append(d)
+
+            fig = self._plot_graph(metric_name, labels, interpolated_data)
+            fig_path = output_dir / f"{metric_name}.png".replace(" ", "_")
+            fig.savefig(fig_path)
+            plt.close()
 
 
 class Logger:
@@ -53,95 +181,86 @@ class Logger:
         wandb_project_name: Optional[str] = None,
     ) -> None:
         self.output_dir = output_dir
-        self.histories = defaultdict(dict)
         self.last_epoch = 0
         self.phase = phase
         self.level = level
-        self.use_mlflow = False
-        self.use_wandb = False
-        self.mlflow_run: Optional[mlflow.ActiveRun] = None
-        self.wandb_run: Optional[WandbRun] = None
 
-        log_path = output_dir / f"{self.phase}.log" if output_dir is not None else None
-        self.logger = self.setup_logger(log_path, level)
+        # 基本ロガーの設定
+        self._setup_basic_logger(output_dir, level)
 
-        if is_world_main_process():
-            with open(Path(output_dir) / "cmd_histry.log", "a") as f:
-                print(get_cmd(), file=f)  # Execute CLI command history
+        # メトリックロガーの初期化
+        self.metric_logger = MetricLogger()
 
-            if use_mlflow and mlflow_experiment_name is not None and output_dir is not None:
-                self.use_mlflow = True
-                self.mlflow_run = self.setup_mlflow(output_dir.name, mlflow_experiment_name)
-                self.logger.info(f"MLflow Tracking: {self.get_mlflow_run_uri()}")
+        # 外部ロガーの設定
+        self._setup_mlflow_logger(use_mlflow, mlflow_experiment_name, output_dir)
+        self._setup_wandb_logger(use_wandb, wandb_project_name, output_dir)
 
-            if use_wandb and wandb_project_name is not None and output_dir is not None:
-                self.use_wandb = True
-                self.wandb_run = self.setup_wandb(wandb_project_name, output_dir.name)
-                self.logger.info(f"Wandb Tracking: {wandb.run.get_url()}")
+        self._log_initial_info()
 
-        self.logger.info(f"Command: {get_cmd()}")
-        self.logger.info(f"Git Hash: {get_git_hash()}")
-        self.logger.info(f"Output dir: {str(output_dir)}")
+    def _setup_basic_logger(self, output_dir: Optional[PathLike], level: str) -> None:
+        """基本ロガーを設定する"""
+        if output_dir is not None:
+            self.log_path = output_dir / f"{self.phase}.log"
+        else:
+            self.log_path = None
 
-    def setup_logger(self, log_path: Optional[Union[str, Path]] = None, level: str = "INFO"):
         logger.remove()
         logger.add(sys.stdout, level=level.upper())
-        if log_path and is_world_main_process():
-            logger.add(log_path, level=level.upper())
-        return logger
+        if self.log_path:
+            logger.add(self.log_path, level=level.upper())
+        self.logger = logger
 
-    # ########## MLflow ##########
-    def setup_mlflow(self, run_name: str, experiment_name: str):
-        mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
-        mlflow.set_tracking_uri(mlflow_uri)
+    def _setup_mlflow_logger(
+        self, use_mlflow: bool, experiment_name: Optional[str], output_dir: Optional[PathLike]
+    ) -> None:
+        """MLflowロガーを設定する"""
+        self.mlflow_logger: Optional[MlflowLogger] = None
+        if use_mlflow and experiment_name is not None and output_dir is not None:
+            self.mlflow_logger = MlflowLogger(experiment_name, output_dir.name)
+            self.logger.info(f"MLflow Tracking: {self.mlflow_logger.get_run_uri()}")
+            self.logger.info(
+                f"Start MLflow Tracking: experiment_name={experiment_name} "
+                f"run_name={output_dir.name} "
+                f"experiment_id: {self.mlflow_logger.run.info.experiment_id} "
+                f"run_id: {self.mlflow_logger.run.info.run_id}"
+            )
+            self.mlflow_logger.log_params(
+                {"output_dir": self.output_dir, "hostname": os.uname()[1]}
+            )
 
-        experiment = mlflow.set_experiment(experiment_name=experiment_name)
-        mlflow_run = mlflow.start_run(
-            experiment_id=experiment.experiment_id, run_name=run_name, description=""
-        )
+    def _setup_wandb_logger(
+        self, use_wandb: bool, project_name: Optional[str], output_dir: Optional[PathLike]
+    ) -> None:
+        """Weights & Biasesロガーを設定する"""
+        self.wandb_logger: Optional[WandbLogger] = None
+        if use_wandb and project_name is not None and output_dir is not None:
+            self.wandb_logger = WandbLogger(project_name, output_dir.name)
+            self.logger.info(f"Wandb Tracking: {self.wandb_logger.get_run_uri()}")
 
-        self.logger.info(
-            f"Start MLflow Tracking: experiment_name={experiment_name} "
-            f"run_name={run_name} "
-            f"experiment_id: {experiment.experiment_id} run_id: {mlflow_run.info.run_id}"
-        )
-        self.log_params({"output_dir": self.output_dir, "hostname": os.uname()[1]})
-        return mlflow_run
-
-    def get_mlflow_run_uri(self) -> str:
-        if not self.use_mlflow:
-            return ""
-        run = mlflow.get_run(self.mlflow_run.info.run_id)
-        artifact_uri = run.info.artifact_uri
-
-        if artifact_uri.startswith("file:"):
-            return artifact_uri.replace("file:", "")
-        else:
-            tracking_uri = mlflow.get_tracking_uri()
-            return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
+    def _log_initial_info(self):
+        if self.output_dir is not None:
+            with open(Path(self.output_dir) / "cmd_histry.log", "a") as f:
+                print(get_cmd(), file=f)  # Execute CLI command history
+        self.logger.info(f"Command: {get_cmd()}")
+        self.logger.info(f"Git Hash: {get_git_hash()}")
+        self.logger.info(f"Output dir: {str(self.output_dir)}")
 
     @contextmanager
-    def mlflow_safe_operation(self, operation_name: str):
+    def _safe_operation(self, operation_name: str):
         try:
             yield
         except Exception as e:
-            self.logger.warning(f"Failed to {operation_name} on MLflow: {e}")
+            self.logger.warning(f"Failed to {operation_name}: {e}")
 
-    # ########## Wandb ##########
-    def setup_wandb(self, project_name: str, run_name: str) -> WandbRun:
-        Path("result/wandb").mkdir(parents=True, exist_ok=True)
-        wandb.require("core")
-        return wandb.init(
-            project=project_name,
-            name=run_name,
-            dir="result",
-        )
+    def get_mlflow_run_uri(self) -> str:
+        if self.mlflow_logger is None:
+            return None
+        return self.mlflow_logger.get_run_uri()
 
     def get_wandb_run_uri(self) -> str:
-        if self.use_wandb:
-            return wandb.run.get_url()
-        else:
-            return ""
+        if self.wandb_logger is None:
+            return None
+        return self.wandb_logger.get_run_uri()
 
     def info(self, message):
         self.logger.info(message)
@@ -170,16 +289,18 @@ class Logger:
     ):
         if phase is None:
             phase = self.phase
-
         if isinstance(metric, Tensor):
             metric = metric.cpu().item()
 
         self.logger.info(f"{phase.capitalize()} {name}: {metric}")
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_metric"):
-                mlflow.log_metric(f"{phase}/{name}", metric, step)
-        if self.use_wandb:
-            wandb.log({f"{phase}/{name}": metric}, step=step)
+        self.metric_logger.log_metric(name, metric, phase)
+
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_metric"):
+                self.mlflow_logger.log_metric(f"{phase}/{name}", metric, step)
+        if self.wandb_logger:
+            with self._safe_operation("wandb.log"):
+                self.wandb_logger.log_metric(f"{phase}/{name}", metric, step)
 
     def log_metrics(self, metrics: dict, step: int, phase: Optional[PhaseStr] = None):
         if phase is None:
@@ -190,124 +311,93 @@ class Logger:
             if isinstance(value, Tensor):
                 value = value.cpu().item()
 
-            if isinstance(value, (int, float)):
-                # Log value history
-                if phase not in self.histories[name]:
-                    self.histories[name][phase] = []
-                self.histories[name][phase].append(value)
-
+            if isinstance(value, (int, float, str)):
                 log_metrics[f"{phase}/{name}"] = value
+
+                if not isinstance(value, str):
+                    self.metric_logger.log_metric(name, value, phase)
 
             self.logger.info(f"{phase.capitalize()} {name}: {value}")
 
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_metrics"):
-                mlflow.log_metrics(log_metrics, step)
-        if self.use_wandb:
-            wandb.log(log_metrics, step=step)
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_metrics"):
+                self.mlflow_logger.log_metrics(log_metrics, step)
+        if self.wandb_logger:
+            with self._safe_operation("wandb.log"):
+                self.wandb_logger.log_metrics(log_metrics, step)
 
     def log_params(self, parameters: dict):
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_params"):
-                mlflow.log_params(parameters)
-        if self.use_wandb:
-            wandb.config.update(parameters)
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_params"):
+                self.mlflow_logger.log_params(parameters)
+        if self.wandb_logger:
+            with self._safe_operation("wandb.log_params"):
+                self.wandb_logger.log_params(parameters)
 
     def log_tag(self, key: str, value: str):
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_tag"):
-                mlflow.set_tag(key, value)
-        if self.use_wandb:
-            wandb.run.tags.append(value)
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_tag"):
+                self.mlflow_logger.log_tag(key, value)
+        if self.wandb_logger:
+            with self._safe_operation("wandb.log_tag"):
+                self.wandb_logger.log_tag(key, value)
 
     def log_figure(self, fig: matplotlib.figure.Figure, path: Union[str, Path]):
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_figure"):
-                mlflow.log_figure(fig, str(path))
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_figure"):
+                self.mlflow_logger.log_figure(fig, str(path))
 
     def log_artifact(self, path: Union[str, Path]):
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_artifact"):
-                mlflow.log_artifact(str(path))
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_artifact"):
+                self.mlflow_logger.log_artifact(str(path))
 
     def log_artifacts(self, path: Union[str, Path]):
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_artifacts"):
-                mlflow.log_artifacts(str(path))
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_artifacts"):
+                self.mlflow_logger.log_artifacts(str(path))
 
-    def log_result_dir(self, path: Union[str, Path], ignore_dirs: list[str] = ["models"]):
-        """重みファイル(models以下)以外をartifactにする
+    def log_result_dir(self, path: Union[str, Path], ignore_dirs: Optional[list[str]] = None):
+        """結果ディレクトリをログに記録する
 
         Args:
-            path (str): result path
+            path (Union[str, Path]): 結果ディレクトリのパス
+            ignore_dirs (Optional[list[str]], optional): 無視するディレクトリ名のリスト
         """
-        if not self.use_mlflow:
+        if self.mlflow_logger is None:
             return
 
+        if ignore_dirs is None:
+            ignore_dirs = []
+
+        path = Path(path)
+
         for p in os.listdir(path):
-            target = os.path.join(path, p)
-            if os.path.isdir(target):
-                ignore = False
-                for ignore_dir_name in ignore_dirs:
-                    if ignore_dir_name in target:
-                        ignore = True
-                        continue
-                if ignore:
+            target = path / p
+
+            if target.is_dir():
+                # ディレクトリが無視リストに含まれているかチェック
+                if any(ignore_dir_name in str(target) for ignore_dir_name in ignore_dirs):
                     continue
-                with self.mlflow_safe_operation("log_artifacts"):
-                    mlflow.log_artifacts(target)
+
+                with self._safe_operation("mlflow.log_artifacts"):
+                    self.mlflow_logger.log_artifacts(target)
             else:
-                with self.mlflow_safe_operation("log_artifact"):
-                    mlflow.log_artifact(target)
+                with self._safe_operation("mlflow.log_artifact"):
+                    self.mlflow_logger.log_artifact(target)
 
     def log_table(self, dict_data):
-        if self.use_mlflow:
-            with self.mlflow_safe_operation("log_table"):
-                mlflow.log_table(data=dict_data)
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_table"):
+                self.mlflow_logger.log_table(data=dict_data)
 
-    def log_history_figure(self):
-        self.logger.info(f"Histories:\n{pformat(dict(self.histories))}")
-        metrics_names = list(self.histories.keys())
-
-        for metric in metrics_names:
-            labels = []
-            data = []
-            for k, v in self.histories[metric].items():
-                labels.append(f"{metric}_{k}")
-                data.append(v)
-            if not data:
-                continue
-            max_length = max([len(d) for d in data])
-
-            # サンプル不足でのグラフ描画エラーの処理
-            # Validation Intervalによってはlen(hist_loss) > len(hist_val_loss)
-            # なので、x軸を補間することで、グラフを合わせる
-            interpolated_data = []
-            for d in data:
-                if len(d) < max_length:
-                    x = np.linspace(0, max_length - 1, len(d))
-                    interp_data = np.interp(np.arange(max_length), x, d)
-                    interpolated_data.append(interp_data)
-                else:
-                    interpolated_data.append(d)
-
-            fig = self.plot_graph(metric, labels, interpolated_data)
-            fig_path = os.path.join(self.output_dir, f"{metric}.png".replace(" ", "_"))
-            fig.savefig(fig_path)
-            plt.close()
-
-    def plot_graph(self, title, labels, data):
-        plt.gcf().clear()
-
-        fig, ax = plt.subplots(
-            1, 1, figsize=(9, 6), tight_layout=True, subplot_kw=dict(title=title)
-        )
-        for label, d in zip(labels, data):
-            ax.plot(range(len(d)), d, label=label)
-        ax.legend()
-        ax.set_xlabel("Epoch")
-        ax.set_xlim(0, len(data[0]))  # x軸の範囲を設定
-        return fig
+    def log_history_figure(self, output_dir: PathLike):
+        histories = defaultdict_to_dict(self.metric_logger.histories)
+        self.logger.info(f"Histories:\n{pformat(histories)}")
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        with self._safe_operation("log_history_figure"):
+            self.metric_logger.log_history_figure(output_dir)
 
     def log_config(self, cfg: ExperimentConfig, params: LogParamsConfig):
         log_params = {}
@@ -322,7 +412,9 @@ class Logger:
         self.log_params(log_params)
 
     def close(self, status="FINISHED"):
-        if self.use_mlflow:
-            mlflow.end_run(status=status)
-        if self.use_wandb:
-            wandb.finish(exit_code=0 if status == "FINISHED" else 1)
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.end_run"):
+                self.mlflow_logger.close(status)
+        if self.wandb_logger:
+            with self._safe_operation("wandb.finish"):
+                self.wandb_logger.close(status)

@@ -261,7 +261,7 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     device = next(model.parameters()).device
     model_state_dict = model.state_dict()
 
-    checkpoint = torch.load(weight_path, map_location=device, weights_only=True)
+    checkpoint = torch.load(weight_path, map_location=device, weights_only=False)
     checkpoint = remove_compile_prefix_from_weight(checkpoint)
     checkpoint = remove_parallel_prefix_from_weight(checkpoint)
 

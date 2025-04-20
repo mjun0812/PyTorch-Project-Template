@@ -34,7 +34,9 @@ def build_optimizer(cfg: OptimizerConfig, model: torch.nn.Module) -> optim.Optim
         optimizer = create_optimizer_v2(target_model, opt=optimizer_cls_name, lr=lr, **args)
 
     if cfg.checkpoint is not None:
-        optimizer.load_state_dict(torch.load(cfg.checkpoint, map_location="cpu", weights_only=True))
+        optimizer.load_state_dict(
+            torch.load(cfg.checkpoint, map_location="cpu", weights_only=False)
+        )
 
     return optimizer
 

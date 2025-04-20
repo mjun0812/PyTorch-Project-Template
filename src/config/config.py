@@ -110,7 +110,9 @@ class LoggerConfig:
     use_wandb: bool = False
     wandb_project_name: str = "pytorch-project-template"
     mlflow_experiment_name: str = "pytorch-project-template"
-    mlflow_ignore_artifact_dirs: list[str] = field(default_factory=lambda: ["models"])
+    mlflow_ignore_artifact_dirs: list[str] = field(
+        default_factory=lambda: ["models", "optimizers", "schedulers"]
+    )
     log_params: Optional[list[LogParamsConfig]] = None
 
 
@@ -130,6 +132,8 @@ class ExperimentConfig:
     save_interval: int = 5
     metric_for_best_model: str = "total_loss"
     greater_is_better: bool = False
+    best_metric: float = 0
+    best_epoch: int = 0
 
     # DataLoader Config
     batch: int = 32

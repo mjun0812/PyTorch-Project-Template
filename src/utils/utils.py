@@ -107,15 +107,7 @@ def plot_graph(title, labels, data, output_dir):
 
     # 論文用にFontを変更する
     font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
-    plt.rcParams.update(
-        {
-            "font.family": "Times New Roman",
-            "font.size": 18,
-            # "text.usetex": True,
-            "ps.useafm": True,
-            "pdf.use14corefonts": True,
-        }
-    )
+    plt.rcParams.update({"font.family": "Times New Roman", "font.size": 18})
     fig, ax = plt.subplots(1, 1, figsize=(9, 6), tight_layout=True, subplot_kw=dict(title=title))
     for label, d in zip(labels, data):
         ax.plot(d, label=label)
@@ -126,15 +118,7 @@ def plot_graph(title, labels, data, output_dir):
 
 def plot_multi_graph(filename, titles, data, dpi=300):
     font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
-    plt.rcParams.update(
-        {
-            "font.family": "Times New Roman",
-            "font.size": 10,
-            # "text.usetex": True,
-            "ps.useafm": True,
-            "pdf.use14corefonts": True,
-        }
-    )
+    plt.rcParams.update({"font.family": "Times New Roman", "font.size": 10})
     col = len(titles)
     # 比率が合わないときはfigsizeをいじる
     fig, axs = plt.subplots(1, col, figsize=(col * 5, 5))

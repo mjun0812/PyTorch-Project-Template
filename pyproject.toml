@@ -5,14 +5,13 @@ description = ""
 authors = [{ name = "Junya Morioka", email = "mjun@mjunya.com" }]
 requires-python = ">=3.11"
 dependencies = [
-    "torch==2.5.1+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
-    "torch==2.5.1; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
-    "torchvision==0.20.1+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
-    "torchvision==0.20.1; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
-    "numpy<2.0.0",
+    "torch==2.6.0+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "torch==2.6.0; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
+    "torchvision==0.21.0+cu124; sys_platform == 'linux' and platform_machine == 'x86_64'",
+    "torchvision==0.21.0; sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')",
     "timm>=1.0.11",
     "kornia>=0.7.4",
-    "mlflow==2.20.0",
+    "mlflow>=2.20.3",
     "torchmetrics>=1.4.1",
     "tqdm>=4.66.5",
     "matplotlib>=3.9.2",
@@ -44,7 +43,7 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [tool.uv.sources]
-torch-cpp = { url = "https://github.com/mjun0812/torch_cpp/releases/download/v1.1.9/torch_cpp-1.1.9+torch250cu124-cp311-cp311-linux_x86_64.whl" }
+torch-cpp = { url = "https://github.com/mjun0812/torch_cpp/releases/download/v1.1.13/torch_cpp-1.1.13+torch260cu124-cp311-cp311-linux_x86_64.whl" }
 torch = [
     { index = "torch-cuda", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
     { index = "torch-cpu", marker = "sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')" },
