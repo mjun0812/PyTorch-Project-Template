@@ -256,7 +256,7 @@ def main(cfg: ExperimentConfig) -> None:
             child_dirs=["models", "optimizers", "schedulers"],
         )
 
-    # Logging
+    # create logger
     logger = Logger(
         output_dir,
         "train",
@@ -269,14 +269,8 @@ def main(cfg: ExperimentConfig) -> None:
     if cfg.tag:
         logger.log_tag("tag", cfg.tag)
         logger.log_params({"tag": cfg.tag})
-
-    if is_world_main_process():
-        # Save config
-        ConfigManager.dump(cfg, output_dir / "config.yaml")
-    logger.info("\n" + ConfigManager.pretty_text(cfg))
-    logger.log_config(cfg, cfg.log.log_params)
-    logger.log_artifacts(output_dir)
-
+    # logging Device Info
+    cuda_info(logger=logger)
     if is_distributed():
         logger.info("Use Distributed Data Parallel Training")
         if is_multi_node():
@@ -295,7 +289,13 @@ def main(cfg: ExperimentConfig) -> None:
                 f"LOCAL_RANK={local_rank}, "
                 f"LOCAL_WORLD_SIZE={get_local_size()}"
             )
-    cuda_info(logger=logger)
+
+    # save config
+    if is_world_main_process():
+        ConfigManager.dump(cfg, output_dir / "config.yaml")
+    logger.info("\n" + ConfigManager.pretty_text(cfg))
+    logger.log_config(cfg, cfg.log.log_params)
+    logger.log_artifacts(output_dir)
 
     messages = [
         f"host: {os.uname()[1]}",
@@ -315,7 +315,6 @@ def main(cfg: ExperimentConfig) -> None:
             messages += [f"train error: {e}\n{traceback.format_exc()}"]
             logger.exception("\n".join(messages))
             post_slack(channel="#error", message="\n".join(messages))
-            logger.log_result_dir(output_dir, ignore_dirs=cfg.log.mlflow_ignore_artifact_dirs)
             if is_distributed():
                 dist.destroy_process_group()
         logger.close("FAILED")

@@ -41,9 +41,6 @@ class BaseTester:
         self.use_amp = use_amp
         self.amp_dtype = TORCH_DTYPE[amp_dtype] if use_amp else torch.float32
 
-        if self.use_amp:
-            logger.info(f"Using Mixed Precision with AMP (dtype: {self.amp_dtype})")
-
     def do_test(self) -> TesterOutput:
         results = []
         targets = []

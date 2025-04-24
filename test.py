@@ -47,6 +47,9 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
         evaluator = evaluator.to(device)
     logger.info("Complete Build Evaluator")
 
+    if cfg.use_amp:
+        logger.info(f"Using Mixed Precision with AMP (dtype: {cfg.amp_dtype})")
+
     tester = Tester(
         device,
         model,

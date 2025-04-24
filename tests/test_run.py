@@ -21,13 +21,16 @@ plt.rcParams.update({"font.family": "Times New Roman", "font.size": 18})
 
 def test_train_test_resume():
     common_options = [
-        "use_cpu=true",
         "mlflow.use=false",
         "output=/tmp/test",
         "epoch=2",
         "val_interval=1",
         "use_ram_cache=false",
     ]
+    if torch.cuda.is_available():
+        common_options.append("use.gpu=0")
+    else:
+        common_options.append("use_cpu=true")
     print("start training test")
     process = subprocess.run(
         ["python", "train.py", "config/dummy.yaml"] + common_options,
