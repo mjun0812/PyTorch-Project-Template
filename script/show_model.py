@@ -40,12 +40,17 @@ def main(cfg: ExperimentConfig):
         _, batch_sampler = build_sampler(dataset, phase, cfg.batch, cfg.dataset.batch_sampler)
         dataloader = build_dataloader(dataset, cfg.num_worker, batch_sampler)
 
-        data = next(iter(dataloader))
-        if batched_transform is not None:
-            data = batched_transform(data)
-        print(f"Data: {data}")
-        y = model(data)
-        print(f"Output: {y}")
+        with torch.no_grad():
+            data = next(iter(dataloader))
+            if batched_transform is not None:
+                data = batched_transform(data)
+
+            for k, v in data.items():
+                data[k] = v.to(device)
+
+            print(f"Data: {data}")
+            y = model(data)
+            print(f"Output: {y}")
 
 
 if __name__ == "__main__":
