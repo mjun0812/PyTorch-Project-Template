@@ -303,7 +303,7 @@ def main(cfg: ExperimentConfig) -> None:
         f"tag: {cfg.tag}",
         f"model: {cfg.model.name}",
         f"train dataset: {cfg.dataset.train.name}",
-        f"resume cmd: python train.py {output_dir / 'config.yaml'}",
+        f"resume cmd: python train.py {output_dir}/config.yaml",
         f"mlflow_url: {logger.get_mlflow_run_uri()}",
         f"wandb_url: {logger.get_wandb_run_uri()}",
     ]
@@ -327,7 +327,7 @@ def main(cfg: ExperimentConfig) -> None:
         dist.destroy_process_group()
     torch.cuda.empty_cache()
 
-    messages += [f"test cmd: python test.py {output_dir / 'config.yaml'}"]
+    messages += [f"test cmd: python test.py {output_dir}/config.yaml"]
     post_slack(message="Finish Training:\n" + "\n".join(messages))
     logger.info("Finish Training:\n" + "\n".join(messages))
     logger.log_result_dir(output_dir, ignore_dirs=cfg.log.mlflow_ignore_artifact_dirs)

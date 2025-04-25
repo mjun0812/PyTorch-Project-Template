@@ -255,10 +255,9 @@ class BaseTrainer:
             if is_distributed():
                 value = reduce_tensor(value) / dist.get_world_size()
             epoch_history[key] = epoch_history.get(key, 0.0) + value.item()
-
             description += f"{key.capitalize()}: {value.item():8.4f} "
-
-        state.progress_bar.set_description(description)
+        if is_local_main_process():
+            state.progress_bar.set_description(description)
 
     def _after_epoch(self, state: TrainingState, epoch_result: EpochResult) -> EpochResult:
         if state.phase == "train" and self.epoch_lr_scheduler:
@@ -320,15 +319,15 @@ class BaseTrainer:
             self.logger.log_artifact(self.params.output_dir / "config.yaml")
 
     def save_state(self, epoch: int, output_dir: Path) -> dict[str, Path]:
-        weight_path = output_dir / f"models/model_epoch_{epoch}.pth"
-        optimizer_path = output_dir / f"optimizers/optimizer_epoch_{epoch}.pth"
-        epoch_scheduler_path = output_dir / "schedulers" / f"epoch_scheduler_epoch_{epoch}.pth"
-        iter_scheduler_path = output_dir / "schedulers" / f"iter_scheduler_epoch_{epoch}.pth"
+        weight_path = f"{output_dir}/models/model_epoch_{epoch}.pth"
+        optimizer_path = f"{output_dir}/optimizers/optimizer_epoch_{epoch}.pth"
+        epoch_scheduler_path = f"{output_dir}/schedulers/epoch_scheduler_epoch_{epoch}.pth"
+        iter_scheduler_path = f"{output_dir}/schedulers/iter_scheduler_epoch_{epoch}.pth"
 
-        final_model_path = output_dir / "models/model_final.pth"
-        final_optimizer_path = output_dir / "optimizers/optimizer_final.pth"
-        final_epoch_scheduler_path = output_dir / "schedulers/epoch_scheduler_final.pth"
-        final_iter_scheduler_path = output_dir / "schedulers/iter_scheduler_final.pth"
+        final_model_path = f"{output_dir}/models/model_final.pth"
+        final_optimizer_path = f"{output_dir}/optimizers/optimizer_final.pth"
+        final_epoch_scheduler_path = f"{output_dir}/schedulers/epoch_scheduler_final.pth"
+        final_iter_scheduler_path = f"{output_dir}/schedulers/iter_scheduler_final.pth"
 
         save_model(self.model, weight_path)
 
