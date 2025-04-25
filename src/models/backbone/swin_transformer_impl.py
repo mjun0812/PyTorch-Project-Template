@@ -52,8 +52,8 @@ class SwinTransformer(nn.Module):
         patch_size=4,
         in_chans=3,
         embed_dim=96,
-        depths=[2, 2, 6, 2],
-        num_heads=[3, 6, 12, 24],
+        depths=None,
+        num_heads=None,
         window_size=7,
         mlp_ratio=4.0,
         qkv_bias=True,
@@ -69,6 +69,11 @@ class SwinTransformer(nn.Module):
         use_checkpoint=False,
     ):
         super().__init__()
+
+        if depths is None:
+            depths = [2, 2, 6, 2]
+        if num_heads is None:
+            num_heads = [3, 6, 12, 24]
 
         self.pretrain_img_size = pretrain_img_size
         self.num_layers = len(depths)

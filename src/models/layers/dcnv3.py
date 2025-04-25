@@ -126,7 +126,8 @@ class DCNv3_pytorch(nn.Module):
         if not _is_power_of_2(_d_per_group):
             warnings.warn(
                 "You'd better set channels in DCNv3 to make the dimension of each attention head a power of 2 "
-                "which is more efficient in our CUDA implementation."
+                "which is more efficient in our CUDA implementation.",
+                stacklevel=2,
             )
 
         self.offset_scale = offset_scale

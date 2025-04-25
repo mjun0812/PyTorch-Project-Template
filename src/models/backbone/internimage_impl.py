@@ -536,8 +536,8 @@ class InternImage(nn.Module):
         self,
         core_op="DCNv3",
         channels=64,
-        depths=[3, 4, 18, 5],
-        groups=[3, 6, 12, 24],
+        depths=None,
+        groups=None,
         num_classes=1000,
         mlp_ratio=4.0,
         drop_rate=0.0,
@@ -562,6 +562,10 @@ class InternImage(nn.Module):
         **kwargs,
     ):
         super().__init__()
+        if depths is None:
+            depths = [3, 4, 18, 5]
+        if groups is None:
+            groups = [3, 6, 12, 24]
         self.core_op = core_op
         self.num_classes = num_classes
         self.num_levels = len(depths)
