@@ -1,11 +1,7 @@
 import argparse
-import os
-import sys
 from pathlib import Path
 
 from omegaconf import OmegaConf
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 
 def main():

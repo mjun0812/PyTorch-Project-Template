@@ -1,13 +1,9 @@
-import os
-import sys
-
 import cv2
 import numpy as np
 import torch
 import torchvision.transforms.v2 as T
 import torchvision.transforms.v2.functional as TF
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.config import ConfigManager, ExperimentConfig
 from src.dataloaders import build_dataloader, build_dataset, build_sampler
 from src.transform import build_batched_transform, build_transforms

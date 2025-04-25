@@ -6,9 +6,7 @@ cd ../
 PYTHON="3.11"
 CUDA_VERSION="12.4.1"
 
-DESCRIPTION=$(cat <<< "CUDA + Python Docker
-同階層にpoetry, requirements.txtを置くと自動でパッケージがインストールされます．
-
+DESCRIPTION=$(cat <<< "PyTorch Project Docker
 Option:
     -p, --python: python version. default to $PYTHON 
     -c, --cuda:   CUDA Version. default to $CUDA_VERSION"
@@ -21,6 +19,10 @@ for OPT in "$@"; do
         ;;
         '-c' | '--cuda')
             CUDA_VERSION="$2"
+            shift 2
+        ;;
+        '-p' | '--python')
+            PYTHON="$2"
             shift 2
         ;;
     esac
@@ -36,6 +38,7 @@ mkdir -p result
 docker build \
     --build-arg BUILDER_IMAGE=${BUILDER_IMAGE} \
     --build-arg BASE_IMAGE=${BASE_IMAGE} \
+    --build-arg PWD=$(pwd) \
     --build-arg PYTHON=${PYTHON} \
     -t "${USER}/${IMAGE_NAME}-server:latest" \
     -f docker/Dockerfile .

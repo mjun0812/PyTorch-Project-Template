@@ -3,7 +3,6 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import torch
-from loguru import logger
 from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from tqdm import tqdm

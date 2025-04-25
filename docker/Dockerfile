@@ -8,6 +8,8 @@ ARG BASE_IMAGE="nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04"
 FROM $BUILDER_IMAGE AS builder
 
 ARG PYTHON
+ARG PWD
+
 ENV UV_PYTHON_INSTALL_DIR="/opt/python" \
     UV_PYTHON=${PYTHON} \
     # インストール後にソースファイルをバイトコードにコンパイルする
@@ -28,23 +30,29 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     curl \
     ca-certificates
 
+WORKDIR ${PWD}
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     ulimit -n 8192 \
     && uv sync --frozen --no-install-project
-
+ADD . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 FROM $BASE_IMAGE AS production
 
+ARG PWD
+
 COPY --from=builder /opt/python /opt/python
-COPY --from=builder /.venv /.venv
+COPY --from=builder ${PWD}/.venv ${PWD}/.venv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=ja_JP.UTF-8 \
     TZ=Asia/Tokyo \
-    PATH="/.venv/bin:$PATH" \
+    PATH="${PWD}/.venv/bin:$PATH" \
     # 標準出力・標準エラーのストリームのバッファリングを行わない
     PYTHONUNBUFFERED=1 \
     # .pycファイルを生成しない

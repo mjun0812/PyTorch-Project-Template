@@ -9,6 +9,7 @@ USER_ID=`id -u`
 GROUP_ID=`id -g`
 GROUP_NAME=`id -gn`
 USER_NAME=$USER
+PWD=$(pwd)
 
 USE_QUEUE="-i"
 USE_JUPYTER=""
@@ -39,10 +40,11 @@ fi
 
 # datasetディレクトリ以下のシンボリックリンクを探し、リンク先をマウントする
 SYMLINK_MOUNTS=""
-for symlink in $(find "$(pwd)/dataset" -type l); do
+for symlink in $(find "${PWD}/dataset" -type l); do
     target=$(dirname "$symlink")/$(readlink "$symlink")
     [ -e "$target" ] && SYMLINK_MOUNTS+=" -v $target:$target"
 done
+
 
 docker run \
     -t \
@@ -64,11 +66,12 @@ docker run \
     -v $HOME/.Xauthority:$HOME/.Xauthority:rw \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -v $HOME/.cache:$HOME/.cache \
-    -v "$(pwd):$(pwd)" \
-    -v "$(pwd)/dataset:$(pwd)/dataset" \
-    -v "$(pwd)/result:$(pwd)/result" \
+    -v ${PWD}:${PWD} \
+    -v ${PWD}/dataset:${PWD}/dataset \
+    -v ${PWD}/result:${PWD}result \
+    -v ${PWD}/.venv \
     $SYMLINK_MOUNTS \
-    --workdir $(pwd) \
+    --workdir ${PWD} \
     --name "${IMAGE_NAME}-$(date '+%s')" \
     "${USER}/${IMAGE_NAME}-server:latest" \
     ${@:-zsh}

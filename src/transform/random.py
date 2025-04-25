@@ -3,7 +3,6 @@ import random
 import numpy as np
 import torch
 import torchvision.transforms.v2 as T
-import torchvision.transforms.v2.functional as TF
 
 from ..config import TransformConfig
 from .base import BaseTransform
