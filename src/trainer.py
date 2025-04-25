@@ -256,7 +256,7 @@ class BaseTrainer:
                 value = reduce_tensor(value) / dist.get_world_size()
             epoch_history[key] = epoch_history.get(key, 0.0) + value.item()
 
-            description += f"{key.capitalize()}: {value.item():8.4f}"
+            description += f"{key.capitalize()}: {value.item():8.4f} "
 
         state.progress_bar.set_description(description)
 

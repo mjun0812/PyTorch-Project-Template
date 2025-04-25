@@ -17,7 +17,7 @@ TIMM_MODEL_LIST = timm.list_models()
 
 @dataclass
 class BackboneConfig:
-    name: str
+    name: str = ""
     pretrained: bool = True
     pretrained_weight: Optional[str] = None
     freeze: bool = False
