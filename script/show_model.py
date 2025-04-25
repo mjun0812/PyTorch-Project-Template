@@ -46,7 +46,8 @@ def main(cfg: ExperimentConfig):
                 data = batched_transform(data)
 
             for k, v in data.items():
-                data[k] = v.to(device)
+                if isinstance(v, torch.Tensor):
+                    data[k] = v.to(device)
 
             print(f"Data: {data}")
             y = model(data)
