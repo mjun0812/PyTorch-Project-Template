@@ -19,8 +19,8 @@ class RandomSelect(BaseTransform):
     def __init__(
         self, transforms1: list[TransformConfig], transforms2: list[TransformConfig], p=0.5
     ):
-        self.transforms1 = T.Compose([build_transform(t) for t in transforms1])
-        self.transforms2 = T.Compose([build_transform(t) for t in transforms2])
+        self.transforms1 = T.Compose([build_transform(TransformConfig(**t)) for t in transforms1])
+        self.transforms2 = T.Compose([build_transform(TransformConfig(**t)) for t in transforms2])
         self.p = p
 
     def __call__(self, data: dict) -> dict:

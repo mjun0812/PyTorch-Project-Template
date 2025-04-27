@@ -282,7 +282,10 @@ class BaseTrainer:
         if self.device.type == "cuda":
             description.append(f"GPU: {torch.cuda.memory_reserved(self.device) / 1e9:.1f}GB.")
         for k, v in epoch_result.items():
-            description.append(f"{k}: {v:8.4f}")
+            if isinstance(v, float):
+                description.append(f"{k}: {v:8.4f}")
+            else:
+                description.append(f"{k}: {v}")
         description = " ".join(description)
         logger.info(description)
 

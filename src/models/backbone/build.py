@@ -4,7 +4,6 @@ from typing import Optional
 import timm
 import torch
 import torchvision
-from omegaconf import OmegaConf
 from torchvision.models._utils import IntermediateLayerGetter
 
 from ...utils import Registry
@@ -47,8 +46,6 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
     args = cfg.args
     if args is None:
         args = {}
-    else:
-        args = OmegaConf.to_object(args)
 
     if model_name in BACKBONE_REGISTRY._obj_map.keys():
         backbone = BACKBONE_REGISTRY.get(cfg.name)(

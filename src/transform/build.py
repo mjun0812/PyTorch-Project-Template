@@ -1,5 +1,4 @@
 import torchvision.transforms.v2 as T
-from omegaconf import OmegaConf
 
 from ..config import TransformConfig
 from ..utils import Registry
@@ -13,8 +12,7 @@ def build_transform(cfg: TransformConfig):
     if cfg.args is None:
         transform = TRANSFORM_REGISTRY.get(cfg.class_name)()
     else:
-        args = OmegaConf.to_object(cfg.args)
-        transform = TRANSFORM_REGISTRY.get(cfg.class_name)(**args)
+        transform = TRANSFORM_REGISTRY.get(cfg.class_name)(**cfg.args)
     return transform
 
 
