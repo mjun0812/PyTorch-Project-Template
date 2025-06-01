@@ -19,7 +19,7 @@ def test_torchvision_backbone():
         args=OmegaConf.create({"out_indices": [1, 2, 3, 4]}),
     )
 
-    backbone, channels = build_backbone(cfg)
+    backbone, _ = build_backbone(cfg)
 
     # モデルが入力を処理できるか確認（小さいサイズの入力を使用）
     dummy_input = torch.randn(1, 3, 224, 224)
@@ -28,14 +28,14 @@ def test_torchvision_backbone():
 
 
 def test_timm_backbone():
-    """timmモデルの構築をテスト（GPUなしでも実行可能）"""
+    """timmモデルの構築をテスト(GPUなしでも実行可能)"""
     cfg = BackboneConfig(
         name="resnet18",
         pretrained=False,  # テスト高速化のため事前学習なし
         args=OmegaConf.create({"out_indices": [1, 2, 3, 4]}),
     )
 
-    backbone, channels = build_backbone(cfg)
+    backbone, _ = build_backbone(cfg)
 
     # モデルが入力を処理できるか確認（小さいサイズの入力を使用）
     dummy_input = torch.randn(1, 3, 224, 224)
@@ -51,7 +51,7 @@ def test_internimage_backbone():
         args=OmegaConf.create({"out_indices": [1, 2, 3, 4]}),
     )
 
-    backbone, channels = build_backbone(cfg)
+    backbone, _ = build_backbone(cfg)
 
     # モデルが入力を処理できるか確認（小さいサイズの入力を使用）
     dummy_input = torch.randn(1, 3, 224, 224)

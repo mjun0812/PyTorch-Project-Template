@@ -1,7 +1,7 @@
 import math
 
-import torch.nn as nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class MaxPool2dSame(nn.Module):

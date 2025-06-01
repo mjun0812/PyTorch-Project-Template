@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import timm
 import torch
@@ -18,9 +17,9 @@ TIMM_MODEL_LIST = timm.list_models()
 class BackboneConfig:
     name: str = ""
     pretrained: bool = True
-    pretrained_weight: Optional[str] = None
+    pretrained_weight: str | None = None
     freeze: bool = False
-    args: Optional[dict] = None
+    args: dict | None = None
 
 
 def get_available_backbones() -> list[str]:
@@ -47,7 +46,7 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
     if args is None:
         args = {}
 
-    if model_name in BACKBONE_REGISTRY._obj_map.keys():
+    if model_name in BACKBONE_REGISTRY._obj_map:
         backbone = BACKBONE_REGISTRY.get(cfg.name)(
             pretrained=cfg.pretrained,
             weight_path=cfg.pretrained_weight,

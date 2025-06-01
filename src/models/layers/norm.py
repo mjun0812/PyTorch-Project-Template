@@ -2,7 +2,7 @@ from functools import partial
 from typing import Literal
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 NormLayerTypes = Literal[
     "BatchNorm2d", "GroupNorm", "InstanceNorm2d", "LayerNorm", "FrozenBatchNorm2d", "Identity"
@@ -35,9 +35,7 @@ def build_norm_layer(input_dim, norm_type: NormLayerTypes, **kwargs):
         return nn.LayerNorm(input_dim, **kwargs)
     elif norm_type == "FrozenBatchNorm2d":
         return FrozenBatchNorm2d(input_dim, **kwargs)
-    elif norm_type == "Identity":
-        return nn.Identity()
-    elif norm_type is None:
+    elif norm_type == "Identity" or norm_type is None:
         return nn.Identity()
 
 
@@ -51,7 +49,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
     """
 
     def __init__(self, n):
-        super(FrozenBatchNorm2d, self).__init__()
+        super().__init__()
         self.register_buffer("weight", torch.ones(n))
         self.register_buffer("bias", torch.zeros(n))
         self.register_buffer("running_mean", torch.zeros(n))
@@ -64,7 +62,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         if num_batches_tracked_key in state_dict:
             del state_dict[num_batches_tracked_key]
 
-        super(FrozenBatchNorm2d, self)._load_from_state_dict(
+        super()._load_from_state_dict(
             state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
         )
 

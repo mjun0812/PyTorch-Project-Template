@@ -5,11 +5,10 @@ from collections import defaultdict
 from contextlib import contextmanager
 from pathlib import Path
 from pprint import pformat
-from typing import Literal, Optional, Union
+from typing import Literal
 
 import matplotlib
 import matplotlib.figure
-import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.runs
@@ -17,6 +16,7 @@ import numpy as np
 import wandb
 from dotenv import load_dotenv
 from loguru import logger
+from matplotlib import font_manager
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from torch import Tensor
 
@@ -54,7 +54,7 @@ class MlflowLogger:
             tracking_uri = mlflow.get_tracking_uri()
             return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
 
-    def log_metric(self, name: str, metric: Union[int, float, Tensor], step: int):
+    def log_metric(self, name: str, metric: int | float | Tensor, step: int):
         mlflow.log_metric(name, metric, step)
 
     def log_metrics(self, metrics: dict, step: int):
@@ -66,13 +66,13 @@ class MlflowLogger:
     def log_tag(self, key: str, value: str):
         mlflow.set_tag(key, value)
 
-    def log_artifact(self, path: Union[str, Path]):
+    def log_artifact(self, path: str | Path):
         mlflow.log_artifact(str(path))
 
-    def log_figure(self, fig: matplotlib.figure.Figure, path: Union[str, Path]):
+    def log_figure(self, fig: matplotlib.figure.Figure, path: str | Path):
         mlflow.log_figure(fig, str(path))
 
-    def log_artifacts(self, path: Union[str, Path]):
+    def log_artifacts(self, path: str | Path):
         mlflow.log_artifacts(str(path))
 
     def log_table(self, dict_data):
@@ -94,7 +94,7 @@ class WandbLogger:
     def get_run_uri(self) -> str:
         return self.run.get_url()
 
-    def log_metric(self, name: str, metric: Union[int, float, Tensor], step: int):
+    def log_metric(self, name: str, metric: int | float | Tensor, step: int):
         wandb.log({name: metric}, step=step)
 
     def log_metrics(self, metrics: dict, step: int):
@@ -118,10 +118,10 @@ class MetricLogger:
     def __init__(self) -> None:
         self.histories = defaultdict(lambda: defaultdict(list))
 
-    def log_metric(self, metric_name: str, metric: Union[int, float, str], phase: PhaseStr):
+    def log_metric(self, metric_name: str, metric: int | float | str, phase: PhaseStr):
         self.histories[metric_name][phase].append(metric)
 
-    def log_metrics(self, metrics: dict[str, Union[int, float, str]], phase: PhaseStr):
+    def log_metrics(self, metrics: dict[str, int | float | str], phase: PhaseStr):
         for name, value in metrics.items():
             self.log_metric(phase, name, value)
 
@@ -172,13 +172,13 @@ class MetricLogger:
 class Logger:
     def __init__(
         self,
-        output_dir: Optional[PathLike],
+        output_dir: PathLike | None,
         phase: PhaseStr,
         level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO",
         use_mlflow: bool = False,
         use_wandb: bool = False,
-        mlflow_experiment_name: Optional[str] = None,
-        wandb_project_name: Optional[str] = None,
+        mlflow_experiment_name: str | None = None,
+        wandb_project_name: str | None = None,
     ) -> None:
         self.output_dir = output_dir
         self.last_epoch = 0
@@ -197,7 +197,7 @@ class Logger:
 
         self._log_initial_info()
 
-    def _setup_basic_logger(self, output_dir: Optional[PathLike], level: str) -> None:
+    def _setup_basic_logger(self, output_dir: PathLike | None, level: str) -> None:
         """基本ロガーを設定する"""
         if output_dir is not None:
             self.log_path = output_dir / f"{self.phase}.log"
@@ -211,10 +211,10 @@ class Logger:
         self.logger = logger
 
     def _setup_mlflow_logger(
-        self, use_mlflow: bool, experiment_name: Optional[str], output_dir: Optional[PathLike]
+        self, use_mlflow: bool, experiment_name: str | None, output_dir: PathLike | None
     ) -> None:
         """MLflowロガーを設定する"""
-        self.mlflow_logger: Optional[MlflowLogger] = None
+        self.mlflow_logger: MlflowLogger | None = None
         if use_mlflow and experiment_name is not None and output_dir is not None:
             self.mlflow_logger = MlflowLogger(experiment_name, output_dir.name)
             self.logger.info(f"MLflow Tracking: {self.mlflow_logger.get_run_uri()}")
@@ -229,10 +229,10 @@ class Logger:
             )
 
     def _setup_wandb_logger(
-        self, use_wandb: bool, project_name: Optional[str], output_dir: Optional[PathLike]
+        self, use_wandb: bool, project_name: str | None, output_dir: PathLike | None
     ) -> None:
         """Weights & Biasesロガーを設定する"""
-        self.wandb_logger: Optional[WandbLogger] = None
+        self.wandb_logger: WandbLogger | None = None
         if use_wandb and project_name is not None and output_dir is not None:
             self.wandb_logger = WandbLogger(project_name, output_dir.name)
             self.logger.info(f"Wandb Tracking: {self.wandb_logger.get_run_uri()}")
@@ -243,7 +243,7 @@ class Logger:
                 print(get_cmd(), file=f)  # Execute CLI command history
         self.logger.info(f"Command: {get_cmd()}")
         self.logger.info(f"Git Hash: {get_git_hash()}")
-        self.logger.info(f"Output dir: {str(self.output_dir)}")
+        self.logger.info(f"Output dir: {self.output_dir!s}")
 
     @contextmanager
     def _safe_operation(self, operation_name: str):
@@ -283,9 +283,9 @@ class Logger:
     def log_metric(
         self,
         name: str,
-        metric: Union[int, float, Tensor],
+        metric: int | float | Tensor,
         step: int,
-        phase: Optional[PhaseStr] = None,
+        phase: PhaseStr | None = None,
     ):
         if phase is None:
             phase = self.phase
@@ -302,7 +302,7 @@ class Logger:
             with self._safe_operation("wandb.log"):
                 self.wandb_logger.log_metric(f"{phase}/{name}", metric, step)
 
-    def log_metrics(self, metrics: dict, step: int, phase: Optional[PhaseStr] = None):
+    def log_metrics(self, metrics: dict, step: int, phase: PhaseStr | None = None):
         if phase is None:
             phase = self.phase
 
@@ -342,22 +342,22 @@ class Logger:
             with self._safe_operation("wandb.log_tag"):
                 self.wandb_logger.log_tag(key, value)
 
-    def log_figure(self, fig: matplotlib.figure.Figure, path: Union[str, Path]):
+    def log_figure(self, fig: matplotlib.figure.Figure, path: str | Path):
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_figure"):
                 self.mlflow_logger.log_figure(fig, str(path))
 
-    def log_artifact(self, path: Union[str, Path]):
+    def log_artifact(self, path: str | Path):
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_artifact"):
                 self.mlflow_logger.log_artifact(str(path))
 
-    def log_artifacts(self, path: Union[str, Path]):
+    def log_artifacts(self, path: str | Path):
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_artifacts"):
                 self.mlflow_logger.log_artifacts(str(path))
 
-    def log_result_dir(self, path: Union[str, Path], ignore_dirs: Optional[list[str]] = None):
+    def log_result_dir(self, path: str | Path, ignore_dirs: list[str] | None = None):
         """結果ディレクトリをログに記録する
 
         Args:

@@ -17,7 +17,7 @@ def main():
     mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "./result/mlruns")
     mlflow.set_tracking_uri(mlflow_uri)
 
-    with open("config/__base__/config.yaml", "r") as f:
+    with open("config/__base__/config.yaml") as f:
         config = yaml.safe_load(f)
     experiment_name = config["log"]["mlflow_experiment_name"]
 

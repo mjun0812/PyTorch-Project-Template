@@ -11,9 +11,14 @@ from .build import TRANSFORM_REGISTRY, build_transform
 
 @TRANSFORM_REGISTRY.register()
 class RandomSelect(BaseTransform):
-    """
-    Randomly selects between transforms1 and transforms2,
+    """Randomly selects between transforms1 and transforms2.
+
     with probability p for transforms1 and (1 - p) for transforms2
+
+    Args:
+        transforms1 (list[TransformConfig]): List of transforms1.
+        transforms2 (list[TransformConfig]): List of transforms2.
+        p (float, optional): Probability of transforms1. Defaults to 0.5.
     """
 
     def __init__(

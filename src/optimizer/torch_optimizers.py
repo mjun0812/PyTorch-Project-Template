@@ -1,4 +1,4 @@
-import torch.optim as optim
+from torch import optim
 
 from .build import OPTIMIZER_REGISTRY
 

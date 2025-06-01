@@ -1,5 +1,5 @@
 import math
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from torch import optim
 
@@ -46,7 +46,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
         self.cycle = 0  # cycle count
         self.step_in_cycle = last_epoch  # step size of the current cycle
 
-        super(CosineAnnealingWarmupReduceRestarts, self).__init__(optimizer, last_epoch)
+        super().__init__(optimizer, last_epoch)
 
         # set learning rate min_lr
         self.base_lrs = []
@@ -91,26 +91,25 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
                     int((self.cur_cycle_steps - self.warmup_steps) * self.cycle_mult)
                     + self.warmup_steps
                 )
-        else:
-            if epoch >= self.first_cycle_steps:
-                if self.cycle_mult == 1.0:
-                    self.step_in_cycle = epoch % self.first_cycle_steps
-                    self.cycle = epoch // self.first_cycle_steps
-                else:
-                    n = int(
-                        math.log(
-                            (epoch / self.first_cycle_steps * (self.cycle_mult - 1) + 1),
-                            self.cycle_mult,
-                        )
-                    )
-                    self.cycle = n
-                    self.step_in_cycle = epoch - int(
-                        self.first_cycle_steps * (self.cycle_mult**n - 1) / (self.cycle_mult - 1)
-                    )
-                    self.cur_cycle_steps = self.first_cycle_steps * self.cycle_mult ** (n)
+        elif epoch >= self.first_cycle_steps:
+            if self.cycle_mult == 1.0:
+                self.step_in_cycle = epoch % self.first_cycle_steps
+                self.cycle = epoch // self.first_cycle_steps
             else:
-                self.cur_cycle_steps = self.first_cycle_steps
-                self.step_in_cycle = epoch
+                n = int(
+                    math.log(
+                        (epoch / self.first_cycle_steps * (self.cycle_mult - 1) + 1),
+                        self.cycle_mult,
+                    )
+                )
+                self.cycle = n
+                self.step_in_cycle = epoch - int(
+                    self.first_cycle_steps * (self.cycle_mult**n - 1) / (self.cycle_mult - 1)
+                )
+                self.cur_cycle_steps = self.first_cycle_steps * self.cycle_mult ** (n)
+        else:
+            self.cur_cycle_steps = self.first_cycle_steps
+            self.step_in_cycle = epoch
 
         self.max_lr = self.base_max_lr * (self.gamma**self.cycle)
         self.last_epoch = math.floor(epoch)
@@ -200,7 +199,7 @@ class ChainedScheduler(optim.lr_scheduler.ChainedScheduler):
     def __init__(
         self,
         schedulers: Sequence[optim.lr_scheduler._LRScheduler],
-        optimizer: Optional[optim.Optimizer] = None,
+        optimizer: optim.Optimizer | None = None,
         step_ranges: Sequence[int] | None = None,
     ):
         self.step_ranges = step_ranges

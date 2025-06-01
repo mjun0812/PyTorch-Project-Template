@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-import torch.nn as nn
+from torch import nn
 from torch.nn import functional as F
 
 from ..config import ModelConfig

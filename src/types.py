@@ -1,11 +1,11 @@
 from pathlib import Path
-from typing import Literal, NotRequired, Required, TypedDict, Union
+from typing import Literal, NotRequired, Required, TypedDict
 
 import torch
 from torch import Tensor
 
 PhaseStr = Literal["train", "val", "test"]
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 class LossOutput(TypedDict, total=False):

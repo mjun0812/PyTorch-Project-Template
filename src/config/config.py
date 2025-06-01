@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -8,7 +7,7 @@ class BaseClassConfig:
 
     name: str = ""
     class_name: str = ""
-    args: Optional[dict] = None
+    args: dict | None = None
 
 
 @dataclass
@@ -19,20 +18,20 @@ class OptimizerGroupConfig:
 
 @dataclass
 class OptimizerConfig(BaseClassConfig):
-    checkpoint: Optional[str] = None
+    checkpoint: str | None = None
     lr: float = 1e-3
-    group: Optional[list[OptimizerGroupConfig]] = None
+    group: list[OptimizerGroupConfig] | None = None
 
 
 @dataclass
 class LrSchedulerConfig(BaseClassConfig):
-    checkpoint: Optional[str] = None
+    checkpoint: str | None = None
 
 
 @dataclass
 class LrSchedulersConfig:
-    iter_scheduler: Optional[LrSchedulerConfig] = None
-    epoch_scheduler: Optional[LrSchedulerConfig] = None
+    iter_scheduler: LrSchedulerConfig | None = None
+    epoch_scheduler: LrSchedulerConfig | None = None
 
 
 @dataclass
@@ -42,9 +41,9 @@ class EvaluatorConfig(BaseClassConfig):
 
 @dataclass
 class EvaluatorsConfig:
-    train: Optional[list[EvaluatorConfig]] = None
-    val: Optional[list[EvaluatorConfig]] = None
-    test: Optional[list[EvaluatorConfig]] = None
+    train: list[EvaluatorConfig] | None = None
+    val: list[EvaluatorConfig] | None = None
+    test: list[EvaluatorConfig] | None = None
 
 
 @dataclass
@@ -55,15 +54,15 @@ class TransformConfig(BaseClassConfig):
 @dataclass
 class DatasetConfig(BaseClassConfig):
     transforms: list[TransformConfig] = field(default_factory=list)
-    batch_transforms: Optional[list[TransformConfig]] = None
+    batch_transforms: list[TransformConfig] | None = None
 
 
 @dataclass
 class DatasetsConfig:
-    train: Optional[DatasetConfig] = None
-    val: Optional[DatasetConfig] = None
-    test: Optional[DatasetConfig] = None
-    batch_sampler: Optional[str] = None
+    train: DatasetConfig | None = None
+    val: DatasetConfig | None = None
+    test: DatasetConfig | None = None
+    batch_sampler: str | None = None
 
 
 @dataclass
@@ -73,8 +72,8 @@ class LossConfig(BaseClassConfig):
 
 @dataclass
 class ModelConfig(BaseClassConfig):
-    checkpoint: Optional[str] = None
-    pre_trained_weight: Optional[str] = None
+    checkpoint: str | None = None
+    pre_trained_weight: str | None = None
     use_sync_bn: bool = False
     find_unused_parameters: bool = False
 
@@ -113,7 +112,7 @@ class LoggerConfig:
     mlflow_ignore_artifact_dirs: list[str] = field(
         default_factory=lambda: ["models", "optimizers", "schedulers"]
     )
-    log_params: Optional[list[LogParamsConfig]] = None
+    log_params: list[LogParamsConfig] | None = None
 
 
 @dataclass
@@ -150,7 +149,7 @@ class ExperimentConfig:
     # AutoMixedPrecision
     use_amp: bool = False
     amp_dtype: str = "fp16"
-    amp_init_scale: Optional[float] = 2**16
+    amp_init_scale: float | None = 2**16
 
     # torch.compile
     use_compile: bool = False
@@ -161,7 +160,7 @@ class ExperimentConfig:
     gradient_accumulation_steps: int = 1
 
     output: str = "./result"
-    tag: Optional[str] = None
+    tag: str | None = None
 
     model: ModelConfig = field(default_factory=ModelConfig)
     dataset: DatasetsConfig = field(default_factory=DatasetsConfig)

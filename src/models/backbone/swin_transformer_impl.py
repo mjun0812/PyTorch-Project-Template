@@ -7,9 +7,9 @@
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.checkpoint as checkpoint
+from torch import nn
+from torch.utils import checkpoint
 
 try:
     from timm.layers import DropPath, to_2tuple, trunc_normal_
@@ -19,8 +19,9 @@ except ImportError:
 
 class SwinTransformer(nn.Module):
     """Swin Transformer backbone.
-        A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`  -
-          https://arxiv.org/pdf/2103.14030
+
+    A PyTorch impl of : `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows`  -
+        https://arxiv.org/pdf/2103.14030
 
     Args:
         pretrain_img_size (int): Input image size for training the pretrained model,
@@ -211,7 +212,7 @@ class SwinTransformer(nn.Module):
 
     def train(self, mode=True):
         """Convert the model into training mode while keep layers freezed."""
-        super(SwinTransformer, self).train(mode)
+        super().train(mode)
         self._freeze_stages()
 
 
@@ -239,7 +240,8 @@ class Mlp(nn.Module):
 
 
 def window_partition(x, window_size):
-    """
+    """Window partition
+
     Args:
         x: (B, H, W, C)
         window_size (int): window size
@@ -254,7 +256,8 @@ def window_partition(x, window_size):
 
 
 def window_reverse(windows, window_size, H, W):
-    """
+    """Window reverse
+
     Args:
         windows: (num_windows*B, window_size, window_size, C)
         window_size (int): Window size
@@ -272,14 +275,16 @@ def window_reverse(windows, window_size, H, W):
 
 class WindowAttention(nn.Module):
     """Window based multi-head self attention (W-MSA) module with relative position bias.
+
     It supports both of shifted and non-shifted window.
 
     Args:
         dim (int): Number of input channels.
         window_size (tuple[int]): The height and width of the window.
         num_heads (int): Number of attention heads.
-        qkv_bias (bool, optional):  If True, add a learnable bias to query, key, value. Default: True
-        qk_scale (float | None, optional): Override default qk scale of head_dim ** -0.5 if set
+        qkv_bias (bool, optional):  If True, add a learnable bias to query, key, value.
+                                    Default: True
+        qk_scale (float | None, optional): Override default qk scale of head_dim ** -0.5 if set.
         attn_drop (float, optional): Dropout ratio of attention weight. Default: 0.0
         proj_drop (float, optional): Dropout ratio of output. Default: 0.0
     """
@@ -518,7 +523,8 @@ class PatchMerging(nn.Module):
 
         Args:
             x: Input feature, tensor size (B, H*W, C).
-            H, W: Spatial resolution of the input feature.
+            H: Spatial resolution of the input feature.
+            W: Spatial resolution of the input feature.
         """
         B, L, C = x.shape
         assert L == H * W, "input feature has wrong size"
@@ -558,7 +564,8 @@ class BasicLayer(nn.Module):
         attn_drop (float, optional): Attention dropout rate. Default: 0.0
         drop_path (float | tuple[float], optional): Stochastic depth rate. Default: 0.0
         norm_layer (nn.Module, optional): Normalization layer. Default: nn.LayerNorm
-        downsample (nn.Module | None, optional): Downsample layer at the end of the layer. Default: None
+        downsample (nn.Module | None, optional): Downsample layer at the end of the layer.
+                                                 Default: None
         use_checkpoint (bool): Whether to use checkpointing to save memory. Default: False.
     """
 
@@ -615,9 +622,9 @@ class BasicLayer(nn.Module):
 
         Args:
             x: Input feature, tensor size (B, H*W, C).
-            H, W: Spatial resolution of the input feature.
+            H: Spatial resolution of the input feature.
+            W: Spatial resolution of the input feature.
         """
-
         # calculate attention mask for SW-MSA
         Hp = int(np.ceil(H / self.window_size)) * self.window_size
         Wp = int(np.ceil(W / self.window_size)) * self.window_size
@@ -643,9 +650,7 @@ class BasicLayer(nn.Module):
         )  # nW, window_size, window_size, 1
         mask_windows = mask_windows.view(-1, self.window_size * self.window_size)
         attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
-        attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(
-            attn_mask == 0, float(0.0)
-        )
+        attn_mask = attn_mask.masked_fill(attn_mask != 0, (-100.0)).masked_fill(attn_mask == 0, 0.0)
 
         for blk in self.blocks:
             blk.H, blk.W = H, W

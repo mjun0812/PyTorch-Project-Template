@@ -5,7 +5,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 import matplotlib
 import numpy as np
@@ -16,8 +15,8 @@ from dotenv import load_dotenv
 from ..types import PathLike
 
 matplotlib.use("Agg")
-import matplotlib.font_manager as font_manager  # noqa
-import matplotlib.pyplot as plt  # noqa
+import matplotlib.font_manager as font_manager
+import matplotlib.pyplot as plt
 
 
 def get_git_hash() -> str:
@@ -38,6 +37,7 @@ def get_git_hash() -> str:
 
 def get_cmd() -> str:
     """実行コマンドを取得する
+
     Returns:
         string: 実行コマンド
 
@@ -51,10 +51,10 @@ def get_cmd() -> str:
 
 def make_output_dirs(
     output_base_path: str | Path,
-    prefix: Optional[str] = None,
-    child_dirs: Optional[list[str]] = None,
+    prefix: str | None = None,
+    child_dirs: list[str] | None = None,
 ) -> Path:
-    """mkdir YYYYMMDD_HHmmSS (+ _prefix)
+    """Mkdir YYYYMMDD_HHmmSS (+ _prefix)
 
     Args:
         output_base_path (str): make output dir path.
@@ -65,13 +65,13 @@ def make_output_dirs(
         str: YYYYMMDD_HHmmSS
 
     Examples:
-    ```python
-    out = make_output_dirs("./result", prefix="MODEL", child_dirs=["models", "figs"])
+        ```python
+        out = make_output_dirs("./result", prefix="MODEL", child_dirs=["models", "figs"])
 
-    ./result/21010812_120000
-    ├── models
-    └── figs
-    ```
+        ./result/21010812_120000
+        ├── models
+        └── figs
+        ```
     """
     today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     if prefix:
@@ -87,13 +87,14 @@ def make_output_dirs(
 def make_result_dirs(base_path: PathLike, prefix: str = "") -> Path:
     """
     Creates a directory for storing results.
+
     Args:
         base_path (PathLike): The base path where the directory will be created.
         prefix (str, optional): The prefix to be added to the directory name. Defaults to "".
+
     Returns:
         Path: The path of the created directory.
     """
-
     dir_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     if prefix:
         dir_name = "_" + prefix
@@ -121,7 +122,7 @@ def plot_multi_graph(filename, titles, data, dpi=300):
     plt.rcParams.update({"font.family": "Times New Roman", "font.size": 10})
     col = len(titles)
     # 比率が合わないときはfigsizeをいじる
-    fig, axs = plt.subplots(1, col, figsize=(col * 5, 5))
+    fig, axs = plt.subplots(1, col, figsize=(col * 5, 5))  # noqa: F841
     plt.subplots_adjust(wspace=0.1, hspace=0.1)
     # 1次元にしてforで回せるように。行->列の順
     a = axs.ravel()
@@ -185,7 +186,7 @@ class JsonEncoder(json.JSONEncoder):
             else:
                 return obj.cpu().tolist()
         else:
-            return super(JsonEncoder, self).default(obj)
+            return super().default(obj)
 
 
 def import_submodules(module):
@@ -198,7 +199,7 @@ def import_submodules(module):
 class HidePrints:
     """標準出力を無効にする
 
-    example:
+    Example:
         ```python
         with HidePrints():
             print("aaaa")
@@ -212,24 +213,24 @@ class HidePrints:
         self.stdout = sys.stdout
         sys.stdout = open(os.devnull, "w")
 
-    def __exit__(self, ex_type, ex_value, trace):  # noqa
+    def __exit__(self, ex_type, ex_value, trace):
         sys.stdout = self.stdout
 
 
 def create_symlink(target: PathLike, dst: PathLike):
-    """
-    Creates a symbolic link from the target path to the destination path.
+    """Creates a symbolic link from the target path to the destination path.
+
     Both paths are relative to the current working directory.
     The symbolic link is created using a path relative to the destination.
 
     Args:
-    target (Union[str, Path]): The target path to create a symbolic link to,
-                               relative to the current directory.
-    dst (Union[str, Path]): The destination path where the symbolic link will be created,
-                            relative to the current directory.
+        target (Union[str, Path]): The target path to create a symbolic link to,
+                                relative to the current directory.
+        dst (Union[str, Path]): The destination path where the symbolic link will be created,
+                                relative to the current directory.
 
     Returns:
-    None
+        None
     """
     # Convert input paths to Path objects and make them absolute
     current_dir = Path.cwd()

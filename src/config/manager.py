@@ -78,7 +78,7 @@ class ConfigManager:
         return ConfigManager._load_base_config(cfg)
 
     @classmethod
-    def _load_base_config(cls, cfg: DictConfig, root_path: str = None) -> DictConfig:
+    def _load_base_config(cls, cfg: DictConfig, root_path: str | None = None) -> DictConfig:
         if cls.BASE_KEY in cfg:
             base_cfg_path = Path(cfg.pop(cls.BASE_KEY))
             if root_path:
@@ -103,8 +103,8 @@ class ConfigManager:
 
     @staticmethod
     def merge(base_dict: DictConfig, override_dict: DictConfig) -> DictConfig:
-        """
-        merge dict `override_dict` into `base_dict`, if the key overlapped, set replace = True to
+        """Merge dict `override_dict` into `base_dict`, if the key overlapped, set replace = True to
+
         use the key in `a` otherwise use the key in `b`
         """
         return OmegaConf.merge(base_dict, override_dict)

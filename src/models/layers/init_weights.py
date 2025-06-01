@@ -2,7 +2,7 @@ import math
 
 
 def variance_scaling(w, gain=1, groups=1):
-    fan_in, fan_out = fan_in_out(w, groups)
+    fan_in, _ = fan_in_out(w, groups)
     gain /= max(1.0, fan_in)  # fan in
     # gain /= max(1., (fan_in + fan_out) / 2.)  # fan
 

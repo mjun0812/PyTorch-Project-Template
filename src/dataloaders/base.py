@@ -1,12 +1,10 @@
-from typing import Optional
-
 from torch.utils.data import Dataset
 
 from .tensor_cache import TensorCache
 
 
 class BaseDataset(Dataset):
-    def __init__(self, cfg: dict, transforms=None, cache: Optional[TensorCache] = None):
+    def __init__(self, cfg: dict, transforms=None, cache: TensorCache | None = None):
         raise NotImplementedError
 
     def __len__(self):

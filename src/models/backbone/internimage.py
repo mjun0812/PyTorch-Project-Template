@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 
 from .build import BACKBONE_REGISTRY
@@ -245,9 +243,9 @@ MODELS = {
 def create_model(
     model_name: str,
     pretrained: bool = True,
-    weight_path: Optional[str] = None,
+    weight_path: str | None = None,
     features_only: bool = False,
-    out_indices: Optional[list[int]] = None,
+    out_indices: list[int] | None = None,
     **kwargs,
 ):
     out_indices = out_indices or [0, 1, 2, 3]

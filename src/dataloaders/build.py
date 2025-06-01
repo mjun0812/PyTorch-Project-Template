@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from loguru import logger
 from torch.utils.data import BatchSampler, DataLoader, Dataset
@@ -20,9 +18,9 @@ DATASET_REGISTRY = Registry("DATASET")
 
 def build_dataset(
     cfg: DatasetConfig,
-    transforms: Optional[Compose],
+    transforms: Compose | None,
     use_ram_cache: bool = False,
-    ram_cache_size_gb: Optional[int] = None,
+    ram_cache_size_gb: int | None = None,
 ) -> Dataset:
     if use_ram_cache:
         assert (
@@ -43,8 +41,8 @@ def build_dataloader(
     num_workers: int,
     batch_sampler: BatchSampler,
     use_iter_loop: bool = False,
-    max_iter: Optional[int] = None,
-    step_iter: Optional[int] = None,
+    max_iter: int | None = None,
+    step_iter: int | None = None,
 ) -> DataLoader:
     common_kwargs = {
         "pin_memory": True,
@@ -64,7 +62,7 @@ def build_sampler(
     dataset: Dataset,
     phase: PhaseStr = "train",
     batch_size: int = 32,
-    batch_sampler: Optional[str] = None,
+    batch_sampler: str | None = None,
 ) -> tuple[Sampler, BatchSampler]:
     # Build Sampler
     if is_distributed():

@@ -108,7 +108,7 @@ def main(cfg: ExperimentConfig):
         f"tag: {cfg.tag}",
         f"model: {cfg.model.name}",
         f"dataset: {cfg.dataset.test.name}",
-        f"save: {str(output_dir)}",
+        f"save: {output_dir!s}",
         f"mlflow_url: {logger.get_mlflow_run_uri()}",
         f"wandb_url: {logger.get_wandb_run_uri()}",
     ]

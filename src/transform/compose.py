@@ -20,7 +20,7 @@ class MultiCompose:
         format_string = self.__class__.__name__ + "("
         for t in self.transforms:
             format_string += "\n"
-            format_string += "    {0}".format(t)
+            format_string += f"    {t}"
         format_string += "\n)"
         return format_string
 
@@ -44,8 +44,11 @@ class BatchedTransformCompose:
 
         Example:
             cfg = [
-                TransformConfig(name='RandomRotation', args={'degrees': 30, 'assign_label': ['mask', 'keypoints']}),
-                TransformConfig(name='RandomHorizontalFlip', args={'p': 0.5, 'assign_label': ['mask']})
+                TransformConfig(name='RandomRotation',
+                                args={'degrees': 30,
+                                'assign_label': ['mask', 'keypoints']}),
+                TransformConfig(name='RandomHorizontalFlip',
+                                args={'p': 0.5, 'assign_label': ['mask']})
             ]
             compose = BatchedTransformCompose(cfg)
             transformed_data = compose(data)
@@ -101,6 +104,6 @@ class BatchedTransformCompose:
         format_string = self.__class__.__name__ + "("
         for t in self.transforms:
             format_string += "\n"
-            format_string += "    {0}".format(t)
+            format_string += f"    {t}"
         format_string += "\n)"
         return format_string

@@ -1,5 +1,4 @@
 from copy import deepcopy
-from typing import Optional
 
 import torch
 from timm.scheduler import create_scheduler_v2
@@ -14,7 +13,7 @@ SCHEDULER_REGISTRY = Registry("SCHEDULER")
 
 def build_lr_scheduler(
     cfg: LrSchedulersConfig, optimizer: optim.Optimizer, epoch: int, max_iter: int
-) -> tuple[Optional[_LRScheduler], Optional[_LRScheduler]]:
+) -> tuple[_LRScheduler | None, _LRScheduler | None]:
     epoch_scheduler, iter_scheduler = None, None
 
     if cfg.epoch_scheduler:

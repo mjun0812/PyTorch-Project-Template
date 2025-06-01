@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import torch
@@ -14,10 +14,10 @@ from .utils import time_synchronized
 
 @dataclass
 class TesterOutput:
-    results: List[Dict[str, Any]] = field(default_factory=list)
-    targets: List[Dict[str, Any]] = field(default_factory=list)
+    results: list[dict[str, Any]] = field(default_factory=list)
+    targets: list[dict[str, Any]] = field(default_factory=list)
     inference_speed: float = 0.0
-    metrics: Optional[Dict[str, Any]] = None
+    metrics: dict[str, Any] | None = None
 
 
 class BaseTester:
@@ -26,8 +26,8 @@ class BaseTester:
         device: torch.device,
         model: BaseModel,
         dataloader: DataLoader,
-        batched_transform: Optional[callable] = None,
-        evaluator: Optional[MetricCollection] = None,
+        batched_transform: callable | None = None,
+        evaluator: MetricCollection | None = None,
         use_amp: bool = True,
         amp_dtype: str = "fp32",
     ):

@@ -2,7 +2,6 @@ import os
 import sys
 import traceback
 from pathlib import Path
-from typing import Optional
 
 import torch
 import torch.distributed as dist
@@ -76,7 +75,7 @@ def build_train_model(cfg: ExperimentConfig, device: torch.device, logger: Logge
 
 def build_phase_dataloader(
     cfg: ExperimentConfig, phase: str, logger: Logger
-) -> tuple[Dataset, DataLoader, Optional[BatchedTransformCompose], Sampler]:
+) -> tuple[Dataset, DataLoader, BatchedTransformCompose | None, Sampler]:
     cfg_dataset: DatasetConfig = cfg.dataset.get(phase)
 
     transform = build_transforms(cfg_dataset.transforms)
@@ -336,7 +335,7 @@ def main(cfg: ExperimentConfig) -> None:
     output_result_dir = make_result_dirs(output_dir)
     logger.logger.add(output_result_dir / "test.log", level="INFO")
     logger.info("Start Test")
-    logger.info(f"Output dir: {str(output_result_dir)}")
+    logger.info(f"Output dir: {output_result_dir!s}")
     logger.log_params({"test_output": str(output_result_dir), "test_weight": cfg.model.checkpoint})
     try:
         do_test(cfg, output_result_dir, device, logger)
@@ -347,7 +346,7 @@ def main(cfg: ExperimentConfig) -> None:
         logger.close("FAILED")
         sys.exit(1)
     messages += [
-        f"test output: {str(output_result_dir)}",
+        f"test output: {output_result_dir!s}",
         f"test dataset: {cfg.dataset.test.name}",
     ]
     # Send Message to Slack

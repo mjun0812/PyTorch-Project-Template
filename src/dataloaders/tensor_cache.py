@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from torch.multiprocessing import Manager, Value
 
@@ -32,7 +30,7 @@ class TensorCache:
         self.current_cache_size.value += size
         return True
 
-    def get(self, key: str) -> Optional[torch.Tensor]:
+    def get(self, key: str) -> torch.Tensor | None:
         return self.cache.get(key, None)
 
     def clear(self):

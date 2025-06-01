@@ -4,7 +4,6 @@
 # Licensed under The MIT License [see LICENSE for details]
 # --------------------------------------------------------
 
-from __future__ import absolute_import, division, print_function
 
 import warnings
 
@@ -74,7 +73,7 @@ def build_act_layer(act_layer):
 
 def _is_power_of_2(n):
     if (not isinstance(n, int)) or (n < 0):
-        raise ValueError("invalid input for _is_power_of_2: {} (type: {})".format(n, type(n)))
+        raise ValueError(f"invalid input for _is_power_of_2: {n} (type: {type(n)})")
 
     return (n & (n - 1) == 0) and n != 0
 
@@ -105,27 +104,33 @@ class DCNv3_pytorch(nn.Module):
         center_feature_scale=False,
         remove_center=False,
     ):
-        """
-        DCNv3 Module
-        :param channels
-        :param kernel_size
-        :param stride
-        :param pad
-        :param dilation
-        :param group
-        :param offset_scale
-        :param act_layer
-        :param norm_layer
+        """DCNv3 PyTorch Module
+
+        Args:
+            channels (int): Number of input channels.
+            kernel_size (int): Kernel size.
+            dw_kernel_size (int): Depthwise kernel size.
+            stride (int): Stride.
+            pad (int): Padding.
+            dilation (int): Dilation.
+            group (int): Group.
+            offset_scale (float): Offset scale.
+            act_layer (str): Activation layer.
+            norm_layer (str): Normalization layer.
+            center_feature_scale (bool): Whether to use center feature scale.
+            remove_center (bool): Whether to remove center.
         """
         super().__init__()
         if channels % group != 0:
             raise ValueError(f"channels must be divisible by group, but got {channels} and {group}")
-        _d_per_group = channels // group
+        d_per_group = channels // group
         dw_kernel_size = dw_kernel_size if dw_kernel_size is not None else kernel_size
-        # you'd better set _d_per_group to a power of 2 which is more efficient in our CUDA implementation
-        if not _is_power_of_2(_d_per_group):
+        # You'd better set _d_per_group to a power of 2
+        # which is more efficient in our CUDA implementation
+        if not _is_power_of_2(d_per_group):
             warnings.warn(
-                "You'd better set channels in DCNv3 to make the dimension of each attention head a power of 2 "
+                "You'd better set channels in DCNv3 to "
+                "make the dimension of each attention head a power of 2 "
                 "which is more efficient in our CUDA implementation.",
                 stacklevel=2,
             )
@@ -188,9 +193,13 @@ class DCNv3_pytorch(nn.Module):
         constant_(self.output_proj.bias.data, 0.0)
 
     def forward(self, input):
-        """
-        :param query                       (N, H, W, C)
-        :return output                     (N, H, W, C)
+        """Forward pass
+
+        Args:
+            input (torch.Tensor): Input tensor of shape (N, H, W, C)
+
+        Returns:
+            torch.Tensor: Output tensor of shape (N, H, W, C)
         """
         N, H, W, _ = input.shape
 
@@ -229,7 +238,10 @@ class DCNv3_pytorch(nn.Module):
                 self.center_feature_scale_proj_weight,
                 self.center_feature_scale_proj_bias,
             )
-            # N, H, W, groups -> N, H, W, groups, 1 -> N, H, W, groups, _d_per_group -> N, H, W, channels
+            # N, H, W, groups
+            # -> N, H, W, groups, 1
+            # -> N, H, W, groups, _d_per_group
+            # -> N, H, W, channels
             center_feature_scale = (
                 center_feature_scale[..., None]
                 .repeat(1, 1, 1, 1, self.channels // self.group)
@@ -301,13 +313,19 @@ def dcnv3_core_pytorch(
 
     P_ = kernel_h * kernel_w - remove_center
     sampling_grids = 2 * sampling_locations - 1
-    # N_, H_in, W_in, group*group_channels -> N_, H_in*W_in, group*group_channels -> N_, group*group_channels, H_in*W_in -> N_*group, group_channels, H_in, W_in
+    # N_, H_in, W_in, group*group_channels
+    # -> N_, H_in*W_in, group*group_channels
+    # -> N_, group*group_channels, H_in*W_in
+    # -> N_*group, group_channels, H_in, W_in
     input_ = (
         input.view(N_, H_in * W_in, group * group_channels)
         .transpose(1, 2)
         .reshape(N_ * group, group_channels, H_in, W_in)
     )
-    # N_, H_out, W_out, group*P_*2 -> N_, H_out*W_out, group, P_, 2 -> N_, group, H_out*W_out, P_, 2 -> N_*group, H_out*W_out, P_, 2
+    # N_, H_out, W_out, group*P_*2
+    # -> N_, H_out*W_out, group, P_, 2
+    # -> N_, group, H_out*W_out, P_, 2
+    # -> N_*group, H_out*W_out, P_, 2
     sampling_grid_ = (
         sampling_grids.view(N_, H_out * W_out, group, P_, 2).transpose(1, 2).flatten(0, 1)
     )
@@ -320,7 +338,10 @@ def dcnv3_core_pytorch(
         align_corners=False,
     )
 
-    # (N_, H_out, W_out, group*P_) -> N_, H_out*W_out, group, P_ -> (N_, group, H_out*W_out, P_) -> (N_*group, 1, H_out*W_out, P_)
+    # (N_, H_out, W_out, group*P_)
+    # -> N_, H_out*W_out, group, P_
+    # -> (N_, group, H_out*W_out, P_)
+    # -> (N_*group, 1, H_out*W_out, P_)
     mask = (
         mask.view(N_, H_out * W_out, group, P_)
         .transpose(1, 2)

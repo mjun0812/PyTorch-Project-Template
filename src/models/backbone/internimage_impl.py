@@ -5,9 +5,9 @@
 # --------------------------------------------------------
 
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.checkpoint as checkpoint
+from torch import nn
+from torch.utils import checkpoint
 
 try:
     from timm.layers import DropPath, trunc_normal_
@@ -65,6 +65,7 @@ def build_act_layer(act_layer):
 
 class CrossAttention(nn.Module):
     r"""Cross Attention Module
+
     Args:
         dim (int): Number of input channels.
         num_heads (int): Number of attention heads. Default: 8
@@ -119,7 +120,7 @@ class CrossAttention(nn.Module):
         self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x, k=None, v=None):
-        B, N, C = x.shape
+        B, N, _ = x.shape
         N_k = k.shape[1]
         N_v = v.shape[1]
 
@@ -155,6 +156,7 @@ class CrossAttention(nn.Module):
 
 class AttentiveBlock(nn.Module):
     r"""Attentive Block
+
     Args:
         dim (int): Number of input channels.
         num_heads (int): Number of attention heads. Default: 8
@@ -224,6 +226,7 @@ class AttentionPoolingBlock(AttentiveBlock):
 
 class StemLayer(nn.Module):
     r"""Stem layer of InternImage
+
     Args:
         in_chans (int): number of input channels
         out_chans (int): number of output channels
@@ -252,6 +255,7 @@ class StemLayer(nn.Module):
 
 class DownsampleLayer(nn.Module):
     r"""Downsample layer of InternImage
+
     Args:
         channels (int): number of input channels
         norm_layer (str): normalization layer
@@ -272,6 +276,7 @@ class DownsampleLayer(nn.Module):
 
 class MLPLayer(nn.Module):
     r"""MLP layer of InternImage
+
     Args:
         in_features (int): number of input features
         hidden_features (int): number of hidden features
@@ -307,6 +312,7 @@ class MLPLayer(nn.Module):
 
 class InternImageLayer(nn.Module):
     r"""Basic layer of InternImage
+
     Args:
         core_op (nn.Module): core operation of InternImage
         channels (int): number of input channels
@@ -410,6 +416,7 @@ class InternImageLayer(nn.Module):
 
 class InternImageBlock(nn.Module):
     r"""Block of InternImage
+
     Args:
         core_op (nn.Module): core operation of InternImage
         channels (int): number of input channels
@@ -508,8 +515,10 @@ class InternImageBlock(nn.Module):
 
 class InternImage(nn.Module):
     r"""InternImage
-        A PyTorch impl of : `InternImage: Exploring Large-Scale Vision Foundation Models with Deformable Convolutions`  -
-          https://arxiv.org/pdf/2103.14030
+    A PyTorch impl of :
+    `InternImage: Exploring Large-Scale Vision Foundation Models with Deformable Convolutions`
+    (https://arxiv.org/pdf/2103.14030)
+
     Args:
         core_op (str): Core operator. Default: 'DCNv3'
         channels (int): Number of the first stage. Default: 64
@@ -656,7 +665,7 @@ class InternImage(nn.Module):
                     else nn.Identity()
                 )
             else:  # for InternImage-H/G
-                pretrain_embed_dim, _stride, attnpool_num_heads, clip_embed_dim = (
+                pretrain_embed_dim, stride, attnpool_num_heads, clip_embed_dim = (
                     1024,
                     2,
                     16,
@@ -665,10 +674,10 @@ class InternImage(nn.Module):
                 self.dcnv3_head_x4 = nn.Sequential(
                     nn.Conv2d(
                         in_channels=self.num_features,
-                        out_channels=pretrain_embed_dim * (_stride**2),
+                        out_channels=pretrain_embed_dim * (stride**2),
                         kernel_size=1,
                     ),
-                    nn.PixelShuffle(_stride),
+                    nn.PixelShuffle(stride),
                 )
                 self.dcnv3_head_x3 = nn.Conv2d(
                     in_channels=self.num_features // 2,
@@ -727,7 +736,7 @@ class InternImage(nn.Module):
             layer_num = 3 - i  # 3 2 1 0
             for j in range(self.depths[layer_num]):
                 block_num = self.depths[layer_num] - j - 1
-                tag = "levels.{}.blocks.{}.".format(layer_num, block_num)
+                tag = f"levels.{layer_num}.blocks.{block_num}."
                 decay = 1.0 * (decay_ratio**idx)
                 lr_ratios[tag] = decay
                 idx += 1

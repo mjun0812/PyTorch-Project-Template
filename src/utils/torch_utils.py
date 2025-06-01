@@ -3,7 +3,6 @@ import random
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -31,7 +30,7 @@ def worker_init_fn(worker_id: int):
 
 
 def fix_seed(seed: int) -> int:
-    """fix seed on random, numpy, torch module
+    """Fix seed on random, numpy, torch module
 
     Args:
         seed (int): seed parameter
@@ -50,8 +49,9 @@ def fix_seed(seed: int) -> int:
 
 
 def time_synchronized() -> time:
-    """return time at synhronized CUDA and CPU.
-       CUDAとCPUの計算が非同期なため，同期してから時間計算する．
+    """Return time at synhronized CUDA and CPU.
+
+    CUDAとCPUの計算が非同期なため，同期してから時間計算する．
 
     Returns:
         time: 関数呼び出し時の時刻
@@ -81,12 +81,15 @@ def set_device(
         global_gpu_index (int): using gpu number in all gpu.
         rank (int): process rank
         is_cpu (bool, optional): use cpu or not. Defaults to False.
-        pci_device_order (bool, optional): . Defaults to True.
+        use_cudnn (bool, optional): use cudnn or not. Defaults to True.
+        cudnn_deterministic (bool, optional): use cudnn deterministic or not. Defaults to False.
+        allow_tf32 (bool, optional): use tf32 or not. Defaults to False.
+        pci_device_order (bool, optional): use pci device order or not. Defaults to True.
+        verbose (bool, optional): print verbose or not. Defaults to True.
 
     Returns:
         torch.device: use device object.
     """
-
     if not is_cpu:
         if pci_device_order:
             os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -116,15 +119,15 @@ def set_device(
 
 
 def cuda_info(global_cuda_index=0, logger=None):
-    """show using GPU Info
+    """Show using GPU Info
 
     Args:
         global_cuda_index (int, optional): using GPU number in all GPU number. Defaults to 0.
+        logger (Logger, optional): Logger object. Defaults to None.
     """
-
     for i in range(torch.cuda.device_count()):
         info = torch.cuda.get_device_properties(i)
-        infostr = f"CUDA:{i + global_cuda_index} {info.name}, {info.total_memory / 1024 ** 2}MB"
+        infostr = f"CUDA:{i + global_cuda_index} {info.name}, {info.total_memory / 1024**2}MB"
         if logger is not None:
             logger.info(infostr)
         else:
@@ -132,9 +135,7 @@ def cuda_info(global_cuda_index=0, logger=None):
 
 
 def is_distributed():
-    if dist.is_initialized():
-        return True
-    return False
+    return dist.is_initialized()
 
 
 def get_local_rank() -> int:
@@ -184,7 +185,7 @@ def reduce_tensor(tensor, n=1) -> torch.Tensor:
 
 
 def is_model_parallel(model: torch.nn.Module) -> bool:
-    """check model is parallel or single
+    """Check model is parallel or single
 
     Args:
         model (torch.nn.Module): Model file
@@ -192,11 +193,11 @@ def is_model_parallel(model: torch.nn.Module) -> bool:
     Returns:
         bool: parallel = True, single = False
     """
-    return isinstance(model, torch.nn.DataParallel) or isinstance(model, DistributedDataParallel)
+    return isinstance(model, (torch.nn.DataParallel, DistributedDataParallel))
 
 
 def is_model_compiled(model: torch.nn.Module) -> bool:
-    """check model is compiled or not using torch.compile
+    """Check model is compiled or not using torch.compile
 
     Args:
         model (torch.nn.Module): Model object
@@ -245,8 +246,8 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     """Load PreTrained or Continued Model
 
     Args:
-        model (torch.nn.Model): Load model
-        weight (str): PreTrained weight path
+        weight_path (str): PreTrained weight path
+        model (torch.nn.Module): Model object
     """
     if not weight_path:
         return
@@ -282,7 +283,7 @@ def load_model_weight(weight_path: str, model: torch.nn.Module):
     logger.info(f"Unexpected weight key: {unexpexted}")
 
 
-def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
+def save_model(model: torch.nn.Module, file_path: str | Path):
     if is_model_compiled(model):
         model = model._orig_mod
     if is_model_parallel(model):
@@ -291,28 +292,26 @@ def save_model(model: torch.nn.Module, file_path: Union[str, Path]):
 
     if is_world_main_process():
         torch.save(state_dict, str(file_path))
-    logger.info(f"Saving model at {str(file_path)}")
+    logger.info(f"Saving model at {file_path!s}")
 
 
-def save_optimizer(optimizer: torch.optim.Optimizer, file_path: Union[str, Path]):
+def save_optimizer(optimizer: torch.optim.Optimizer, file_path: str | Path):
     state_dict = optimizer.state_dict()
     if is_world_main_process():
         torch.save(state_dict, str(file_path))
-    logger.info(f"Saving optimizer at {str(file_path)}")
+    logger.info(f"Saving optimizer at {file_path!s}")
 
 
-def save_lr_scheduler(
-    lr_scheduler: torch.optim.lr_scheduler._LRScheduler, file_path: Union[str, Path]
-):
+def save_lr_scheduler(lr_scheduler: torch.optim.lr_scheduler._LRScheduler, file_path: str | Path):
     torch.save(lr_scheduler.state_dict(), str(file_path))
-    logger.info(f"Saving lr_scheduler at {str(file_path)}")
+    logger.info(f"Saving lr_scheduler at {file_path!s}")
 
 
 def save_model_info(
-    output_dir: Optional[PathLike],
+    output_dir: PathLike | None,
     model: torch.nn.Module,
-    input_size: Optional[list[int]] = None,
-    input_data: Optional[list[torch.Tensor]] = None,
+    input_size: list[int] | None = None,
+    input_data: list[torch.Tensor] | None = None,
     prefix: str = "",
 ):
     """Output PyTorch Model Summary to log.
@@ -322,9 +321,9 @@ def save_model_info(
         model (torch.nn.Module): PyTorch Model Class
         input_size (List): input tensor size
         input_data (List[Tensor]): input data
-        prefix (str, optional): log file prefix output_dir/model_summary_{prefix}.log. Defaults to "".
+        prefix (str, optional): log file prefix output_dir/model_summary_{prefix}.log.
+                                Defaults to "".
     """
-
     if prefix:
         prefix = "_" + prefix
     if is_model_compiled(model):

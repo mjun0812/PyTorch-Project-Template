@@ -1,8 +1,8 @@
 from functools import partial
 
-import torch.nn as nn
 from loguru import logger
 from timm.utils import ModelEmaV3
+from torch import nn
 from torch.distributed.fsdp import FullyShardedDataParallel
 from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload, MixedPrecision
 from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy

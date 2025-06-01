@@ -54,7 +54,7 @@ def get_artifacts_from_mlflow(client: mlflow.tracking.MlflowClient, run: mlflow.
                 local_path = mlflow.artifacts.download_artifacts(
                     run_id=run_id, artifact_path=a.path, dst_path=d
                 )
-                with open(local_path, "r") as f:
+                with open(local_path) as f:
                     config = yaml.safe_load(f)
                 config["mlflow_status"] = run.info.status
                 with open(f"./.tmp/{run_name}_config.yaml", "w") as f:
@@ -74,7 +74,7 @@ def main():
     mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "./result/mlruns")
     mlflow.set_tracking_uri(mlflow_uri)
 
-    with open("config/__base__/config.yaml", "r") as f:
+    with open("config/__base__/config.yaml") as f:
         cfg = yaml.safe_load(f)
     experiment_name = cfg["mlflow"]["experiment_name"]
     print(f"Experiment: {experiment_name}")
@@ -107,13 +107,13 @@ def main():
 
         # load config from mlflow artifact or cache
         if os.path.isfile(local_config_path) and os.path.isfile(local_result_path):
-            with open(local_config_path, "r") as f:
+            with open(local_config_path) as f:
                 config = yaml.safe_load(f)
             if run.info.status != config["mlflow_status"]:
                 config, local_result_path = get_artifacts_from_mlflow(client, run)
         else:
             config, local_result_path = get_artifacts_from_mlflow(client, run)
-        with open(local_result_path, "r") as f:
+        with open(local_result_path) as f:
             result.update(json.load(f))
         if config is None:
             continue

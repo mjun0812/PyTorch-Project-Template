@@ -19,7 +19,7 @@ class TimeCompose:
         for t in self.transforms:
             start = time.time()
             data = t(data)
-            print(f"    {t.__class__.__name__}: {time.time()-start:.4f}")
+            print(f"    {t.__class__.__name__}: {time.time() - start:.4f}")
         return data
 
     def __repr__(self):
@@ -51,11 +51,11 @@ def main(cfg: ExperimentConfig):
             if batched_transforms:
                 data = batched_transforms(data)
 
-            print(f"{i:4}/{len(dataloader)}: {((time.time() - start_one_batch)*1000):.5f}ms")
+            print(f"{i:4}/{len(dataloader)}: {((time.time() - start_one_batch) * 1000):.5f}ms")
             if i > 1:
                 break
 
-        print(f"{((time.time() - start_time)*1000):.5f}ms")
+        print(f"{((time.time() - start_time) * 1000):.5f}ms")
 
 
 if __name__ == "__main__":

@@ -1,13 +1,15 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 # This code from fvcore (https://github.com/facebookresearch/fvcore)
 
-from typing import Any, Dict, Iterator, Optional, Tuple
+from collections.abc import Iterator
+from typing import Any
 
 from tabulate import tabulate
 
 
-class Registry(object):
+class Registry:
     """The registry that provides name -> object mapping,
+
     to support third-party users' custom modules.
 
     To create a registry (e.g. a backbone registry):
@@ -31,12 +33,13 @@ class Registry(object):
     """
 
     def __init__(self, name: str) -> None:
-        """
+        """Initialize Registry
+
         Args:
             name (str): the name of this registry
         """
         self._name: str = name
-        self._obj_map: Dict[str, object] = {}
+        self._obj_map: dict[str, object] = {}
 
     def _do_register(self, name: str, obj: object) -> None:
         assert (
@@ -44,10 +47,17 @@ class Registry(object):
         ), f"An object named '{name}' was already registered in '{self._name}' registry!"
         self._obj_map[name] = obj
 
-    def register(self, obj: object = None) -> Optional[object]:
+    def register(self, obj: object = None) -> object | None:
         """Register the given object under the the name `obj.__name__`.
+
         Can be used as either a decorator or not. See docstring of
         this class for usage.
+
+        Args:
+            obj (object, optional): Object to register. Defaults to None.
+
+        Returns:
+            object: Registered Object
         """
         if obj is None:
             # used as a decorator
@@ -63,7 +73,7 @@ class Registry(object):
         self._do_register(name, obj)
 
     def get(self, name: str) -> object:
-        """get object from Registry
+        """Get object from Registry
 
         Args:
             name (str): Object Name
@@ -85,7 +95,7 @@ class Registry(object):
     def __repr__(self) -> str:
         table_headers = ["Names", "Objects"]
         table = tabulate(self._obj_map.items(), headers=table_headers, tablefmt="fancy_grid")
-        return "Registry of {}:\n".format(self._name) + table
+        return f"Registry of {self._name}:\n" + table
 
-    def __iter__(self) -> Iterator[Tuple[str, Any]]:
+    def __iter__(self) -> Iterator[tuple[str, Any]]:
         return iter(self._obj_map.items())

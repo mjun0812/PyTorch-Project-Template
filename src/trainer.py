@@ -1,6 +1,7 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterator, Optional, TypedDict
+from typing import Any, TypedDict
 
 import torch
 import torch.distributed as dist
@@ -71,12 +72,12 @@ class BaseTrainer:
         model: BaseModel,
         datasets: dict[PhaseStr, torch.utils.data.Dataset],
         dataloaders: dict[PhaseStr, torch.utils.data.DataLoader],
-        samplers: dict[PhaseStr, Optional[torch.utils.data.Sampler]],
+        samplers: dict[PhaseStr, torch.utils.data.Sampler | None],
         batched_transforms: dict[PhaseStr, callable],
         optimizer: torch.optim.Optimizer,
-        epoch_lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
-        iter_lr_scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
-        evaluators: Optional[dict[PhaseStr, MetricCollection]] = None,
+        epoch_lr_scheduler: torch.optim.lr_scheduler._LRScheduler | None = None,
+        iter_lr_scheduler: torch.optim.lr_scheduler._LRScheduler | None = None,
+        evaluators: dict[PhaseStr, MetricCollection] | None = None,
     ) -> None:
         self.cfg = cfg
         self.params = params
@@ -167,7 +168,8 @@ class BaseTrainer:
                         )
                         self.logger.info(
                             "Save best model at "
-                            f"{self.params.metric_for_best_model}({self.training_state.best_metric:.4f}) "
+                            f"{self.params.metric_for_best_model}"
+                            f"({self.training_state.best_metric:.4f}) "
                             f"in Epoch {self.training_state.best_epoch}"
                         )
         self._after_train(self.training_state)

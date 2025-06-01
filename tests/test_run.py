@@ -1,16 +1,15 @@
-import os
 import subprocess
 import sys
 from pathlib import Path
 
 import matplotlib
-import matplotlib.font_manager as font_manager
 import matplotlib.pyplot as plt
 import torch
+from matplotlib import font_manager
 from omegaconf import OmegaConf
 from torch import optim
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.append(Path(__file__).parent.parent)
 from src.config import ConfigManager, ExperimentConfig
 
 matplotlib.use("Agg")
@@ -32,9 +31,11 @@ def test_train_test_resume():
     else:
         common_options.append("use_cpu=true")
     print("start training test")
+    cmd = ["python", "train.py", "config/dummy.yaml", *common_options]
     process = subprocess.run(
-        ["python", "train.py", "config/dummy.yaml"] + common_options,
+        cmd,
         stdout=subprocess.PIPE,
+        check=False,
     )
     assert process.returncode == 0
     output = process.stdout.decode("utf-8")
@@ -54,6 +55,7 @@ def test_train_test_resume():
     process = subprocess.run(
         output_cmd.split(" "),
         stdout=subprocess.PIPE,
+        check=False,
     )
     assert process.returncode == 0
     print("end test test")
@@ -61,8 +63,9 @@ def test_train_test_resume():
     print("start resume test")
     cmd = output_cmd.replace("test.py", "train.py").split(" ")
     process = subprocess.run(
-        cmd + ["epoch=3"],
+        [*cmd, "epoch=3"],
         stdout=subprocess.PIPE,
+        check=False,
     )
     assert process.returncode == 0
     print("end resume test")
@@ -78,7 +81,7 @@ def _load_config(path: str) -> ExperimentConfig:
 
 
 def test_config():
-    cfg = _load_config(os.path.join(os.path.dirname(__file__), "../config/dummy.yaml"))
+    cfg = _load_config(Path(__file__).parent.parent / "config/dummy.yaml")
     print(ConfigManager.pretty_text(cfg))
 
 
@@ -87,8 +90,7 @@ def test_dataloader():
     from src.dataloaders import build_dataloader, build_dataset, build_sampler
     from src.transform import build_batched_transform, build_transforms
 
-    config_dir = os.path.join(os.path.dirname(__file__), "../config/__base__/dataset")
-    config_dir = Path(config_dir)
+    config_dir = Path(__file__).parent.parent / "config/__base__/dataset"
     for config_path in config_dir.glob("*.yaml"):
         dataset_cfg = OmegaConf.load(config_path)
         dataset_cfg = DatasetsConfig(**dataset_cfg)
@@ -115,13 +117,12 @@ def test_lr_scheduler():
     from src.config import LrSchedulersConfig
     from src.scheduler import build_lr_scheduler
 
-    config_dir = os.path.join(os.path.dirname(__file__), "../config/__base__/lr_scheduler")
-    config_dir = Path(config_dir)
+    config_dir = Path(__file__).parent.parent / "config/__base__/lr_scheduler"
 
     model = torch.nn.Linear(1, 1)
     optimizer = optim.SGD(model.parameters(), lr=0.01)
 
-    base_cfg = _load_config(os.path.join(os.path.dirname(__file__), "../config/dummy.yaml"))
+    base_cfg = _load_config(Path(__file__).parent.parent / "config/dummy.yaml")
     base_cfg.epoch = 100
     for config_path in config_dir.glob("*.yaml"):
         if "None" in config_path.stem:
@@ -167,16 +168,15 @@ def test_lr_scheduler():
         ax1.plot(x, lrs)
         ax1.set_xlabel("epoch")
         ax1.set_ylabel("lr")
-        fig.savefig(f"{os.path.dirname(__file__)}/../doc/lr_scheduler/{scheduler_name}.png")
+        fig.savefig(Path(__file__).parent.parent / f"doc/lr_scheduler/{scheduler_name}.png")
 
 
 def test_optimizer():
     from src.config import OptimizerConfig, OptimizerGroupConfig
     from src.optimizer import build_optimizer
 
-    cfg = _load_config(os.path.join(os.path.dirname(__file__), "../config/dummy.yaml"))
-    config_dir = os.path.join(os.path.dirname(__file__), "../config/__base__/optimizer")
-    config_dir = Path(config_dir)
+    cfg = _load_config(Path(__file__).parent.parent / "config/dummy.yaml")
+    config_dir = Path(__file__).parent.parent / "config/__base__/optimizer"
 
     class Model(torch.nn.Module):
         def __init__(self):
@@ -205,7 +205,7 @@ def test_optimizer():
 
 def test_scripts():
     common_options = [
-        os.path.join(os.path.dirname(__file__), "../config/dummy.yaml"),
+        Path(__file__).parent.parent / "config/dummy.yaml",
         "use_cpu=true",
         "use_ram_cache=false",
     ]
@@ -217,8 +217,9 @@ def test_scripts():
     for script in scripts:
         print("start", script)
         process = subprocess.run(
-            ["python", script] + common_options,
+            ["python", script, *common_options],
             stdout=subprocess.PIPE,
+            check=False,
         )
         assert process.returncode == 0
         print("end", script)

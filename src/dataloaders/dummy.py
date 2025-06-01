@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import torch
 from torchvision.transforms.v2 import Compose
@@ -20,8 +19,8 @@ class DummyDataset(BaseDataset):
     def __init__(
         self,
         cfg: DummyDatasetConfig,
-        transforms: Optional[Compose] = None,
-        cache: Optional[TensorCache] = None,
+        transforms: Compose | None = None,
+        cache: TensorCache | None = None,
     ):
         self.cfg = DummyDatasetConfig(**cfg)
         self.transforms = transforms
