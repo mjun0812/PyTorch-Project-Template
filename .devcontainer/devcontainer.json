@@ -1,23 +1,27 @@
 {
 	"name": "pytorch-project",
-	"build": {
-		"context": "..",
-		"dockerfile": "Dockerfile",
-		"args": {
-			"PYTHON": "3.11"
-		}
-	},
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 	"containerEnv": {
 		"PYTHONUNBUFFERED": "1",
 		"UV_LINK_MODE": "copy",
 		"UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv",
-		"DISPLAY": "dummy",
-		"TZ": "Asia/Tokyo"
+		"UV_CACHE_DIR": "${containerWorkspaceFolder}/.cache/uv",
+		"DISPLAY": "dummy"
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/github-cli:1": {}
+		"ghcr.io/devcontainers/features/github-cli:1": {},
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"configureZshAsDefaultShell": true
+		},
+		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+			"packages": "curl,wget,git,jq,ca-certificates,build-essential"
+		},
+		"ghcr.io/va-h/devcontainers-features/uv:1": {
+			"shellAutocompletion": true
+		}
 	},
 	"runArgs": [
+		"--init",
 		"--rm"
 	],
 	"hostRequirements": {
