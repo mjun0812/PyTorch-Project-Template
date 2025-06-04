@@ -33,7 +33,7 @@ for OPT in "$@"; do
 done
 
 GPU_OPTION=""
-if type nvcc > /dev/null 2>&1; then
+if docker system info | grep -qE '^\s*Runtimes: .*nvidia.*'; then
     # Use GPU
     GPU_OPTION="--gpus all"
 fi
