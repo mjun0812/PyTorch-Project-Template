@@ -3,8 +3,8 @@ from dataclasses import dataclass
 import torch.nn.functional as F
 
 from ...config import LossConfig
-from ...dataloaders.types import DatasetOutput
-from ...types import LossOutput
+from ...dataloaders import DatasetOutput
+from ..types import LossOutput
 from .base import BaseLoss
 from .build import LOSS_REGISTRY
 
