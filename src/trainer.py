@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypedDict
@@ -74,7 +74,7 @@ class BaseTrainer:
         datasets: dict[PhaseStr, torch.utils.data.Dataset],
         dataloaders: dict[PhaseStr, torch.utils.data.DataLoader],
         samplers: dict[PhaseStr, torch.utils.data.Sampler | None],
-        batched_transforms: dict[PhaseStr, callable],
+        batched_transforms: dict[PhaseStr, Callable],
         optimizer: torch.optim.Optimizer,
         epoch_lr_scheduler: torch.optim.lr_scheduler._LRScheduler | None = None,
         iter_lr_scheduler: torch.optim.lr_scheduler._LRScheduler | None = None,

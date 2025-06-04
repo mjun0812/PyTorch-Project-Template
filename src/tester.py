@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -26,7 +27,7 @@ class BaseTester:
         device: torch.device,
         model: BaseModel,
         dataloader: DataLoader,
-        batched_transform: callable | None = None,
+        batched_transform: Callable | None = None,
         evaluator: MetricCollection | None = None,
         use_amp: bool = True,
         amp_dtype: str = "fp32",
