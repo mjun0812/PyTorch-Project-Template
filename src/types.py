@@ -1,25 +1,10 @@
 from pathlib import Path
-from typing import Literal, NotRequired, Required, TypedDict
+from typing import Literal
 
 import torch
-from torch import Tensor
 
 PhaseStr = Literal["train", "val", "test"]
 PathLike = str | Path
-
-
-class LossOutput(TypedDict, total=False):
-    total_loss: Required[Tensor]
-
-
-class ModelOutput(TypedDict, total=False):
-    losses: NotRequired[LossOutput]
-    preds: NotRequired[dict[str, Tensor]]
-
-
-class DatasetOutput(TypedDict, total=False):
-    data: NotRequired[Tensor]
-    label: NotRequired[int]
 
 
 TORCH_DTYPE = {

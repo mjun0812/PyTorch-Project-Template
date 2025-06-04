@@ -3,10 +3,10 @@ from dataclasses import dataclass
 import torch
 from torchvision.transforms.v2 import Compose
 
-from ..types import DatasetOutput
 from .base import BaseDataset
 from .build import DATASET_REGISTRY
 from .tensor_cache import TensorCache
+from .types import DatasetOutput
 
 
 @dataclass

@@ -22,6 +22,7 @@ dependencies = [
     "wandb>=0.17.7",
     "schedulefree>=1.4",
     "jupyter>=1.1.1",
+    "timm>=1.0.15",
 ]
 
 [tool.uv]
@@ -103,6 +104,7 @@ ignore = [
     "PTH123", # `open()` should be replaced by `Path.open()`
     "RUF002", # 無効なUnicodeエスケープシーケンスを無視
     "RUF003", # 無効なUnicode文字を無視
+    "SIM116", # Use a dictionary instead of consecutive `if` statements
 ]
 fixable = ["ALL"]
 unfixable = [

@@ -6,12 +6,13 @@ from torch.utils.data.sampler import RandomSampler, Sampler, SequentialSampler
 from torchvision.transforms.v2 import Compose
 
 from ..config import DatasetConfig
-from ..types import DatasetOutput, PhaseStr
+from ..types import PhaseStr
 from ..utils import Registry, get_free_shm_size, is_distributed, worker_init_fn
 from .base import BaseDataset
 from .iteratable_dataloader import IterBasedDataloader
 from .sampler import SAMPLER_REGISTRY
 from .tensor_cache import BYTES_PER_GIB, TensorCache
+from .types import DatasetOutput
 
 DATASET_REGISTRY = Registry("DATASET")
 

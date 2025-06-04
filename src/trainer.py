@@ -11,8 +11,10 @@ from torchmetrics import MetricCollection
 from tqdm import tqdm
 
 from .config import ConfigManager, ExperimentConfig
+from .dataloaders.types import DatasetOutput
 from .models import BaseModel
-from .types import TORCH_DTYPE, DatasetOutput, ModelOutput, PathLike, PhaseStr
+from .models.types import ModelOutput
+from .types import TORCH_DTYPE, PathLike, PhaseStr
 from .utils import (
     Logger,
     create_symlink,

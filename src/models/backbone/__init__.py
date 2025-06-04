@@ -1,6 +1,5 @@
-# flake8: noqa
-
 from .build import BACKBONE_REGISTRY, BackboneConfig, build_backbone, get_available_backbones
+from .hf_model import resnext101d_32x4d
 from .internimage import (
     internimage_b_1k_224,
     internimage_g_22kto1k_512,
@@ -29,4 +28,3 @@ from .swin_transformer import (
     swin_tiny_patch4_window7_224_22k,
     swin_tiny_patch4_window7_224_22kto1k,
 )
-from .hf_model import resnext101d_32x4d

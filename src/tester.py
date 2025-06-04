@@ -8,7 +8,8 @@ from torchmetrics import MetricCollection
 from tqdm import tqdm
 
 from .models import BaseModel
-from .types import TORCH_DTYPE, ModelOutput
+from .models.types import ModelOutput
+from .types import TORCH_DTYPE
 from .utils import time_synchronized
 
 
@@ -129,8 +130,4 @@ class BaseTester:
 
 
 class Tester(BaseTester):
-    def default_generate_input_evaluator(self, targets, preds):
-        return targets, preds
-
-    def save_results(self, output_dir, targets, results):
-        return super().save_results(output_dir, targets, results)
+    pass

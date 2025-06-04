@@ -4,9 +4,11 @@ from torch import nn
 from torch.nn import functional as F
 
 from ..config import ModelConfig
-from ..types import DatasetOutput, ModelOutput, PhaseStr
+from ..dataloaders.types import DatasetOutput
+from ..types import PhaseStr
 from .base import BaseModel
 from .build import MODEL_REGISTRY
+from .types import ModelOutput
 
 
 @dataclass

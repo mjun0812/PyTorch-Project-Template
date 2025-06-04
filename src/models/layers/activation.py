@@ -4,53 +4,9 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-ActivationFnTypes = Literal[
+ActivationNames = Literal[
     "ReLU", "GELU", "GLU", "PReLU", "SELU", "Swish", "MemoryEfficientSwish", "SiLU"
 ]
-ActivationLayerTypes = ActivationFnTypes
-
-
-def get_activation_fn(activation: ActivationFnTypes) -> nn.Module:
-    """Return an activation function given a string"""
-    if activation == "ReLU":
-        return F.relu
-    elif activation == "GELU":
-        return F.gelu
-    elif activation == "GLU":
-        return F.glu
-    elif activation == "PReLU":
-        return F.prelu
-    elif activation == "SELU":
-        return F.selu
-    elif activation == "Swish":
-        return swish_fn
-    elif activation == "MemoryEfficientSwish":
-        return memory_efficient_swish_fn
-    elif activation == "SiLU":
-        return F.silu
-    else:
-        raise RuntimeError(f"activation should be relu/gelu, not {activation}.")
-
-
-def get_activation_layer(activation: ActivationLayerTypes) -> nn.Module:
-    if activation == "ReLU":
-        return nn.ReLU
-    elif activation == "GELU":
-        return nn.GELU
-    elif activation == "GLU":
-        return nn.GLU
-    elif activation == "PReLU":
-        return nn.PReLU
-    elif activation == "SELU":
-        return nn.SELU
-    elif activation == "Swish":
-        return Swish
-    elif activation == "MemoryEfficientSwish":
-        return MemoryEfficientSwish
-    elif activation == "SiLU":
-        return nn.SiLU
-    else:
-        raise RuntimeError(f"activation should be relu/gelu, not {activation}.")
 
 
 def swish_fn(x: torch.Tensor) -> torch.Tensor:
@@ -85,13 +41,40 @@ class MemoryEfficientSwish(nn.Module):
         return memory_efficient_swish_fn(x)
 
 
-ActivationLayers = [
-    nn.ReLU,
-    nn.GELU,
-    nn.GLU,
-    nn.PReLU,
-    nn.SELU,
-    Swish,
-    MemoryEfficientSwish,
-    nn.SiLU,
-]
+def get_activation_fn(activation: ActivationNames) -> nn.Module:
+    """Return an activation function given a string"""
+    if activation == "ReLU":
+        return F.relu
+    elif activation == "GELU":
+        return F.gelu
+    elif activation == "GLU":
+        return F.glu
+    elif activation == "PReLU":
+        return F.prelu
+    elif activation == "SELU":
+        return F.selu
+    elif activation == "Swish":
+        return swish_fn
+    elif activation == "MemoryEfficientSwish":
+        return memory_efficient_swish_fn
+    elif activation == "SiLU":
+        return F.silu
+
+
+def get_activation_layer(activation: ActivationNames) -> nn.Module:
+    if activation == "ReLU":
+        return nn.ReLU
+    elif activation == "GELU":
+        return nn.GELU
+    elif activation == "GLU":
+        return nn.GLU
+    elif activation == "PReLU":
+        return nn.PReLU
+    elif activation == "SELU":
+        return nn.SELU
+    elif activation == "Swish":
+        return Swish
+    elif activation == "MemoryEfficientSwish":
+        return MemoryEfficientSwish
+    elif activation == "SiLU":
+        return nn.SiLU
