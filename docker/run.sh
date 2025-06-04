@@ -45,7 +45,6 @@ for symlink in $(find "${PWD}/dataset" -type l); do
     [ -e "$target" ] && SYMLINK_MOUNTS+=" -v $target:$target"
 done
 
-
 docker run \
     -t \
     $USE_QUEUE \
@@ -69,7 +68,6 @@ docker run \
     -v ${PWD}:${PWD} \
     -v ${PWD}/dataset:${PWD}/dataset \
     -v ${PWD}/result:${PWD}result \
-    -v ${PWD}/.venv \
     $SYMLINK_MOUNTS \
     --workdir ${PWD} \
     --name "${IMAGE_NAME}-$(date '+%s')" \

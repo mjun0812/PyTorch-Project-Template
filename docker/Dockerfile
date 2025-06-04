@@ -1,27 +1,25 @@
 # syntax=docker/dockerfile:1
 
-# NVIDIA CUDA imageはdevel: 4.31GB, runtime: 1.95GBなので、
-# ビルド時にはdevelを使い、実行時にはruntimeを使う
 ARG BUILDER_IMAGE="nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04"
-ARG BASE_IMAGE="nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04"
+ARG RUNNER_IMAGE="ubuntu:22.04"
 
 FROM $BUILDER_IMAGE AS builder
 
-ARG PYTHON
 ARG PWD
 
-ENV UV_PYTHON_INSTALL_DIR="/opt/python" \
-    UV_PYTHON=${PYTHON} \
+ENV DEBIAN_FRONTEND=noninteractive \
+    UV_PYTHON_INSTALL_DIR="/opt/python" \
+    UV_PROJECT_ENVIRONMENT="/opt/venv" \
     # インストール後にソースファイルをバイトコードにコンパイルする
     UV_COMPILE_BYTECODE=1 \
     # wheelからパッケージをコピーしてインストールする
     UV_LINK_MODE=copy \
-    DEBIAN_FRONTEND=noninteractive
+    # 標準出力・標準エラーのストリームのバッファリングを行わない
+    PYTHONUNBUFFERED=1 \
+    # .pycファイルを生成しない
+    PYTHONDONTWRITEBYTECODE=1
 
-# apt packageのミラー先を日本に変更して高速化
-# --no-install-recommends: 依存を最小限にしてinstall
-RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.list \
-    && rm -f /etc/apt/apt.conf.d/docker-clean \
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -29,37 +27,37 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     git \
     curl \
     ca-certificates
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 WORKDIR ${PWD}
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=.python-version,target=.python-version \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     ulimit -n 8192 \
-    && uv sync --frozen --no-install-project
-ADD . .
+    && uv sync --locked --no-install-project
+COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv sync --locked --no-dev
 
-FROM $BASE_IMAGE AS production
-
-ARG PWD
+FROM $RUNNER_IMAGE AS production
 
 COPY --from=builder /opt/python /opt/python
-COPY --from=builder ${PWD}/.venv ${PWD}/.venv
+COPY --from=builder /opt/venv /opt/venv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=ja_JP.UTF-8 \
     TZ=Asia/Tokyo \
-    PATH="${PWD}/.venv/bin:$PATH" \
+    PATH="/opt/venv/bin:$PATH" \
+    UV_PYTHON_INSTALL_DIR="/opt/python" \
+    UV_PROJECT_ENVIRONMENT="/opt/venv" \
     # 標準出力・標準エラーのストリームのバッファリングを行わない
     PYTHONUNBUFFERED=1 \
     # .pycファイルを生成しない
     PYTHONDONTWRITEBYTECODE=1
 
-RUN sed -i 's@archive.ubuntu.com@ftp.jaist.ac.jp/pub/Linux@g' /etc/apt/sources.list \
-    && rm -f /etc/apt/apt.conf.d/docker-clean \
+RUN rm -f /etc/apt/apt.conf.d/docker-clean \
     && echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -79,8 +77,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     build-essential \
     tzdata
 
-RUN locale-gen ja_JP.UTF-8 \
-    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+    && locale-gen ja_JP.UTF-8 \
     && ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
     && echo "Asia/Tokyo" > /etc/timezone \
     && dpkg-reconfigure -f noninteractive tzdata
