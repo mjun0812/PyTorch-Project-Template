@@ -5,8 +5,9 @@ PyTorchのProjectテンプレートです．
 ## Features
 
 - Docker + uvで環境構築
+- Multi Node, Multi GPU Trainingのサポート
 - PyTorchのDistributed Data Parallel(DDP), Data Parallel, Fully Shared Distributed Parallel(FSDP)によるマルチGPU Training
-- Multi Node Multi GPU Trainingのサポート
+- devcontainer
 - [MLflow](https://mlflow.org)と[wandb](https://www.wandb.jp)を使った実験管理
 - [OmegaConf](https://github.com/omry/omegaconf)を使ったコンフィグ管理
 - データセットの一部をRAMにキャッシュする機能
@@ -15,8 +16,8 @@ PyTorchのProjectテンプレートです．
 ## Environments
 
 - Python 3.11
-- CUDA 12.4
-- PyTorch 2.5.1
+- CUDA 12.8
+- PyTorch 2.7.0
 
 ## Install
 
@@ -98,7 +99,7 @@ gpu:
 `train.py`では`config`以下のyamlファイルを指定します．
 
 ```bash
-./docker/run.sh python train.py [config file path]
+./docker/run.sh python train.py [config_file_path]
 ./docker/run.sh python train.py config/model/ResNet.yaml
 ```
 

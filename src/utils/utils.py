@@ -122,7 +122,7 @@ def plot_multi_graph(filename, titles, data, dpi=300):
     plt.rcParams.update({"font.family": "Times New Roman", "font.size": 10})
     col = len(titles)
     # 比率が合わないときはfigsizeをいじる
-    fig, axs = plt.subplots(1, col, figsize=(col * 5, 5))  # noqa: F841
+    _, axs = plt.subplots(1, col, figsize=(col * 5, 5))
     plt.subplots_adjust(wspace=0.1, hspace=0.1)
     # 1次元にしてforで回せるように。行->列の順
     a = axs.ravel()

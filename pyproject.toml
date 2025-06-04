@@ -59,9 +59,9 @@ typeCheckingMode = "off"
 exclude = ["dataset", "result", ".tmp", ".git", ".venv", ".vscode"]
 
 [tool.ruff]
-exclude = [".git", ".ruff_cache", ".venv", ".vscode", "dataset", "result"]
 line-length = 100
 target-version = "py311"
+exclude = [".git", ".ruff_cache", ".venv", ".vscode", "dataset", "result"]
 
 [tool.ruff.lint]
 preview = true
@@ -88,7 +88,6 @@ ignore = [
     "D205",   # 1 blank line required between summary line and description
     "D212",   # Multi-line docstring summary should start at the first line
     "D213",   # Multi-line docstring summary should start at the second line
-    "D300",   # Use """triple double quotes""" for docstrings
     "D400",   # First line of docstring should end with a period
     "D415",   # First line of docstring should end with punctuation (period, question mark, or exclamation point)
     "E114",   # Indentation is not a multiple of four (comment)
