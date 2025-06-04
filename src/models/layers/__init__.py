@@ -11,14 +11,8 @@ from .conv import SeparableConv2d
 from .dcnv3 import DCNv3_pytorch
 from .init_weights import fan_in_out, glorot_uniform, variance_scaling
 from .norm import (
-    BatchNorm2d,
     FrozenBatchNorm2d,
-    GroupNorm,
-    LayerNorm,
-    LayerNorm2d,
-    LayerNorm3d,
     NormLayerTypes,
-    SyncBatchNorm,
     build_norm_layer,
     get_norm_layer,
 )
