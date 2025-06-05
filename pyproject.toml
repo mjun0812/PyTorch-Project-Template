@@ -25,6 +25,17 @@ dependencies = [
     "timm>=1.0.15",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pyright]
+typeCheckingMode = "off"
+exclude = ["dataset", "result", ".tmp", ".git", ".venv", ".vscode"]
+
 [tool.uv]
 dev-dependencies = ["pytest>=8.3.2", "ruff>=0.6.2"]
 
@@ -47,17 +58,6 @@ explicit = true
 name = "torch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src"]
-
-[tool.pyright]
-typeCheckingMode = "off"
-exclude = ["dataset", "result", ".tmp", ".git", ".venv", ".vscode"]
 
 [tool.ruff]
 line-length = 100
@@ -97,18 +97,17 @@ ignore = [
     "G004",   # Logging statement uses f-string
     "ISC001", # Implicit string concatenation on a single line
     "ISC002", # Implicit string concatenation on multiple lines
+    "PTH123", # `open()` should be replaced by `Path.open()`
     "Q000",   # Single quotes found when double quotes are preferred
     "Q001",   # Single quotes found when double quotes are preferred for multi-line strings
     "Q002",   # Single quotes found when double quotes are preferred for docstrings
-    "SIM105", # try-except-pass blocks that can be replaced with the contextlib.suppress context manager.
-    "SIM108", # Use ternary operator instead of `if`-`else`-block
-    "UP038",  # (Deprecated) Use `X | Y` in `isinstance` call instead of `(X, Y)`
-    "PTH123", # `open()` should be replaced by `Path.open()`
     "RUF002", # 無効なUnicodeエスケープシーケンスを無視
     "RUF003", # 無効なUnicode文字を無視
+    "SIM105", # try-except-pass blocks that can be replaced with the contextlib.suppress context manager.
+    "SIM108", # Use ternary operator instead of `if`-`else`-block
     "SIM116", # Use a dictionary instead of consecutive `if` statements
+    "UP038",  # (Deprecated) Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
-fixable = ["ALL"]
 unfixable = [
     "F401", # unused import
     "F841", # unused variable

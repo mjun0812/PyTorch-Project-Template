@@ -56,7 +56,14 @@ class FrozenBatchNorm2d(torch.nn.Module):
         self.register_buffer("running_var", torch.ones(n))
 
     def _load_from_state_dict(
-        self, state_dict: dict[str, Any], prefix: str, local_metadata: Any, strict: bool, missing_keys: list[str], unexpected_keys: list[str], error_msgs: list[str]
+        self,
+        state_dict: dict[str, Any],
+        prefix: str,
+        local_metadata: Any,
+        strict: bool,
+        missing_keys: list[str],
+        unexpected_keys: list[str],
+        error_msgs: list[str],
     ) -> None:
         num_batches_tracked_key = prefix + "num_batches_tracked"
         state_dict.pop(num_batches_tracked_key, None)

@@ -270,7 +270,11 @@ def create_model(
 
 @BACKBONE_REGISTRY.register()
 def internimage_t_1k_224(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_t_1k_224",
@@ -285,7 +289,11 @@ def internimage_t_1k_224(
 
 @BACKBONE_REGISTRY.register()
 def internimage_s_1k_224(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_s_1k_224",
@@ -300,7 +308,11 @@ def internimage_s_1k_224(
 
 @BACKBONE_REGISTRY.register()
 def internimage_b_1k_224(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_b_1k_224",
@@ -315,7 +327,11 @@ def internimage_b_1k_224(
 
 @BACKBONE_REGISTRY.register()
 def internimage_l_22kto1k_384(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_l_22kto1k_384",
@@ -330,7 +346,11 @@ def internimage_l_22kto1k_384(
 
 @BACKBONE_REGISTRY.register()
 def internimage_xl_22kto1k_384(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_xl_22kto1k_384",
@@ -345,7 +365,11 @@ def internimage_xl_22kto1k_384(
 
 @BACKBONE_REGISTRY.register()
 def internimage_h_22kto1k_384(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_h_22kto1k_384",
@@ -360,7 +384,11 @@ def internimage_h_22kto1k_384(
 
 @BACKBONE_REGISTRY.register()
 def internimage_h_22kto1k_640(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_h_22kto1k_640",
@@ -375,7 +403,11 @@ def internimage_h_22kto1k_640(
 
 @BACKBONE_REGISTRY.register()
 def internimage_g_22kto1k_512(
-    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+    pretrained: bool,
+    weight_path: str | None,
+    features_only: bool = True,
+    out_indices: tuple[int, ...] = (0, 1, 2, 3),
+    **kwargs: Any,
 ) -> Any:
     model = create_model(
         "internimage_g_22kto1k_512",

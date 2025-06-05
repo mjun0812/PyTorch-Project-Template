@@ -5,6 +5,8 @@
 # Written by Ze Liu, Yutong Lin, Yixuan Wei
 # --------------------------------------------------------
 
+from typing import Any
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -49,26 +51,26 @@ class SwinTransformer(nn.Module):
 
     def __init__(
         self,
-        pretrain_img_size=224,
-        patch_size=4,
-        in_chans=3,
-        embed_dim=96,
-        depths=None,
-        num_heads=None,
-        window_size=7,
-        mlp_ratio=4.0,
-        qkv_bias=True,
-        qk_scale=None,
-        drop_rate=0.0,
-        attn_drop_rate=0.0,
-        drop_path_rate=0.2,
-        norm_layer=nn.LayerNorm,
-        ape=False,
-        patch_norm=True,
-        out_indices=(0, 1, 2, 3),
-        frozen_stages=-1,
-        use_checkpoint=False,
-    ):
+        pretrain_img_size: int = 224,
+        patch_size: int = 4,
+        in_chans: int = 3,
+        embed_dim: int = 96,
+        depths: list[int] | None = None,
+        num_heads: list[int] | None = None,
+        window_size: int = 7,
+        mlp_ratio: float = 4.0,
+        qkv_bias: bool = True,
+        qk_scale: float | None = None,
+        drop_rate: float = 0.0,
+        attn_drop_rate: float = 0.0,
+        drop_path_rate: float = 0.2,
+        norm_layer: Any = nn.LayerNorm,
+        ape: bool = False,
+        patch_norm: bool = True,
+        out_indices: tuple[int, ...] = (0, 1, 2, 3),
+        frozen_stages: int = -1,
+        use_checkpoint: bool = False,
+    ) -> None:
         super().__init__()
 
         if depths is None:
@@ -145,7 +147,7 @@ class SwinTransformer(nn.Module):
 
         self._freeze_stages()
 
-    def _freeze_stages(self):
+    def _freeze_stages(self) -> None:
         if self.frozen_stages >= 0:
             self.patch_embed.eval()
             for param in self.patch_embed.parameters():
@@ -162,7 +164,7 @@ class SwinTransformer(nn.Module):
                 for param in m.parameters():
                     param.requires_grad = False
 
-    def init_weights(self, pretrained=None) -> None:
+    def init_weights(self, pretrained: str | None = None) -> None:
         """Initialize the weights in backbone.
 
         Args:
@@ -170,7 +172,7 @@ class SwinTransformer(nn.Module):
                 Defaults to None.
         """
 
-        def _init_weights(m):
+        def _init_weights(m: nn.Module) -> None:
             if isinstance(m, nn.Linear):
                 trunc_normal_(m.weight, std=0.02)
                 if isinstance(m, nn.Linear) and m.bias is not None:
@@ -181,7 +183,7 @@ class SwinTransformer(nn.Module):
 
         self.apply(_init_weights)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor | list[torch.Tensor]:
         """Forward function."""
         x = self.patch_embed(x)
 
@@ -210,7 +212,7 @@ class SwinTransformer(nn.Module):
 
         return tuple(outs)
 
-    def train(self, mode=True) -> None:
+    def train(self, mode: bool = True) -> None:
         """Convert the model into training mode while keep layers freezed."""
         super().train(mode)
         self._freeze_stages()
@@ -220,8 +222,13 @@ class Mlp(nn.Module):
     """Multilayer perceptron."""
 
     def __init__(
-        self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.0
-    ):
+        self,
+        in_features: int,
+        hidden_features: int | None = None,
+        out_features: int | None = None,
+        act_layer: Any = nn.GELU,
+        drop: float = 0.0,
+    ) -> None:
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -230,7 +237,7 @@ class Mlp(nn.Module):
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.fc1(x)
         x = self.act(x)
         x = self.drop(x)
@@ -239,7 +246,7 @@ class Mlp(nn.Module):
         return x
 
 
-def window_partition(x, window_size):
+def window_partition(x: torch.Tensor, window_size: int) -> torch.Tensor:
     """Window partition
 
     Args:
@@ -255,7 +262,7 @@ def window_partition(x, window_size):
     return windows
 
 
-def window_reverse(windows, window_size, H, W):
+def window_reverse(windows: torch.Tensor, window_size: int, H: int, W: int) -> torch.Tensor:
     """Window reverse
 
     Args:
@@ -291,14 +298,14 @@ class WindowAttention(nn.Module):
 
     def __init__(
         self,
-        dim,
-        window_size,
-        num_heads,
-        qkv_bias=True,
-        qk_scale=None,
-        attn_drop=0.0,
-        proj_drop=0.0,
-    ):
+        dim: int,
+        window_size: tuple[int, int],
+        num_heads: int,
+        qkv_bias: bool = True,
+        qk_scale: float | None = None,
+        attn_drop: float = 0.0,
+        proj_drop: float = 0.0,
+    ) -> None:
         super().__init__()
         self.dim = dim
         self.window_size = window_size  # Wh, Ww
@@ -332,7 +339,7 @@ class WindowAttention(nn.Module):
         trunc_normal_(self.relative_position_bias_table, std=0.02)
         self.softmax = nn.Softmax(dim=-1)
 
-    def forward(self, x, mask=None):
+    def forward(self, x: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
         """Forward function.
 
         Args:
@@ -398,19 +405,19 @@ class SwinTransformerBlock(nn.Module):
 
     def __init__(
         self,
-        dim,
-        num_heads,
-        window_size=7,
-        shift_size=0,
-        mlp_ratio=4.0,
-        qkv_bias=True,
-        qk_scale=None,
-        drop=0.0,
-        attn_drop=0.0,
-        drop_path=0.0,
-        act_layer=nn.GELU,
-        norm_layer=nn.LayerNorm,
-    ):
+        dim: int,
+        num_heads: int,
+        window_size: int = 7,
+        shift_size: int = 0,
+        mlp_ratio: float = 4.0,
+        qkv_bias: bool = True,
+        qk_scale: float | None = None,
+        drop: float = 0.0,
+        attn_drop: float = 0.0,
+        drop_path: float = 0.0,
+        act_layer: Any = nn.GELU,
+        norm_layer: Any = nn.LayerNorm,
+    ) -> None:
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
@@ -440,7 +447,7 @@ class SwinTransformerBlock(nn.Module):
         self.H = None
         self.W = None
 
-    def forward(self, x, mask_matrix):
+    def forward(self, x: torch.Tensor, mask_matrix: torch.Tensor) -> torch.Tensor:
         """Forward function.
 
         Args:
@@ -512,13 +519,13 @@ class PatchMerging(nn.Module):
         norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
     """
 
-    def __init__(self, dim, norm_layer=nn.LayerNorm):
+    def __init__(self, dim: int, norm_layer: Any = nn.LayerNorm) -> None:
         super().__init__()
         self.dim = dim
         self.reduction = nn.Linear(4 * dim, 2 * dim, bias=False)
         self.norm = norm_layer(4 * dim)
 
-    def forward(self, x, H, W):
+    def forward(self, x: torch.Tensor, H: int, W: int) -> torch.Tensor:
         """Forward function.
 
         Args:
@@ -571,20 +578,20 @@ class BasicLayer(nn.Module):
 
     def __init__(
         self,
-        dim,
-        depth,
-        num_heads,
-        window_size=7,
-        mlp_ratio=4.0,
-        qkv_bias=True,
-        qk_scale=None,
-        drop=0.0,
-        attn_drop=0.0,
-        drop_path=0.0,
-        norm_layer=nn.LayerNorm,
-        downsample=None,
-        use_checkpoint=False,
-    ):
+        dim: int,
+        depth: int,
+        num_heads: int,
+        window_size: int = 7,
+        mlp_ratio: float = 4.0,
+        qkv_bias: bool = True,
+        qk_scale: float | None = None,
+        drop: float = 0.0,
+        attn_drop: float = 0.0,
+        drop_path: float | list[float] = 0.0,
+        norm_layer: Any = nn.LayerNorm,
+        downsample: Any | None = None,
+        use_checkpoint: bool = False,
+    ) -> None:
         super().__init__()
         self.window_size = window_size
         self.shift_size = window_size // 2
@@ -617,7 +624,7 @@ class BasicLayer(nn.Module):
         else:
             self.downsample = None
 
-    def forward(self, x, H, W):
+    def forward(self, x: torch.Tensor, H: int, W: int) -> torch.Tensor:
         """Forward function.
 
         Args:
@@ -676,7 +683,13 @@ class PatchEmbed(nn.Module):
         norm_layer (nn.Module, optional): Normalization layer. Default: None
     """
 
-    def __init__(self, patch_size=4, in_chans=3, embed_dim=96, norm_layer=None):
+    def __init__(
+        self,
+        patch_size: int = 4,
+        in_chans: int = 3,
+        embed_dim: int = 96,
+        norm_layer: Any | None = None,
+    ) -> None:
         super().__init__()
         patch_size = to_2tuple(patch_size)
         self.patch_size = patch_size
@@ -690,7 +703,7 @@ class PatchEmbed(nn.Module):
         else:
             self.norm = None
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, int, int]:
         """Forward function."""
         # padding
         _, _, H, W = x.size()

@@ -2,10 +2,11 @@ import json
 import os
 import sys
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from pprint import pformat
-from typing import Literal
+from typing import Any, Literal
 
 import matplotlib
 import matplotlib.figure
@@ -75,7 +76,7 @@ class MlflowLogger:
     def log_artifacts(self, path: str | Path) -> None:
         mlflow.log_artifacts(str(path))
 
-    def log_table(self, dict_data) -> None:
+    def log_table(self, dict_data: dict[str, Any]) -> None:
         mlflow.log_table(data=dict_data)
 
     def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED") -> None:
@@ -125,7 +126,9 @@ class MetricLogger:
         for name, value in metrics.items():
             self.log_metric(phase, name, value)
 
-    def _plot_graph(self, title, labels, data):
+    def _plot_graph(
+        self, title: str, labels: list[str], data: list[list[int | float]]
+    ) -> matplotlib.figure.Figure:
         plt.gcf().clear()
         fig, ax = plt.subplots(
             1, 1, figsize=(9, 6), tight_layout=True, subplot_kw=dict(title=title)
@@ -237,7 +240,7 @@ class Logger:
             self.wandb_logger = WandbLogger(project_name, output_dir.name)
             self.logger.info(f"Wandb Tracking: {self.wandb_logger.get_run_uri()}")
 
-    def _log_initial_info(self):
+    def _log_initial_info(self) -> None:
         if self.output_dir is not None:
             with open(Path(self.output_dir) / "cmd_histry.log", "a") as f:
                 print(get_cmd(), file=f)  # Execute CLI command history
@@ -246,7 +249,7 @@ class Logger:
         self.logger.info(f"Output dir: {self.output_dir!s}")
 
     @contextmanager
-    def _safe_operation(self, operation_name: str):
+    def _safe_operation(self, operation_name: str) -> Generator[None, None, None]:
         try:
             yield
         except Exception as e:
@@ -386,7 +389,7 @@ class Logger:
                 with self._safe_operation("mlflow.log_artifact"):
                     self.mlflow_logger.log_artifact(target)
 
-    def log_table(self, dict_data) -> None:
+    def log_table(self, dict_data: dict[str, Any]) -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_table"):
                 self.mlflow_logger.log_table(data=dict_data)

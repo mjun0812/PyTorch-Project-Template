@@ -1,3 +1,5 @@
+from typing import Any
+
 import torch
 from timm.optim import create_optimizer_v2
 from torch import optim
@@ -41,7 +43,11 @@ def build_optimizer(cfg: OptimizerConfig, model: torch.nn.Module) -> optim.Optim
     return optimizer
 
 
-def param_groups_weight_decay(model, weight_decay=1e-5, no_weight_decay_list=()):
+def param_groups_weight_decay(
+    model: torch.nn.Module,
+    weight_decay: float = 1e-5,
+    no_weight_decay_list: tuple[str, ...] = (),
+) -> list[dict[str, Any]]:
     no_weight_decay_list = set(no_weight_decay_list)
     decay = []
     no_decay = []

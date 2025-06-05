@@ -1,11 +1,19 @@
-from typing import Any
+# Removed unused typing import
 
 import torch
 from torch import nn
 
 
 class Attention(nn.Module):
-    def __init__(self, head_dim: int, q_dim: int, k_dim: int | None = None, v_dim: int | None = None, num_heads: int = 8, dropout: float = 0.0) -> None:
+    def __init__(
+        self,
+        head_dim: int,
+        q_dim: int,
+        k_dim: int | None = None,
+        v_dim: int | None = None,
+        num_heads: int = 8,
+        dropout: float = 0.0,
+    ) -> None:
         super().__init__()
         if k_dim is None:
             k_dim = q_dim
@@ -32,7 +40,14 @@ class Attention(nn.Module):
         if self.w_out[0].bias is not None:
             nn.init.constant_(self.w_out[0].bias, 0.0)
 
-    def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor | None = None, attn_mask: torch.Tensor | None = None, attn_weights: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor | None = None,
+        attn_mask: torch.Tensor | None = None,
+        attn_weights: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         q = self.w_q(q)
         k = self.w_k(k)
         v = self.w_v(v) if v is not None else k

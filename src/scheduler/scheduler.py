@@ -1,5 +1,6 @@
 import math
 from collections.abc import Sequence
+from typing import Any
 
 from torch import optim
 
@@ -20,7 +21,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
         warmup_steps: int = 0,
         gamma: float = 1.0,
         last_epoch: int = -1,
-    ):
+    ) -> None:
         """
         Args:
             optimizer (Optimizer): Wrapped optimizer.
@@ -54,7 +55,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
             param_group["lr"] = self.min_lr
             self.base_lrs.append(self.min_lr)
 
-    def get_lr(self):
+    def get_lr(self) -> list[float]:
         if self.step_in_cycle == -1:
             return self.base_lrs
         elif self.step_in_cycle < self.warmup_steps:
@@ -78,7 +79,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
                 for base_lr in self.base_lrs
             ]
 
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         if epoch is None:
             epoch = self.last_epoch + 1
             self.step_in_cycle = self.step_in_cycle + 1
@@ -129,7 +130,13 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
         power: The power of the polynomial.
     """
 
-    def __init__(self, optimizer, max_decay_steps, end_learning_rate=0.0001, power=1.0):
+    def __init__(
+        self,
+        optimizer: optim.Optimizer,
+        max_decay_steps: int,
+        end_learning_rate: float = 0.0001,
+        power: float = 1.0,
+    ) -> None:
         if max_decay_steps <= 1.0:
             raise ValueError("max_decay_steps should be greater than 1.")
         self.max_decay_steps = max_decay_steps
@@ -149,7 +156,7 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
             for base_lr in self.base_lrs
         ]
 
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         if epoch is None:
             epoch = self.last_step + 1
         self.last_step = epoch if epoch != 0 else 1
@@ -166,31 +173,31 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
 
 @SCHEDULER_REGISTRY.register()
 class ReduceLROnPlateau(optim.lr_scheduler.ReduceLROnPlateau):
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         super().step(metric, epoch=None)
 
 
 @SCHEDULER_REGISTRY.register()
 class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts):
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         super().step(epoch=epoch)
 
 
 @SCHEDULER_REGISTRY.register()
 class MultiStepLR(optim.lr_scheduler.MultiStepLR):
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         super().step()
 
 
 @SCHEDULER_REGISTRY.register()
 class StepLR(optim.lr_scheduler.StepLR):
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         super().step()
 
 
 @SCHEDULER_REGISTRY.register()
 class LinearLR(optim.lr_scheduler.LinearLR):
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         super().step()
 
 
@@ -201,11 +208,11 @@ class ChainedScheduler(optim.lr_scheduler.ChainedScheduler):
         schedulers: Sequence[optim.lr_scheduler._LRScheduler],
         optimizer: optim.Optimizer | None = None,
         step_ranges: Sequence[int] | None = None,
-    ):
+    ) -> None:
         self.step_ranges = step_ranges
         super().__init__(schedulers, optimizer)
 
-    def step(self, epoch=None, metric=None) -> None:
+    def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
         for scheduler, step_range in zip(self._schedulers, self.step_ranges):
             if step_range and step_range[0] <= epoch < step_range[1]:
                 scheduler.step(epoch=epoch, metric=metric)

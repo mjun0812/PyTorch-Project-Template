@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -31,7 +32,7 @@ class BaseTester:
         evaluator: MetricCollection | None = None,
         use_amp: bool = True,
         amp_dtype: str = "fp32",
-    ):
+    ) -> None:
         self.device = device
         self.model = model
         self.model.phase = "test"
@@ -67,7 +68,7 @@ class BaseTester:
 
         return self.after_test(results, targets, inference_times)
 
-    def _setup_pbar(self):
+    def _setup_pbar(self) -> tqdm:
         progress_bar = enumerate(self.dataloader)
         progress_bar = tqdm(progress_bar, total=len(self.dataloader), dynamic_ncols=True)
         return progress_bar
@@ -122,10 +123,10 @@ class BaseTester:
                 batch_list.append(batch)
         return batch_list
 
-    def generate_input_evaluator(self, targets, preds) -> tuple[Any, Any]:
+    def generate_input_evaluator(self, targets: Any, preds: Any) -> tuple[Any, Any]:
         return targets, preds
 
-    def save_results(self, output_dir, targets, results) -> None:
+    def save_results(self, output_dir: Path, targets: list, results: list) -> None:
         pass
 
 

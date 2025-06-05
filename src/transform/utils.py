@@ -22,8 +22,11 @@ class RandomSelect(BaseTransform):
     """
 
     def __init__(
-        self, transforms1: list[TransformConfig], transforms2: list[TransformConfig], p=0.5
-    ):
+        self,
+        transforms1: list[TransformConfig],
+        transforms2: list[TransformConfig],
+        p: float = 0.5,
+    ) -> None:
         self.transforms1 = T.Compose([build_transform(TransformConfig(**t)) for t in transforms1])
         self.transforms2 = T.Compose([build_transform(TransformConfig(**t)) for t in transforms2])
         self.p = p
@@ -33,7 +36,7 @@ class RandomSelect(BaseTransform):
             return self.transforms1(data)
         return self.transforms2(data)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         format_string += f"{self.transforms1}, "
         format_string += f"{self.transforms2})"

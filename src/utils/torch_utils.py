@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from loguru import logger
+from loguru import Logger, logger
 from torch import distributed as dist
 from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel
@@ -118,7 +118,7 @@ def set_device(
     return device
 
 
-def cuda_info(global_cuda_index: int = 0, logger=None) -> None:
+def cuda_info(global_cuda_index: int = 0, logger: Logger | None = None) -> None:
     """Show using GPU Info
 
     Args:

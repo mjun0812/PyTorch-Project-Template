@@ -116,7 +116,7 @@ class BaseTrainer:
             progress_bar=None,
         )
 
-    def _before_train(self, state: TrainingState):
+    def _before_train(self, state: TrainingState) -> None:
         pass
 
     def train(self, start_epoch: int) -> None:
@@ -175,7 +175,7 @@ class BaseTrainer:
                         )
         self._after_train(self.training_state)
 
-    def _before_epoch(self, state: TrainingState):
+    def _before_epoch(self, state: TrainingState) -> None:
         self.optimizer.zero_grad(set_to_none=True)
         # For ScheduleFree Optimizer
         if state.phase == "train" and getattr(self.optimizer, "train", False):
@@ -224,7 +224,7 @@ class BaseTrainer:
 
         return epoch_result
 
-    def _backward(self, output: ModelOutput, iter_idx: int, current_epoch: int):
+    def _backward(self, output: ModelOutput, iter_idx: int, current_epoch: int) -> None:
         total_loss = output["losses"]["total_loss"] / self.params.gradient_accumulation_steps
         self.scaler.scale(total_loss).backward()
 
@@ -248,7 +248,7 @@ class BaseTrainer:
         epoch_history: EpochResult,
         inputs: DatasetOutput,
         outputs: ModelOutput,
-    ):
+    ) -> None:
         if self.evaluators[state.phase] is not None:
             self.evaluators[state.phase].update(inputs, outputs["preds"])
 
@@ -294,7 +294,7 @@ class BaseTrainer:
 
         return epoch_result
 
-    def _after_train(self, state: TrainingState):
+    def _after_train(self, state: TrainingState) -> None:
         if is_world_main_process():
             self.logger.log_artifact(self.params.output_dir / "models/model_final.pth")
             self.logger.log_artifact(self.params.output_dir / "optimizers/optimizer_final.pth")

@@ -14,6 +14,9 @@
 # ==============================================================================
 """PyTorch implementation of the Lion optimizer."""
 
+from collections.abc import Callable
+from typing import Any
+
 import torch
 from torch.optim.optimizer import Optimizer
 
@@ -24,7 +27,13 @@ from .build import OPTIMIZER_REGISTRY
 class Lion(Optimizer):
     r"""Implements Lion algorithm."""
 
-    def __init__(self, params, lr=1e-4, betas=(0.9, 0.99), weight_decay=0.0):
+    def __init__(
+        self,
+        params: Any,
+        lr: float = 1e-4,
+        betas: tuple[float, float] = (0.9, 0.99),
+        weight_decay: float = 0.0,
+    ) -> None:
         """Initialize the hyperparameters.
 
         Args:
@@ -45,7 +54,7 @@ class Lion(Optimizer):
         super().__init__(params, defaults)
 
     @torch.no_grad()
-    def step(self, closure=None):
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
         """Performs a single optimization step.
 
         Args:

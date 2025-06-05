@@ -24,24 +24,28 @@ except ImportError:
 
 
 class to_channels_first(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x.permute(0, 3, 1, 2)
 
 
 class to_channels_last(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x.permute(0, 2, 3, 1)
 
 
 def build_norm_layer(
-    dim, norm_layer, in_format="channels_last", out_format="channels_last", eps=1e-6
-):
+    dim: int,
+    norm_layer: str,
+    in_format: str = "channels_last",
+    out_format: str = "channels_last",
+    eps: float = 1e-6,
+) -> nn.Sequential:
     layers = []
     if norm_layer == "BN":
         if in_format == "channels_last":
@@ -60,7 +64,7 @@ def build_norm_layer(
     return nn.Sequential(*layers)
 
 
-def build_act_layer(act_layer):
+def build_act_layer(act_layer: str) -> nn.Module:
     if act_layer == "ReLU":
         return nn.ReLU(inplace=True)
     elif act_layer == "SiLU":
@@ -71,7 +75,7 @@ def build_act_layer(act_layer):
     raise NotImplementedError(f"build_act_layer does not support {act_layer}")
 
 
-def _is_power_of_2(n):
+def _is_power_of_2(n: int) -> bool:
     if (not isinstance(n, int)) or (n < 0):
         raise ValueError(f"invalid input for _is_power_of_2: {n} (type: {type(n)})")
 
@@ -79,7 +83,12 @@ def _is_power_of_2(n):
 
 
 class CenterFeatureScaleModule(nn.Module):
-    def forward(self, query, center_feature_scale_proj_weight, center_feature_scale_proj_bias):
+    def forward(
+        self,
+        query: torch.Tensor,
+        center_feature_scale_proj_weight: torch.Tensor,
+        center_feature_scale_proj_bias: torch.Tensor,
+    ) -> torch.Tensor:
         center_feature_scale = F.linear(
             query,
             weight=center_feature_scale_proj_weight,
@@ -91,19 +100,19 @@ class CenterFeatureScaleModule(nn.Module):
 class DCNv3_pytorch(nn.Module):
     def __init__(
         self,
-        channels=64,
-        kernel_size=3,
-        dw_kernel_size=None,
-        stride=1,
-        pad=1,
-        dilation=1,
-        group=4,
-        offset_scale=1.0,
-        act_layer="GELU",
-        norm_layer="LN",
-        center_feature_scale=False,
-        remove_center=False,
-    ):
+        channels: int = 64,
+        kernel_size: int = 3,
+        dw_kernel_size: int | None = None,
+        stride: int = 1,
+        pad: int = 1,
+        dilation: int = 1,
+        group: int = 4,
+        offset_scale: float = 1.0,
+        act_layer: str = "GELU",
+        norm_layer: str = "LN",
+        center_feature_scale: bool = False,
+        remove_center: bool = False,
+    ) -> None:
         """DCNv3 PyTorch Module
 
         Args:
@@ -182,7 +191,7 @@ class DCNv3_pytorch(nn.Module):
             )
             self.center_feature_scale_module = CenterFeatureScaleModule()
 
-    def _reset_parameters(self):
+    def _reset_parameters(self) -> None:
         constant_(self.offset.weight.data, 0.0)
         constant_(self.offset.bias.data, 0.0)
         constant_(self.mask.weight.data, 0.0)
@@ -192,7 +201,7 @@ class DCNv3_pytorch(nn.Module):
         xavier_uniform_(self.output_proj.weight.data)
         constant_(self.output_proj.bias.data, 0.0)
 
-    def forward(self, input):
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         """Forward pass
 
         Args:
@@ -254,23 +263,23 @@ class DCNv3_pytorch(nn.Module):
 
 
 def dcnv3_core_pytorch(
-    input,
-    offset,
-    mask,
-    kernel_h,
-    kernel_w,
-    stride_h,
-    stride_w,
-    pad_h,
-    pad_w,
-    dilation_h,
-    dilation_w,
-    group,
-    group_channels,
-    offset_scale,
-    im2col_step,
-    remove_center,
-):
+    input: torch.Tensor,
+    offset: torch.Tensor,
+    mask: torch.Tensor,
+    kernel_h: int,
+    kernel_w: int,
+    stride_h: int,
+    stride_w: int,
+    pad_h: int,
+    pad_w: int,
+    dilation_h: int,
+    dilation_w: int,
+    group: int,
+    group_channels: int,
+    offset_scale: float,
+    im2col_step: int,
+    remove_center: int,
+) -> torch.Tensor:
     # for debug and test only,
     # need to use cuda version instead
 
@@ -353,17 +362,17 @@ def dcnv3_core_pytorch(
 
 
 def _get_reference_points(
-    spatial_shapes,
-    device,
-    kernel_h,
-    kernel_w,
-    dilation_h,
-    dilation_w,
-    pad_h=0,
-    pad_w=0,
-    stride_h=1,
-    stride_w=1,
-):
+    spatial_shapes: tuple[int, int, int, int],
+    device: torch.device,
+    kernel_h: int,
+    kernel_w: int,
+    dilation_h: int,
+    dilation_w: int,
+    pad_h: int = 0,
+    pad_w: int = 0,
+    stride_h: int = 1,
+    stride_w: int = 1,
+) -> torch.Tensor:
     _, H_, W_, _ = spatial_shapes
     H_out = (H_ - (dilation_h * (kernel_h - 1) + 1)) // stride_h + 1
     W_out = (W_ - (dilation_w * (kernel_w - 1) + 1)) // stride_w + 1
@@ -398,8 +407,14 @@ def _get_reference_points(
 
 
 def _generate_dilation_grids(
-    spatial_shapes, kernel_h, kernel_w, dilation_h, dilation_w, group, device
-):
+    spatial_shapes: tuple[int, int, int, int],
+    kernel_h: int,
+    kernel_w: int,
+    dilation_h: int,
+    dilation_w: int,
+    group: int,
+    device: torch.device,
+) -> torch.Tensor:
     _, H_, W_, _ = spatial_shapes
     points_list = []
     x, y = torch.meshgrid(
@@ -427,7 +442,9 @@ def _generate_dilation_grids(
     return grid
 
 
-def remove_center_sampling_locations(sampling_locations, kernel_w, kernel_h):
+def remove_center_sampling_locations(
+    sampling_locations: torch.Tensor, kernel_w: int, kernel_h: int
+) -> torch.Tensor:
     idx = list(range(sampling_locations.shape[-2]))
     C = (kernel_w * kernel_h - 1) // 2
     idx = [i for i in idx if i != C and (i - C) % (C * 2 + 1) != 0]

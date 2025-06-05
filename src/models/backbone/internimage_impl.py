@@ -21,21 +21,25 @@ class to_channels_first(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x.permute(0, 3, 1, 2)
 
 
 class to_channels_last(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x.permute(0, 2, 3, 1)
 
 
 def build_norm_layer(
-    dim, norm_layer, in_format="channels_last", out_format="channels_last", eps=1e-6
-):
+    dim: int,
+    norm_layer: str,
+    in_format: str = "channels_last",
+    out_format: str = "channels_last",
+    eps: float = 1e-6,
+) -> nn.Sequential:
     layers = []
     if norm_layer == "BN":
         if in_format == "channels_last":
@@ -54,7 +58,7 @@ def build_norm_layer(
     return nn.Sequential(*layers)
 
 
-def build_act_layer(act_layer):
+def build_act_layer(act_layer: str) -> nn.Module:
     if act_layer == "ReLU":
         return nn.ReLU(inplace=True)
     elif act_layer == "SiLU":
@@ -84,15 +88,15 @@ class CrossAttention(nn.Module):
 
     def __init__(
         self,
-        dim,
-        num_heads=8,
-        qkv_bias=False,
-        qk_scale=None,
-        attn_drop=0.0,
-        proj_drop=0.0,
-        attn_head_dim=None,
-        out_dim=None,
-    ):
+        dim: int,
+        num_heads: int = 8,
+        qkv_bias: bool = False,
+        qk_scale: float | None = None,
+        attn_drop: float = 0.0,
+        proj_drop: float = 0.0,
+        attn_head_dim: int | None = None,
+        out_dim: int | None = None,
+    ) -> None:
         super().__init__()
         if out_dim is None:
             out_dim = dim
@@ -121,7 +125,9 @@ class CrossAttention(nn.Module):
         self.proj = nn.Linear(all_head_dim, out_dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-    def forward(self, x, k=None, v=None):
+    def forward(
+        self, x: torch.Tensor, k: torch.Tensor | None = None, v: torch.Tensor | None = None
+    ) -> torch.Tensor:
         B, N, _ = x.shape
         N_k = k.shape[1]
         N_v = v.shape[1]
@@ -177,17 +183,17 @@ class AttentiveBlock(nn.Module):
 
     def __init__(
         self,
-        dim,
-        num_heads,
-        qkv_bias=False,
-        qk_scale=None,
-        drop=0.0,
-        attn_drop=0.0,
-        drop_path=0.0,
-        norm_layer="LN",
-        attn_head_dim=None,
-        out_dim=None,
-    ):
+        dim: int,
+        num_heads: int,
+        qkv_bias: bool = False,
+        qk_scale: float | None = None,
+        drop: float = 0.0,
+        attn_drop: float = 0.0,
+        drop_path: float = 0.0,
+        norm_layer: str = "LN",
+        attn_head_dim: int | None = None,
+        out_dim: int | None = None,
+    ) -> None:
         super().__init__()
 
         self.norm1_q = build_norm_layer(dim, norm_layer, eps=1e-6)
@@ -206,7 +212,15 @@ class AttentiveBlock(nn.Module):
 
         self.drop_path = DropPath(drop_path) if drop_path > 0.0 else nn.Identity()
 
-    def forward(self, x_q, x_kv, pos_q, pos_k, bool_masked_pos, rel_pos_bias=None):
+    def forward(
+        self,
+        x_q: torch.Tensor,
+        x_kv: torch.Tensor,
+        pos_q: torch.Tensor,
+        pos_k: torch.Tensor,
+        bool_masked_pos: torch.Tensor | None,
+        rel_pos_bias: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         x_q = self.norm1_q(x_q + pos_q)
         x_k = self.norm1_k(x_kv + pos_k)
         x_v = self.norm1_v(x_kv)
@@ -217,7 +231,7 @@ class AttentiveBlock(nn.Module):
 
 
 class AttentionPoolingBlock(AttentiveBlock):
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x_q = x.mean(1, keepdim=True)
         x_kv = x
         pos_q, pos_k = 0, 0
@@ -236,7 +250,13 @@ class StemLayer(nn.Module):
         norm_layer (str): normalization layer
     """
 
-    def __init__(self, in_chans=3, out_chans=96, act_layer="GELU", norm_layer="BN"):
+    def __init__(
+        self,
+        in_chans: int = 3,
+        out_chans: int = 96,
+        act_layer: str = "GELU",
+        norm_layer: str = "BN",
+    ) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(in_chans, out_chans // 2, kernel_size=3, stride=2, padding=1)
         self.norm1 = build_norm_layer(
@@ -246,7 +266,7 @@ class StemLayer(nn.Module):
         self.conv2 = nn.Conv2d(out_chans // 2, out_chans, kernel_size=3, stride=2, padding=1)
         self.norm2 = build_norm_layer(out_chans, norm_layer, "channels_first", "channels_last")
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv1(x)
         x = self.norm1(x)
         x = self.act(x)
@@ -263,14 +283,14 @@ class DownsampleLayer(nn.Module):
         norm_layer (str): normalization layer
     """
 
-    def __init__(self, channels, norm_layer="LN"):
+    def __init__(self, channels: int, norm_layer: str = "LN") -> None:
         super().__init__()
         self.conv = nn.Conv2d(
             channels, 2 * channels, kernel_size=3, stride=2, padding=1, bias=False
         )
         self.norm = build_norm_layer(2 * channels, norm_layer, "channels_first", "channels_last")
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv(x.permute(0, 3, 1, 2))
         x = self.norm(x)
         return x
@@ -289,12 +309,12 @@ class MLPLayer(nn.Module):
 
     def __init__(
         self,
-        in_features,
-        hidden_features=None,
-        out_features=None,
-        act_layer="GELU",
-        drop=0.0,
-    ):
+        in_features: int,
+        hidden_features: int | None = None,
+        out_features: int | None = None,
+        act_layer: str = "GELU",
+        drop: float = 0.0,
+    ) -> None:
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
@@ -303,7 +323,7 @@ class MLPLayer(nn.Module):
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.fc1(x)
         x = self.act(x)
         x = self.drop(x)
@@ -332,23 +352,23 @@ class InternImageLayer(nn.Module):
 
     def __init__(
         self,
-        core_op,
-        channels,
-        groups,
-        mlp_ratio=4.0,
-        drop=0.0,
-        drop_path=0.0,
-        act_layer="GELU",
-        norm_layer="LN",
-        post_norm=False,
-        layer_scale=None,
-        offset_scale=1.0,
-        with_cp=False,
-        dw_kernel_size=None,  # for InternImage-H/G
-        res_post_norm=False,  # for InternImage-H/G
-        center_feature_scale=False,  # for InternImage-H/G
-        remove_center=False,  # for InternImage-H/G
-    ):
+        core_op: Any,
+        channels: int,
+        groups: int,
+        mlp_ratio: float = 4.0,
+        drop: float = 0.0,
+        drop_path: float = 0.0,
+        act_layer: str = "GELU",
+        norm_layer: str = "LN",
+        post_norm: bool = False,
+        layer_scale: float | None = None,
+        offset_scale: float = 1.0,
+        with_cp: bool = False,
+        dw_kernel_size: int | None = None,  # for InternImage-H/G
+        res_post_norm: bool = False,  # for InternImage-H/G
+        center_feature_scale: bool = False,  # for InternImage-H/G
+        remove_center: bool = False,  # for InternImage-H/G
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.groups = groups
@@ -388,8 +408,8 @@ class InternImageLayer(nn.Module):
             self.res_post_norm1 = build_norm_layer(channels, "LN")
             self.res_post_norm2 = build_norm_layer(channels, "LN")
 
-    def forward(self, x):
-        def _inner_forward(x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        def _inner_forward(x: torch.Tensor) -> torch.Tensor:
             if not self.layer_scale:
                 if self.post_norm:
                     x = x + self.drop_path(self.norm1(self.dcn(x)))
@@ -437,26 +457,26 @@ class InternImageBlock(nn.Module):
 
     def __init__(
         self,
-        core_op,
-        channels,
-        depth,
-        groups,
-        downsample=True,
-        mlp_ratio=4.0,
-        drop=0.0,
-        drop_path=0.0,
-        act_layer="GELU",
-        norm_layer="LN",
-        post_norm=False,
-        offset_scale=1.0,
-        layer_scale=None,
-        with_cp=False,
-        dw_kernel_size=None,  # for InternImage-H/G
-        post_norm_block_ids=None,  # for InternImage-H/G
-        res_post_norm=False,  # for InternImage-H/G
-        center_feature_scale=False,  # for InternImage-H/G
-        remove_center=False,  # for InternImage-H/G
-    ):
+        core_op: Any,
+        channels: int,
+        depth: int,
+        groups: int,
+        downsample: bool = True,
+        mlp_ratio: float = 4.0,
+        drop: float = 0.0,
+        drop_path: float | list[float] = 0.0,
+        act_layer: str = "GELU",
+        norm_layer: str = "LN",
+        post_norm: bool = False,
+        offset_scale: float = 1.0,
+        layer_scale: float | None = None,
+        with_cp: bool = False,
+        dw_kernel_size: int | None = None,  # for InternImage-H/G
+        post_norm_block_ids: list[int] | None = None,  # for InternImage-H/G
+        res_post_norm: bool = False,  # for InternImage-H/G
+        center_feature_scale: bool = False,  # for InternImage-H/G
+        remove_center: bool = False,  # for InternImage-H/G
+    ) -> None:
         super().__init__()
         self.channels = channels
         self.depth = depth
@@ -497,7 +517,9 @@ class InternImageBlock(nn.Module):
             DownsampleLayer(channels=channels, norm_layer=norm_layer) if downsample else None
         )
 
-    def forward(self, x, return_wo_downsample=False):
+    def forward(
+        self, x: torch.Tensor, return_wo_downsample: bool = False
+    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         for i, blk in enumerate(self.blocks):
             x = blk(x)
             if (self.post_norm_block_ids is not None) and (i in self.post_norm_block_ids):
@@ -545,33 +567,33 @@ class InternImage(nn.Module):
 
     def __init__(
         self,
-        core_op="DCNv3",
-        channels=64,
-        depths=None,
-        groups=None,
-        num_classes=1000,
-        mlp_ratio=4.0,
-        drop_rate=0.0,
-        drop_path_rate=0.2,
-        drop_path_type="linear",
-        act_layer="GELU",
-        norm_layer="LN",
-        layer_scale=None,
-        offset_scale=1.0,
-        post_norm=False,
-        cls_scale=1.5,
-        with_cp=False,
-        dw_kernel_size=None,  # for InternImage-H/G
-        use_clip_projector=False,  # for InternImage-H/G
-        level2_post_norm=False,  # for InternImage-H/G
-        level2_post_norm_block_ids=None,  # for InternImage-H/G
-        res_post_norm=False,  # for InternImage-H/G
-        center_feature_scale=False,  # for InternImage-H/G
-        remove_center=False,  # for InternImage-H/G
-        features_only=False,
-        out_indices=None,
-        **kwargs,
-    ):
+        core_op: str = "DCNv3",
+        channels: int = 64,
+        depths: list[int] | None = None,
+        groups: list[int] | None = None,
+        num_classes: int = 1000,
+        mlp_ratio: float = 4.0,
+        drop_rate: float = 0.0,
+        drop_path_rate: float = 0.2,
+        drop_path_type: str = "linear",
+        act_layer: str = "GELU",
+        norm_layer: str = "LN",
+        layer_scale: float | None = None,
+        offset_scale: float = 1.0,
+        post_norm: bool = False,
+        cls_scale: float = 1.5,
+        with_cp: bool = False,
+        dw_kernel_size: int | None = None,  # for InternImage-H/G
+        use_clip_projector: bool = False,  # for InternImage-H/G
+        level2_post_norm: bool = False,  # for InternImage-H/G
+        level2_post_norm_block_ids: list[int] | None = None,  # for InternImage-H/G
+        res_post_norm: bool = False,  # for InternImage-H/G
+        center_feature_scale: bool = False,  # for InternImage-H/G
+        remove_center: bool = False,  # for InternImage-H/G
+        features_only: bool = False,
+        out_indices: list[int] | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
         if depths is None:
             depths = [3, 4, 18, 5]
@@ -707,7 +729,7 @@ class InternImage(nn.Module):
         self.apply(self._init_weights)
         self.apply(self._init_deform_weights)
 
-    def _init_weights(self, m):
+    def _init_weights(self, m: nn.Module) -> None:
         if isinstance(m, nn.Linear):
             trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
@@ -716,7 +738,7 @@ class InternImage(nn.Module):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
 
-    def _init_deform_weights(self, m):
+    def _init_deform_weights(self, m: nn.Module) -> None:
         try:
             import torch_cpp as opsm
         except ImportError:
@@ -729,7 +751,7 @@ class InternImage(nn.Module):
             m._reset_parameters()
 
     @torch.jit.ignore
-    def lr_decay_keywards(self, decay_ratio=0.87):
+    def lr_decay_keywards(self, decay_ratio: float = 0.87) -> dict[str, float]:
         lr_ratios = {}
 
         # blocks
@@ -755,7 +777,7 @@ class InternImage(nn.Module):
         lr_ratios["levels.2.norm"] = lr_ratios["levels.3.blocks.0."]
         return lr_ratios
 
-    def forward_features(self, x):
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         x = self.patch_embed(x)
         x = self.pos_drop(x)
 
@@ -767,7 +789,7 @@ class InternImage(nn.Module):
         x = torch.flatten(x, 1)
         return x
 
-    def forward_features_seq_out(self, x):
+    def forward_features_seq_out(self, x: torch.Tensor) -> list[torch.Tensor]:
         x = self.patch_embed(x)
         x = self.pos_drop(x)
 
@@ -780,7 +802,7 @@ class InternImage(nn.Module):
                 seq_out.append(x_)
         return seq_out
 
-    def forward_clip_projector(self, x):  # for InternImage-H/G
+    def forward_clip_projector(self, x: torch.Tensor) -> torch.Tensor:  # for InternImage-H/G
         xs = self.forward_features_seq_out(x)
         x1, x2, x3, x4 = xs
 
@@ -800,7 +822,7 @@ class InternImage(nn.Module):
 
         return x
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor | list[torch.Tensor]:
         if self.features_only:
             x = self.forward_features_seq_out(x)
         else:

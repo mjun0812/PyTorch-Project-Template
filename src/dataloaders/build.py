@@ -24,9 +24,9 @@ def build_dataset(
     ram_cache_size_gb: int | None = None,
 ) -> Dataset:
     if use_ram_cache:
-        assert (
-            ram_cache_size_gb <= get_free_shm_size() / BYTES_PER_GIB
-        ), "RAM Cache size is too large"
+        assert ram_cache_size_gb <= get_free_shm_size() / BYTES_PER_GIB, (
+            "RAM Cache size is too large"
+        )
         cache = TensorCache(size_limit_gb=ram_cache_size_gb)
         logger.info(f"Use RAM Cache: {ram_cache_size_gb}GB")
     else:
