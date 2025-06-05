@@ -12,21 +12,11 @@ USER_NAME=$USER
 PWD=$(pwd)
 
 USE_QUEUE="-i"
-USE_JUPYTER=""
-USE_MLFLOW_UI=""
 
 for OPT in "$@"; do
     case $OPT in
         '-q' | '--queue')
             USE_QUEUE=""
-            shift 1;
-        ;;
-        '--jupyter')
-            USE_JUPYTER="-p 38888:38888"
-            shift 1;
-        ;;
-        '--mlflow-ui')
-            USE_MLFLOW_UI="-p 38880:38880"
             shift 1;
         ;;
     esac
@@ -55,8 +45,6 @@ docker run \
     --net host \
     --ipc=host \
     --ulimit memlock=-1 \
-    $USE_JUPYTER \
-    $USE_MLFLOW_UI \
     --env DISPLAY=$DISPLAY \
     --env USER_NAME=$USER_NAME \
     --env USER_ID=$USER_ID \

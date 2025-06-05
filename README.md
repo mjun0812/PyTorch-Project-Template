@@ -1,88 +1,100 @@
 # PyTorch Project Template
 
-PyTorchのProjectテンプレートです．
+My project template using PyTorch.
 
 ## Features
 
-- Docker + uvで環境構築
-- Multi Node, Multi GPU Trainingのサポート
-- PyTorchのDistributed Data Parallel(DDP), Data Parallel, Fully Shared Distributed Parallel(FSDP)によるマルチGPU Training
-- devcontainer
-- [MLflow](https://mlflow.org)と[wandb](https://www.wandb.jp)を使った実験管理
-- [OmegaConf](https://github.com/omry/omegaconf)を使ったコンフィグ管理
-- データセットの一部をRAMにキャッシュする機能
-- 学習の再開機能
+- Docker + uv environment setup.
+- Single-node or multi-node and multi-GPU training on DDP.
+- Experiment management with MLflow and wandb.
+- Config management with OmegaConf and dataclasses.
+- Resume training support.
+- Supports development on macOS and Linux.
+- Devcontainer support.
+- CI support with pre-commit and GitHub Actions.
 
 ## Environments
 
 - Python 3.11
 - CUDA 12.8
-- PyTorch 2.7.0
+- PyTorch 2.7.1
 
 ## Install
 
-環境構築はDockerで行います．
-Dockerコンテナに`./dataset`をマウントするため，この中に各データセットのディレクトリを入れてください。
-Docker Imageのビルドは以下のコマンドで行えます。
+Create env file.
 
 ```bash
-./docker/build.sh
+cp template.env .env
+vim .env
 ```
 
-### MLflow
-
-本テンプレートでは，MLflowによる実験管理が行えます。
-MLflowのデータをローカルに保存する場合と，外部のサーバに送信する場合の両方に対応しています．
-デフォルトはローカル保存となり，`result/mlruns`に保存されます．
-
-外部サーバを利用する場合は，dotenvに設定を書き込む必要があります．
-`template.env`をコピーして利用してください．
-
 ```bash
-$ cp template.env .env
-$ vim .env
-
+# Notice to Slack when finished trianing and evaluation.
 SLACK_TOKEN="HOGE"
-MLFLOW_TRACKING_URI=""
 
+# Write local path or remote uri
+MLFLOW_TRACKING_URI="./result/mlruns"
 # Basic Auth
 # MLFLOW_TRACKING_USERNAME=""
 # MLFLOW_TRACKING_PASSWORD=""
+
+WANDB_API_KEY=""
 ```
 
-ローカルで保存している場合，mlflow server(ui)のコマンドは以下です．
+- Docker Instalation
 
 ```bash
-./docker/run.sh --mlflow-ui ./script/run_mlflow.sh
+./docker/build.sh
+./docker/run.sh [command]
 ```
 
-### Optional: Wandb
-
-Wandbによる実験管理も行えます。
-`.env`の`WANDB_API_KEY`を設定し、configの`wandb.use`をtrueにすれば結果が送信されます。
+- Local Instalation
 
 ```bash
-./docker/run.sh python train.py config/dummy.yaml wandb.use=true wandb.project_name="hoge"
+uv sync
+uv run [command]
 ```
 
-### Optional: Slackによる通知
+- Develop environment
 
-学習の終了や評価の終了時にSlackに通知を行うことができます．
-通知を行うには.envにSlackのトークン(Webhookではない)を書き込む必要があります．
-デフォルトでは，通知は`channel="#通知", username="通知"`で行われます．
-`.env`の`SLACK_TOKEN`にAPI tokenを入れて下さい。
+Use devcontainer or local development.
+
+```bash
+uv sync
+uv run pre-commit install
+```
 
 ## Usage
 
-Dockerコンテナ内でコマンドを実行します．
-そのため，実行するコマンドの先頭に`./docker/run.sh`をつけてください．
+### Tools
 
 ```bash
-./docker/run.sh python train.py config/model/model.yaml gpu.use=1
-./docker/run.sh python test.py result/20220911/config.yaml gpu.use=1
+# JupyterLab Server
+./script/run_notebook.sh
+
+# MLflow WebUI
+./script/run_mlflow.sh
+
+# Replace Config value
+python script/edit_configs.py [yaml or dir] "params.hoge=aa,params.fuga=bb"
+
+# Show deleted local result from mlflow
+# Delete experiment results from the local `./result/` directory that have been removed from MLflow.
+python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
+
+# Aggregate mlflow result
+python script/aggregate_mlflow.py [dataset_name or all]
+
+# Check Registered Modules
+python script/show_options.py
 ```
 
-yaml内のConfigの値をCLIから変更することもできます．以下のように，`.`で連結して，`=`で値を指定してください．
+### Config management
+
+This template uses OmegaConf and dataclasses for config management.
+
+You can change the Config values in the yaml file from the CLI.
+Use `.` to concatenate and `=` to specify the value.
 
 ```yaml
 gpu:
@@ -90,56 +102,56 @@ gpu:
 ```
 
 ```bash
-./docker/run.sh python train.py config/model/ResNet.yaml gpu.use=2
+python train.py config/model/ResNet.yaml gpu.use=2
 ```
 
-### Train
+### Training
 
-学習を行う場合は，`train.py`を使います．このスクリプトでは，学習が終わった後にテストも一緒に行われます．
-`train.py`では`config`以下のyamlファイルを指定します．
+To perform training, use `train.py`. This script also runs the auto test after training.
+In `train.py`, specify the yaml file under `config`.
 
 ```bash
-./docker/run.sh python train.py [config_file_path]
-./docker/run.sh python train.py config/model/ResNet.yaml
+python train.py [config_file_path]
+# Example
+python train.py config/model/ResNet.yaml batch=8
 ```
 
-学習結果は`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]`以下のディレクトリに保存されます．
+Training results are saved under the directory `result/[train_dataset.name]/[date]_[model.name]_[tag]`.
 
 #### Single Node Multi GPU Training
 
-シングルノード・複数GPUを用いた学習を行う場合は，
-実行するコマンドの`python`を消して，
-前に`./torchrun.sh [GPU数]`を入れ，`gpu.use="0,1"`のように，Configの値を変更します．
-この時，GPUのIDの順番は`nvidia-smi`コマンドで並ぶPCIeの順番になっています．
+To perform training with a single node and multiple GPUs,
+remove `python` from the command and add `./torchrun.sh [number of GPUs]` before it,
+and change the Config value like `gpu.use="0,1"`.
+At this time, the order of GPU IDs is the order of PCIe as shown by the `nvidia-smi` command.
 
 ```bash
-./docker/run.sh ./torchrun.sh 4 train.py config/model/ResNet.yaml gpu.use="0,1,2,3"
+./torchrun.sh 4 train.py config/model/ResNet.yaml gpu.use="0,1,2,3"
 ```
 
 #### Multi Node Multi GPU Training
 
-マルチノード・複数GPUを用いた学習を行う場合は，
-実行するコマンドの`python`を消して，
-前に`./multinode.sh [ノード数] [GPU数] [ジョブID] [ノードランク] [マスターノードのホスト名:マスターノードのポート]`を入れ，
-`gpu.use="0,1"`のように，Configの値を変更します．
+To perform training with multiple nodes and multiple GPUs,
+remove `python` from the command and add `./multinode.sh [number of nodes] [number of GPUs] [job ID] [node rank] [master node hostname:master node port]` before it,
+and change the Config value like `gpu.use="0,1"`.
 
 ```bash
 # Master Node
-./docker/run.sh ./multinode.sh 2 4 12345 0 localhost:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
+./multinode.sh 2 4 12345 0 localhost:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
 
 # Worker Node
-./docker/run.sh ./multinode.sh 2 4 12345 1 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=4,5,6,7
+./multinode.sh 2 4 12345 1 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=4,5,6,7
 ```
 
-#### Train Option: RAM Cache
+#### RAM Cache
 
-データセットの一部をRAMにキャッシュする機能があります。キャッシュは`torch.Tensor`のみ対応しています。
+There is a function to cache part of the dataset in RAM. The cache only supports `torch.Tensor`.
 
 ```bash
-./docker/run.sh python train.py config/model/ResNet.yaml gpu.use=1 use_ram_cache=true ram_cache_size_gb=16
+python train.py config/model/ResNet.yaml gpu.use=1 use_ram_cache=true ram_cache_size_gb=16
 ```
 
-この機能を使うには、datasetの実装を以下のように工夫する必要があります。
+To use this function, you need to implement the dataset as follows.
 
 ```python
 if self.cache is not None and idx in self.cache:
@@ -150,155 +162,26 @@ else:
         self.cache.set(idx, image)
 ```
 
-#### Train Option: Resume Training
+#### Resume Training
 
-学習の終了後、もしくは学習を中断した場合に、
-結果のディレクトリに保存されている`config.yaml`である、
-`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]/config.yaml`を指定して実行すると，学習を再開できます。
-この時、元のepochが100だった場合でも、`epoch=150`をコマンドラインで指定して実行すると、configが上書きされて150epochまで学習が継続されます。
+After training is completed or interrupted,
+you can resume training by specifying the `config.yaml` saved in the result directory,
+`result/[train_dataset.name]/[date]_[model.name]_[tag]/config.yaml`.
+At this time, even if the original epoch was 100, if you specify `epoch=150` on the command line, the config will be overwritten and training will continue until 150 epochs.
 
 ```bash
-./docker/run.sh python train.py config/config.yaml # 100epochまで完了
+python train.py config/config.yaml # Completed up to 100 epochs
 
-# 上記の結果を利用して学習を再開 or 継続
-./docker/run.sh python train.py result/ImageNet/hoge_hoge/config.yaml epoch=150 gpu.use=7 # 150epochまで学習を継続
+# Resume or continue training using the above results
+python train.py result/ImageNet/hoge_hoge/config.yaml epoch=150 gpu.use=7 # Continue training until 150 epochs
 ```
 
-### Test
+### Evaluate
 
-評価を行うスクリプトは`test.py`です．
-学習で動かす`train.py`でも評価は実行されますが，手動で行う場合はこちらを使用してください．
-`test.py`では，学習結果の保存されているディレクトリにある`config.yaml`を第1引数に指定します．
-
-```bash
-./docker/run.sh python test.py result/ImageNet/hoge_hoge/config.yaml gpu.use=7
-```
-
-上記のコマンドは，学習時のログでも表示されています．学習時のログは，
-`result/[train_dataset.name]/[日付]_[model.name]_[dataset.name]_[tag]/train.log`に保存されています．
-
-テスト時のログやデータは
-`result/[train_dataset/name]/[日付]_[model.name]_[dataset.name]_[tag]/runs/`以下に，
-ディレクトリが作成され，その中に保存されます．
-
-## Scripts
-
-### Config一括編集
+The script for evaluation is `test.py`.
+Evaluation is also executed in `train.py` for training, but use this if you want to do it manually.
+In `test.py`, specify the `config.yaml` in the directory where the training results are saved as the first argument.
 
 ```bash
-./docker/run.sh python script/edit_configs.py [config_path or recursive directory] "params.hoge=aa,params.fuga=bb"
-```
-
-### MLflow UI
-
-```bash
-./docker/run.sh --mlflow-ui ./script/run_mlflow.sh
-```
-
-### JupyterLab
-
-```bash
-./script/run_notebook.sh
-```
-
-### Test Source
-
-```bash
-./docker/run.sh ./script/run_test.sh
-```
-
-### Clean result
-
-MLflowで削除された実験結果をローカルの`./result/`から削除する
-
-```bash
-./docker/run.sh
-# In container
-python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
-```
-
-### 集計
-
-MLflowの結果を集計し、`./doc/result_csv`以下に保存する。
-
-```bash
-./docker/run.sh python script/aggregate_mlflow.py [dataset_name or all]
-```
-
-### 実装済みモジュールの確認
-
-```bash
-python script/show_options.py
-
-DATASET_REGISTRY
-Registry of DATASET:
-╒══════════════╤════════════════════════════════════════════════╕
-│ Names        │ Objects                                        │
-╞══════════════╪════════════════════════════════════════════════╡
-│ DummyDataset │ <class 'src.dataloaders.dataset.DummyDataset'> │
-╘══════════════╧════════════════════════════════════════════════╛
-EVALUATOR_REGISTRY
-Registry of EVALUATOR:
-╒════════════════╤══════════════════════════════════════════════════╕
-│ Names          │ Objects                                          │
-╞════════════════╪══════════════════════════════════════════════════╡
-│ DummyEvaluator │ <class 'src.evaluator.evaluator.DummyEvaluator'> │
-╘════════════════╧══════════════════════════════════════════════════╛
-MODEL_REGISTRY
-Registry of MODEL:
-╒════════════╤═══════════════════════════════════════╕
-│ Names      │ Objects                               │
-╞════════════╪═══════════════════════════════════════╡
-│ DummyModel │ <class 'src.models.model.DummyModel'> │
-╘════════════╧═══════════════════════════════════════╛
-BACKBONE_REGISTRY
-['bat_resnext26ts',
- 'beit_base_patch16_224',
- 'beit_base_patch16_384',
- 'beit_large_patch16_224',
-...
-```
-
-## Structure
-
-```bash
-.//
-├── config/            # 実験とモデルの設定ファイル
-│   └── __base__/      # 基本設定ファイル
-├── dataset/           # データセットを保存するディレクトリ（Dockerコンテナにマウント）
-├── doc/               # ドキュメントファイルと実験結果
-├── docker/            # Dockerセットアップとユーティリティスクリプト
-├── etc/               # その他のファイル
-├── notebook/          # 探索と分析用のJupyterノートブック
-├── result/            # 学習結果、チェックポイント、ログ
-├── script/            # 様々なタスク用のユーティリティスクリプト
-│   ├── aggregate_mlflow.py  # MLflow結果を集計するスクリプト
-│   ├── clean_result.py      # resultディレクトリをクリーンアップ
-│   ├── edit_configs.py      # 設定ファイルの一括編集
-│   ├── show_*.py            # 様々な情報を表示するスクリプト
-│   ├── run_mlflow.sh        # MLflow UIを起動
-│   ├── run_notebook.sh      # JupyterLabを起動
-│   └── run_test.sh          # テストを実行
-├── src/               # ソースコード
-│   ├── config/        # 設定の処理
-│   ├── dataloaders/   # データ読み込みユーティリティ
-│   ├── evaluator/     # モデル評価コード
-│   ├── models/        # モデル定義
-│   ├── optimizer/     # 最適化アルゴリズム
-│   ├── scheduler/     # 学習率スケジューラ
-│   ├── transform/     # データ変換
-│   ├── utils/         # ユーティリティ関数
-│   ├── sampler.py     # データサンプリングユーティリティ
-│   ├── tester.py      # テストループの実装
-│   ├── trainer.py     # 学習ループの実装
-│   └── types.py       # 型定義
-├── tests/             # テストコード
-├── README.md
-├── template.env       # 環境変数のテンプレート
-├── train.py
-├── test.py
-├── torchrun.sh        # 単一ノードでの分散学習用スクリプト
-├── multinode.sh       # マルチノード分散学習用スクリプト
-├── pyproject.toml
-└── uv.lock
+python test.py result/ImageNet/hoge_hoge/config.yaml gpu.use=7
 ```
