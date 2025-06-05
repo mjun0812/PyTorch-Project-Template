@@ -19,6 +19,25 @@ My project template using PyTorch.
 - CUDA 12.8
 - PyTorch 2.7.1
 
+### Use this template
+
+You can use this as a GitHub template or merge updates from this repository as needed.
+
+```bash
+# Setup new project
+mkdir my-project
+cd my-project
+git init
+git commit --allow-empty -m "Initial commit"
+
+# Link this template
+git remote add upstream git@github.com:mjun0812/PyTorch-Project-Template.git
+
+# Merge update from this template
+git fetch upstream main
+git merge --allow-unrelated-histories --squash upstream/main
+```
+
 ## Install
 
 Create env file.
