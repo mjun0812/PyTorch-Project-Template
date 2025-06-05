@@ -41,21 +41,21 @@ MLFLOW_TRACKING_URI="./result/mlruns"
 WANDB_API_KEY=""
 ```
 
-- Docker Instalation
+- Docker Install
 
 ```bash
 ./docker/build.sh
 ./docker/run.sh [command]
 ```
 
-- Local Instalation
+- Local Install
 
 ```bash
 uv sync
 uv run [command]
 ```
 
-- Develop environment
+- Build develop environment
 
 Use devcontainer or local development.
 
