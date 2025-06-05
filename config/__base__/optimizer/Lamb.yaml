@@ -1,5 +1,5 @@
-name: Lamb_timm
-class_name: lamb_timm
+name: timm_Lamb
+class_name: timm_Lamb
 lr: 1e-4
 args:
   weight_decay: 1e-4

@@ -10,5 +10,6 @@ from .build import (
     build_transforms,
 )
 from .compose import BatchedTransformCompose
+from .convert import ToTensor
 
 import_submodules(mod)

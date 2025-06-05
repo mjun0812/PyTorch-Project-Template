@@ -1,14 +1,17 @@
 from typing import Any
 
-import kornia
 import torch
 from omegaconf import OmegaConf
 
 from ..config import TransformConfig
 from .base import BaseTransform
 
+try:
+    import kornia
+except ImportError:
+    kornia = None
 
-# Use below Compose when using transforms has multi input.
+
 class MultiCompose:
     def __init__(self, transforms: list[BaseTransform]) -> None:
         self.transforms = transforms
@@ -93,7 +96,7 @@ class BatchedTransformCompose:
     def __call__(self, data: dict) -> dict:
         for i, t in enumerate(self.transforms):
             # Korniaの場合
-            if isinstance(t, kornia.augmentation.AugmentationBase2D):
+            if kornia is not None and isinstance(t, kornia.augmentation.AugmentationBase2D):
                 data["image"] = t(data["image"])
                 if self.assign_labels[i]:
                     for k in self.assign_labels:

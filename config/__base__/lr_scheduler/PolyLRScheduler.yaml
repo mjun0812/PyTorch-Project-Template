@@ -1,9 +1,0 @@
-epoch_scheduler:
-  name: PolyLRScheduler_timm
-  class_name: poly_timm
-  checkpoint: null
-  args:
-    num_epochs: ${epoch}
-    min_lr: 1e-6
-    k_decay: 1.0
-iter_scheduler: null

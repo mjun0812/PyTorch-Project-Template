@@ -1,7 +1,6 @@
 from typing import Any
 
 import torch
-from timm.optim import create_optimizer_v2
 from torch import optim
 
 from ..config import ConfigManager, OptimizerConfig, OptimizerGroupConfig
@@ -10,37 +9,28 @@ from ..utils import Registry, is_model_parallel
 OPTIMIZER_REGISTRY = Registry("OPTIMIZER")
 
 
-def build_optimizer(cfg: OptimizerConfig, model: torch.nn.Module) -> optim.Optimizer:
-    optimizer_cls_name = cfg.class_name
-    lr = cfg.lr
+def get_param_group(
+    model: torch.nn.Module, cfg: list[OptimizerGroupConfig], base_lr: float
+) -> list:
+    optimizer_dict = [{"params": [], "lr": base_lr}]
+    keys = []
+    for info in cfg:
+        optimizer_dict.append({"params": [], "lr": base_lr / info.divide})
+        keys.append(info.name)
 
-    target_model = model
-    if is_model_parallel(model):
-        target_model = model.module
+    for n, p in model.named_parameters():
+        if not p.requires_grad:
+            continue
 
-    if cfg.group is not None:
-        parameters = get_param_group(target_model, cfg.group, lr)
-    else:
-        parameters = target_model.parameters()
-
-    args = cfg.get("args")
-    if args is not None:
-        args = ConfigManager.to_object(args.copy())
-    else:
-        args = {}
-
-    if "timm" not in optimizer_cls_name:
-        optimizer = OPTIMIZER_REGISTRY.get(optimizer_cls_name)(parameters, lr=lr, **args)
-    else:
-        optimizer_cls_name = optimizer_cls_name.replace("_timm", "")
-        optimizer = create_optimizer_v2(target_model, opt=optimizer_cls_name, lr=lr, **args)
-
-    if cfg.checkpoint is not None:
-        optimizer.load_state_dict(
-            torch.load(cfg.checkpoint, map_location="cpu", weights_only=False)
-        )
-
-    return optimizer
+        has_key = False
+        for i, k in enumerate(keys):
+            if k in n:
+                optimizer_dict[i + 1]["params"].append(p)
+                has_key = True
+                break
+        if not has_key:
+            optimizer_dict[0]["params"].append(p)
+    return optimizer_dict
 
 
 def param_groups_weight_decay(
@@ -66,25 +56,25 @@ def param_groups_weight_decay(
     ]
 
 
-def get_param_group(
-    model: torch.nn.Module, cfg: list[OptimizerGroupConfig], base_lr: float
-) -> list:
-    optimizer_dict = [{"params": [], "lr": base_lr}]
-    keys = []
-    for info in cfg:
-        optimizer_dict.append({"params": [], "lr": base_lr / info.divide})
-        keys.append(info.name)
+def build_optimizer(cfg: OptimizerConfig, model: torch.nn.Module) -> optim.Optimizer:
+    optimizer_cls_name = cfg.class_name
+    lr = cfg.lr
 
-    for n, p in model.named_parameters():
-        if not p.requires_grad:
-            continue
+    target_model = model
+    if is_model_parallel(model):
+        target_model = model.module
 
-        has_key = False
-        for i, k in enumerate(keys):
-            if k in n:
-                optimizer_dict[i + 1]["params"].append(p)
-                has_key = True
-                break
-        if not has_key:
-            optimizer_dict[0]["params"].append(p)
-    return optimizer_dict
+    if cfg.group is not None:
+        parameters = get_param_group(target_model, cfg.group, lr)
+    else:
+        parameters = target_model.parameters()
+
+    args = ConfigManager.to_object(cfg.args) if cfg.args is not None else {}
+
+    optimizer = OPTIMIZER_REGISTRY.get(optimizer_cls_name)(parameters, lr=lr, **args)
+    if cfg.checkpoint is not None:
+        optimizer.load_state_dict(
+            torch.load(cfg.checkpoint, map_location="cpu", weights_only=False)
+        )
+
+    return optimizer

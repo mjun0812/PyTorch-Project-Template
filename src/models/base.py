@@ -1,6 +1,7 @@
 from torch import nn
 
 from ..config import ModelConfig
+from ..dataloaders import DatasetOutput
 from ..types import PhaseStr
 from .losses import build_loss
 from .types import ModelOutput
@@ -16,16 +17,16 @@ class BaseModel(nn.Module):
         if self.phase in ["train", "val"]:
             self.loss = build_loss(self.cfg.loss)
 
-    def train_forward(self, data: dict) -> ModelOutput:
+    def train_forward(self, data: DatasetOutput) -> ModelOutput:
         raise NotImplementedError
 
-    def val_forward(self, data: dict) -> ModelOutput:
+    def val_forward(self, data: DatasetOutput) -> ModelOutput:
         raise NotImplementedError
 
-    def test_forward(self, data: dict) -> ModelOutput:
+    def test_forward(self, data: DatasetOutput) -> ModelOutput:
         raise NotImplementedError
 
-    def forward(self, data: dict) -> ModelOutput:
+    def forward(self, data: DatasetOutput) -> ModelOutput:
         if self.phase == "train":
             return self.train_forward(data)
         elif self.phase == "val":

@@ -4,12 +4,14 @@
 # Licensed under The MIT License [see LICENSE for details]
 # --------------------------------------------------------
 
-from typing import Any
+from typing import Any, Literal
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import Tensor, nn
 from torch.utils import checkpoint
+
+from ..layers import ActivationNames, build_activation_layer
 
 try:
     from timm.layers import DropPath, trunc_normal_
@@ -21,7 +23,7 @@ class to_channels_first(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return x.permute(0, 3, 1, 2)
 
 
@@ -29,15 +31,15 @@ class to_channels_last(nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return x.permute(0, 2, 3, 1)
 
 
 def build_norm_layer(
     dim: int,
-    norm_layer: str,
-    in_format: str = "channels_last",
-    out_format: str = "channels_last",
+    norm_layer: Literal["BN", "LN"],
+    in_format: Literal["channels_last", "channels_first"] = "channels_last",
+    out_format: Literal["channels_last", "channels_first"] = "channels_last",
     eps: float = 1e-6,
 ) -> nn.Sequential:
     layers = []
@@ -53,20 +55,7 @@ def build_norm_layer(
         layers.append(nn.LayerNorm(dim, eps=eps))
         if out_format == "channels_first":
             layers.append(to_channels_first())
-    else:
-        raise NotImplementedError(f"build_norm_layer does not support {norm_layer}")
     return nn.Sequential(*layers)
-
-
-def build_act_layer(act_layer: str) -> nn.Module:
-    if act_layer == "ReLU":
-        return nn.ReLU(inplace=True)
-    elif act_layer == "SiLU":
-        return nn.SiLU(inplace=True)
-    elif act_layer == "GELU":
-        return nn.GELU()
-
-    raise NotImplementedError(f"build_act_layer does not support {act_layer}")
 
 
 class CrossAttention(nn.Module):
@@ -254,7 +243,7 @@ class StemLayer(nn.Module):
         self,
         in_chans: int = 3,
         out_chans: int = 96,
-        act_layer: str = "GELU",
+        act_layer: ActivationNames = "GELU",
         norm_layer: str = "BN",
     ) -> None:
         super().__init__()
@@ -262,7 +251,7 @@ class StemLayer(nn.Module):
         self.norm1 = build_norm_layer(
             out_chans // 2, norm_layer, "channels_first", "channels_first"
         )
-        self.act = build_act_layer(act_layer)
+        self.act = build_activation_layer(act_layer, inplace=True)
         self.conv2 = nn.Conv2d(out_chans // 2, out_chans, kernel_size=3, stride=2, padding=1)
         self.norm2 = build_norm_layer(out_chans, norm_layer, "channels_first", "channels_last")
 
@@ -312,14 +301,14 @@ class MLPLayer(nn.Module):
         in_features: int,
         hidden_features: int | None = None,
         out_features: int | None = None,
-        act_layer: str = "GELU",
+        act_layer: ActivationNames = "GELU",
         drop: float = 0.0,
     ) -> None:
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
         self.fc1 = nn.Linear(in_features, hidden_features)
-        self.act = build_act_layer(act_layer)
+        self.act = build_activation_layer(act_layer, inplace=True)
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
 
@@ -358,7 +347,7 @@ class InternImageLayer(nn.Module):
         mlp_ratio: float = 4.0,
         drop: float = 0.0,
         drop_path: float = 0.0,
-        act_layer: str = "GELU",
+        act_layer: ActivationNames = "GELU",
         norm_layer: str = "LN",
         post_norm: bool = False,
         layer_scale: float | None = None,
@@ -465,7 +454,7 @@ class InternImageBlock(nn.Module):
         mlp_ratio: float = 4.0,
         drop: float = 0.0,
         drop_path: float | list[float] = 0.0,
-        act_layer: str = "GELU",
+        act_layer: ActivationNames = "GELU",
         norm_layer: str = "LN",
         post_norm: bool = False,
         offset_scale: float = 1.0,
@@ -576,7 +565,7 @@ class InternImage(nn.Module):
         drop_rate: float = 0.0,
         drop_path_rate: float = 0.2,
         drop_path_type: str = "linear",
-        act_layer: str = "GELU",
+        act_layer: ActivationNames = "GELU",
         norm_layer: str = "LN",
         layer_scale: float | None = None,
         offset_scale: float = 1.0,
@@ -681,7 +670,7 @@ class InternImage(nn.Module):
                         "channels_first",
                         "channels_first",
                     ),
-                    build_act_layer(act_layer),
+                    build_activation_layer(act_layer, inplace=True),
                 )
                 self.head = (
                     nn.Linear(int(self.num_features * cls_scale), num_classes)

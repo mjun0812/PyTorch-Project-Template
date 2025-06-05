@@ -1,13 +1,14 @@
 epoch_scheduler:
-  name: CosineLRScheduler_timm
-  class_name: cosine_timm
+  name: timm_CosineLRScheduler
+  class_name: timm_CosineLRScheduler
   checkpoint: null
   args:
-    min_lr: 1e-6
-    warmup_epochs: 5
-    warmup_lr: 1e-4
+    t_initial: ${epoch}
+    lr_min: 1e-6
+    warmup_t: 5
+    warmup_lr_init: 1e-4
     cycle_decay: 0.1
-    noise: [0.8, 0.9]
+    noise_range_t: [0.8, 0.9]
     # warmup終了時の学習率をlrと同じにする
     warmup_prefix: false
     cycle_limit: 1

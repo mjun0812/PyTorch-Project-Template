@@ -5,6 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from ...utils import filter_kwargs
+
 ActivationNames = Literal[
     "ReLU", "GELU", "GLU", "PReLU", "SELU", "Swish", "MemoryEfficientSwish", "SiLU"
 ]
@@ -43,39 +45,34 @@ class MemoryEfficientSwish(nn.Module):
 
 
 def get_activation_fn(activation: ActivationNames) -> Callable[[torch.Tensor], torch.Tensor]:
-    """Return an activation function given a string"""
-    if activation == "ReLU":
-        return F.relu
-    elif activation == "GELU":
-        return F.gelu
-    elif activation == "GLU":
-        return F.glu
-    elif activation == "PReLU":
-        return F.prelu
-    elif activation == "SELU":
-        return F.selu
-    elif activation == "Swish":
-        return swish_fn
-    elif activation == "MemoryEfficientSwish":
-        return memory_efficient_swish_fn
-    elif activation == "SiLU":
-        return F.silu
+    activation_fns = {
+        "ReLU": F.relu,
+        "GELU": F.gelu,
+        "GLU": F.glu,
+        "PReLU": F.prelu,
+        "SELU": F.selu,
+        "Swish": swish_fn,
+        "MemoryEfficientSwish": memory_efficient_swish_fn,
+        "SiLU": F.silu,
+    }
+    return activation_fns[activation]
 
 
 def get_activation_layer(activation: ActivationNames) -> type[nn.Module]:
-    if activation == "ReLU":
-        return nn.ReLU
-    elif activation == "GELU":
-        return nn.GELU
-    elif activation == "GLU":
-        return nn.GLU
-    elif activation == "PReLU":
-        return nn.PReLU
-    elif activation == "SELU":
-        return nn.SELU
-    elif activation == "Swish":
-        return Swish
-    elif activation == "MemoryEfficientSwish":
-        return MemoryEfficientSwish
-    elif activation == "SiLU":
-        return nn.SiLU
+    activation_classes = {
+        "ReLU": nn.ReLU,
+        "GELU": nn.GELU,
+        "GLU": nn.GLU,
+        "PReLU": nn.PReLU,
+        "SELU": nn.SELU,
+        "Swish": Swish,
+        "MemoryEfficientSwish": MemoryEfficientSwish,
+        "SiLU": nn.SiLU,
+    }
+    return activation_classes[activation]
+
+
+def build_activation_layer(activation: ActivationNames, **kwargs: Any) -> nn.Module:
+    cls = get_activation_layer(activation)
+    filtered_kwargs = filter_kwargs(cls, kwargs)
+    return cls(**filtered_kwargs)

@@ -122,5 +122,5 @@ class ConfigManager:
             return json.dumps(OmegaConf.to_object(text), indent=4, sort_keys=False)
 
     @staticmethod
-    def to_object(cfg: DictConfig) -> Any:
+    def to_object(cfg: DictConfig) -> object:
         return OmegaConf.to_container(cfg, resolve=True)

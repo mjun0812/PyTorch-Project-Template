@@ -1,45 +1,16 @@
-from functools import partial
 from typing import Any, Literal
 
 import torch
 from torch import nn
 
-NormLayerTypes = Literal[
+from ...utils import filter_kwargs
+
+NormLayerNames = Literal[
     "BatchNorm2d", "GroupNorm", "InstanceNorm2d", "LayerNorm", "FrozenBatchNorm2d", "Identity"
 ]
 
 
-def get_norm_layer(norm_type: NormLayerTypes, **kwargs: Any) -> type[nn.Module]:
-    if norm_type == "BatchNorm2d":
-        return nn.BatchNorm2d
-    elif norm_type == "GroupNorm":
-        return partial(nn.GroupNorm, **kwargs)
-    elif norm_type == "InstanceNorm2d":
-        return nn.InstanceNorm2d
-    elif norm_type == "LayerNorm":
-        return nn.LayerNorm
-    elif norm_type == "FrozenBatchNorm2d":
-        return FrozenBatchNorm2d
-    elif norm_type == "Identity":
-        return nn.Identity
-
-
-def build_norm_layer(input_dim: int, norm_type: NormLayerTypes, **kwargs: Any) -> nn.Module:
-    if norm_type == "BatchNorm2d":
-        return nn.BatchNorm2d(input_dim, **kwargs)
-    elif norm_type == "GroupNorm":
-        return nn.GroupNorm(num_channels=input_dim, **kwargs)
-    elif norm_type == "InstanceNorm2d":
-        return nn.InstanceNorm2d(input_dim, **kwargs)
-    elif norm_type == "LayerNorm":
-        return nn.LayerNorm(input_dim, **kwargs)
-    elif norm_type == "FrozenBatchNorm2d":
-        return FrozenBatchNorm2d(input_dim, **kwargs)
-    elif norm_type == "Identity" or norm_type is None:
-        return nn.Identity()
-
-
-class FrozenBatchNorm2d(torch.nn.Module):
+class FrozenBatchNorm2d(nn.Module):
     """
     BatchNorm2d where the batch statistics and the affine parameters are fixed.
 
@@ -85,11 +56,19 @@ class FrozenBatchNorm2d(torch.nn.Module):
         return x * scale + bias
 
 
-NormLayers = [
-    nn.BatchNorm2d,
-    nn.GroupNorm,
-    nn.InstanceNorm2d,
-    nn.LayerNorm,
-    FrozenBatchNorm2d,
-    nn.Identity,
-]
+def get_norm_layer(norm_type: NormLayerNames) -> nn.Module:
+    norm_classes = {
+        "BatchNorm2d": nn.BatchNorm2d,
+        "GroupNorm": nn.GroupNorm,
+        "InstanceNorm2d": nn.InstanceNorm2d,
+        "LayerNorm": nn.LayerNorm,
+        "FrozenBatchNorm2d": FrozenBatchNorm2d,
+        "Identity": nn.Identity,
+    }
+    return norm_classes[norm_type]
+
+
+def build_norm_layer(norm_type: NormLayerNames, **kwargs: Any) -> nn.Module:
+    cls = get_norm_layer(norm_type)
+    filtered_kwargs = filter_kwargs(cls, kwargs)
+    return cls(**filtered_kwargs)

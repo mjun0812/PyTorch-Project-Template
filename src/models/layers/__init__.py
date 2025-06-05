@@ -2,6 +2,7 @@ from .activation import (
     ActivationNames,
     MemoryEfficientSwish,
     Swish,
+    build_activation_layer,
     get_activation_fn,
     get_activation_layer,
     swish_fn,
@@ -12,7 +13,7 @@ from .dcnv3 import DCNv3_pytorch
 from .init_weights import fan_in_out, glorot_uniform, variance_scaling
 from .norm import (
     FrozenBatchNorm2d,
-    NormLayerTypes,
+    NormLayerNames,
     build_norm_layer,
     get_norm_layer,
 )

@@ -86,7 +86,7 @@ python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
 python script/aggregate_mlflow.py [dataset_name or all]
 
 # Check Registered Modules
-python script/show_options.py
+python script/show_registers.py
 ```
 
 ### Config management

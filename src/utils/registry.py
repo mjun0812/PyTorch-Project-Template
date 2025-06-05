@@ -51,30 +51,37 @@ class Registry:
         )
         self._obj_map[name] = obj
 
-    def register(self, obj: object | None = None) -> object | None:
-        """Register the given object under the the name `obj.__name__`.
+    def register(self, obj: object | None = None, name: str | None = None) -> object | None:
+        """Register the given object under the the name `obj.__name__` or `name`.
 
         Can be used as either a decorator or not. See docstring of
         this class for usage.
 
         Args:
             obj (object, optional): Object to register. Defaults to None.
+            name (str, optional): Name to register the object under. Defaults to None.
 
         Returns:
             object: Registered Object
         """
         if obj is None:
             # used as a decorator
-            def deco(func_or_class: object) -> object:
-                name = func_or_class.__name__  # pyre-ignore
-                self._do_register(name, func_or_class)
+            def deco(func_or_class: object, name: str | None = None) -> object:
+                if name is None:
+                    register_name = func_or_class.__name__  # pyre-ignore
+                else:
+                    register_name = name
+                self._do_register(register_name, func_or_class)
                 return func_or_class
 
             return deco
 
         # used as a function call
-        name = obj.__name__  # pyre-ignore
-        self._do_register(name, obj)
+        if name is None:
+            register_name = obj.__name__  # pyre-ignore
+        else:
+            register_name = name
+        self._do_register(register_name, obj)
 
     def get(self, name: str) -> object:
         """Get object from Registry

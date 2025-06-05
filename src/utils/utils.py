@@ -1,5 +1,6 @@
 import datetime
 import importlib
+import inspect
 import json
 import os
 import subprocess
@@ -262,3 +263,17 @@ def get_free_shm_size() -> int:
     stats = os.statvfs("/dev/shm")
     free_shm_bytes = stats.f_bsize * stats.f_bavail
     return free_shm_bytes
+
+
+def filter_kwargs(cls: type, kwargs: dict[str, Any]) -> dict[str, Any]:
+    """クラスの__init__メソッドに必要な引数だけをkwargsから抽出する"""
+    # クラスの__init__メソッドのシグネチャを取得
+    sig = inspect.signature(cls.__init__)
+
+    # 有効なパラメータ名を取得（selfを除く）
+    valid_params = set(sig.parameters.keys()) - {"self"}
+
+    # kwargsから有効なパラメータのみを抽出
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_params}
+
+    return filtered_kwargs

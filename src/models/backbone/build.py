@@ -64,21 +64,17 @@ def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
     elif model_name.startswith("torchvision_"):
         model_name = model_name.replace("torchvision_", "")
 
-        # 重みの設定をシンプルに
         weights = "DEFAULT" if cfg.pretrained and cfg.pretrained_weight is None else None
 
-        # チャネル数をディクショナリで定義
         resnet_channels = {
             "resnet18": [32, 64, 128, 256, 512],
             "resnet34": [32, 64, 128, 256, 512],
         }.get(model_name, [128, 256, 512, 1024, 2048])
 
-        # return_layersとbackbone_num_channelsを一度に構築
         use_backbone_features = args.pop("out_indices", [])
         return_layers = {f"layer{idx}": str(i) for i, idx in enumerate(use_backbone_features)}
         backbone_num_channels = [resnet_channels[idx] for idx in use_backbone_features]
 
-        # バックボーンを取得して返す
         norm_layer = FrozenBatchNorm2d if cfg.freeze else None
         backbone = getattr(torchvision.models, model_name)(
             weights=weights, norm_layer=norm_layer, **args

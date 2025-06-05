@@ -1,0 +1,9 @@
+epoch_scheduler:
+  name: timm_PolyLRScheduler
+  class_name: timm_PolyLRScheduler
+  checkpoint: null
+  args:
+    t_initial: ${epoch}
+    lr_min: 1e-6
+    k_decay: 1.0
+iter_scheduler: null

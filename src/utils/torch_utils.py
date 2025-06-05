@@ -2,11 +2,12 @@ import os
 import random
 import time
 from collections import OrderedDict
+from logging import Logger
 from pathlib import Path
 
 import numpy as np
 import torch
-from loguru import Logger, logger
+from loguru import logger
 from torch import distributed as dist
 from torch.backends import cudnn
 from torch.nn.parallel import DistributedDataParallel

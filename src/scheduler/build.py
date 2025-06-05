@@ -1,7 +1,4 @@
-from copy import deepcopy
-
 import torch
-from timm.scheduler import create_scheduler_v2
 from torch import optim
 from torch.optim.lr_scheduler import _LRScheduler
 
@@ -30,7 +27,7 @@ def get_lr_scheduler(
 ) -> _LRScheduler:
     args = cfg.args
     if args and not isinstance(args, dict):
-        args = ConfigManager.to_object(deepcopy(args))
+        args = ConfigManager.to_object(args)
     elif args is None:
         args = {}
 
@@ -67,12 +64,7 @@ def get_lr_scheduler(
             schedulers.append(get_lr_scheduler(optimizer, s, num_loop))
         args["schedulers"] = schedulers
 
-    if "timm" in cfg.class_name:
-        scheduler, _ = create_scheduler_v2(
-            optimizer=optimizer, sched=cfg.class_name.replace("_timm", ""), **args
-        )
-    else:
-        scheduler = SCHEDULER_REGISTRY.get(cfg.class_name)(optimizer=optimizer, **args)
+    scheduler = SCHEDULER_REGISTRY.get(cfg.class_name)(optimizer=optimizer, **args)
 
     if cfg.checkpoint is not None:
         scheduler.load_state_dict(
