@@ -38,7 +38,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && uv sync --locked --no-install-project
 COPY . .
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+    uv sync --locked
 
 FROM $RUNNER_IMAGE AS production
 

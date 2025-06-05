@@ -76,7 +76,8 @@ select = [
     "I",   # isort
     "UP",  # pyupgrade
     "RUF", # ruff specific rules
-    # "PTH", # use `pathlib.Path` instead of `os.path`
+    "PTH", # use `pathlib.Path` instead of `os.path`
+    "ANN", # type annotation
 ]
 ignore = [
     "B007",   # Unused loop variable

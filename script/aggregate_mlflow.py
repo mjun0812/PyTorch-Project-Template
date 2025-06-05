@@ -102,11 +102,11 @@ def main():
         model = run.data.params.get("Model", "")
         result = dict(name=name, model=model)
 
-        local_config_path = f"./.tmp/{run.data.tags['mlflow.runName']}_config.yaml"
-        local_result_path = f"./.tmp/{run.data.tags['mlflow.runName']}_result.json"
+        local_config_path = Path(f"./.tmp/{run.data.tags['mlflow.runName']}_config.yaml")
+        local_result_path = Path(f"./.tmp/{run.data.tags['mlflow.runName']}_result.json")
 
         # load config from mlflow artifact or cache
-        if os.path.isfile(local_config_path) and os.path.isfile(local_result_path):
+        if local_config_path.is_file() and local_result_path.is_file():
             with open(local_config_path) as f:
                 config = yaml.safe_load(f)
             if run.info.status != config["mlflow_status"]:

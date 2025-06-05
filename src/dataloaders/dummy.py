@@ -26,8 +26,8 @@ class DummyDataset(BaseDataset):
         self.transforms = transforms
         self.cache = cache
 
-    def __len__(self):
+    def __len__(self) -> int:
         return 32
 
-    def __getitem__(self, idx) -> DatasetOutput:
+    def __getitem__(self, idx: int) -> DatasetOutput:
         return DatasetOutput(data=torch.ones(8), label=idx % 4)

@@ -21,7 +21,9 @@ from src.utils import (
 )
 
 
-def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logger: Logger):
+def do_test(cfg: ExperimentConfig, output_dir: Path | str, device: torch.device, logger: Logger):
+    output_dir = Path(output_dir)
+
     logger.info("Loading Dataset...")
     transform = build_transforms(cfg.dataset.test.transforms)
     if cfg.dataset.test.batch_transforms is not None:
@@ -70,7 +72,7 @@ def do_test(cfg: ExperimentConfig, output_dir: Path, device: torch.device, logge
         if isinstance(value, torch.Tensor) and value.dim() == 0:
             metrics[name] = value.item()
     logger.log_metrics(metrics, None, "test")
-    with open(os.path.join(output_dir, "result.json"), "w") as f:
+    with open(output_dir / "result.json", "w") as f:
         json.dump(metrics, f, indent=2, cls=JsonEncoder)
 
     tester.save_results(output_dir, results.targets, results.results)

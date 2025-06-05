@@ -9,24 +9,28 @@ from tabulate import tabulate
 
 class Registry:
     """The registry that provides name -> object mapping,
-
     to support third-party users' custom modules.
-
     To create a registry (e.g. a backbone registry):
+
     ```python
     BACKBONE_REGISTRY = Registry('BACKBONE')
     ```
 
     To register an object:
+
     ```python
     @BACKBONE_REGISTRY.register()
     class MyBackbone():
     ```
+
     or
+
     ```python
     BACKBONE_REGISTRY.register(MyBackbone)
+    ```
 
     To get an object from registry
+
     ```python
     BACKBONE_REGISTRY.get("MyBackbone")
     ```
@@ -47,7 +51,7 @@ class Registry:
         ), f"An object named '{name}' was already registered in '{self._name}' registry!"
         self._obj_map[name] = obj
 
-    def register(self, obj: object = None) -> object | None:
+    def register(self, obj: object | None = None) -> object | None:
         """Register the given object under the the name `obj.__name__`.
 
         Can be used as either a decorator or not. See docstring of

@@ -1,12 +1,9 @@
 """Dataloaderを回して速度を計測"""
 
-import os
-import sys
 import time
 
 import torch
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.config import ConfigManager, ExperimentConfig
 from src.dataloaders import build_dataset
 

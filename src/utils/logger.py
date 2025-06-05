@@ -252,32 +252,32 @@ class Logger:
         except Exception as e:
             self.logger.warning(f"Failed to {operation_name}: {e}")
 
-    def get_mlflow_run_uri(self) -> str:
+    def get_mlflow_run_uri(self) -> str | None:
         if self.mlflow_logger is None:
             return None
         return self.mlflow_logger.get_run_uri()
 
-    def get_wandb_run_uri(self) -> str:
+    def get_wandb_run_uri(self) -> str | None:
         if self.wandb_logger is None:
             return None
         return self.wandb_logger.get_run_uri()
 
-    def info(self, message):
+    def info(self, message: str):
         self.logger.info(message)
 
-    def warning(self, message):
+    def warning(self, message: str):
         self.logger.warning(message)
 
-    def error(self, message):
+    def error(self, message: str):
         self.logger.error(message)
 
-    def exception(self, message):
+    def exception(self, message: str):
         self.logger.exception(message)
 
-    def critical(self, message):
+    def critical(self, message: str):
         self.logger.critical(message)
 
-    def debug(self, message):
+    def debug(self, message: str):
         self.logger.debug(message)
 
     def log_metric(
@@ -372,7 +372,7 @@ class Logger:
 
         path = Path(path)
 
-        for p in os.listdir(path):
+        for p in path.iterdir():
             target = path / p
 
             if target.is_dir():
@@ -411,7 +411,7 @@ class Logger:
                 log_params[p.name] = value
         self.log_params(log_params)
 
-    def close(self, status="FINISHED"):
+    def close(self, status: str = "FINISHED"):
         if self.mlflow_logger:
             with self._safe_operation("mlflow.end_run"):
                 self.mlflow_logger.close(status)

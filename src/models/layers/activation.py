@@ -14,19 +14,19 @@ def swish_fn(x: torch.Tensor) -> torch.Tensor:
 
 
 class Swish(nn.Module):
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return swish_fn(x)
 
 
 class SwishImplementation(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, i):
+    def forward(ctx, i: torch.Tensor) -> torch.Tensor:
         result = i * torch.sigmoid(i)
         ctx.save_for_backward(i)
         return result
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output: torch.Tensor) -> torch.Tensor:
         i = ctx.saved_variables[0]
         sigmoid_i = torch.sigmoid(i)
         return grad_output * (sigmoid_i * (1 + i * (1 - sigmoid_i)))
@@ -37,7 +37,7 @@ def memory_efficient_swish_fn(x: torch.Tensor) -> torch.Tensor:
 
 
 class MemoryEfficientSwish(nn.Module):
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return memory_efficient_swish_fn(x)
 
 

@@ -7,8 +7,8 @@ class BaseDataset(Dataset):
     def __init__(self, cfg: dict, transforms=None, cache: TensorCache | None = None):
         raise NotImplementedError
 
-    def __len__(self):
+    def __len__(self) -> int:
         raise NotImplementedError
 
-    def __getitem__(self, idx) -> dict:
+    def __getitem__(self, idx: int) -> dict:
         raise NotImplementedError

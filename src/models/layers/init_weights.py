@@ -1,7 +1,9 @@
 import math
 
+import torch
 
-def variance_scaling(w, gain=1, groups=1):
+
+def variance_scaling(w: torch.Tensor, gain: float = 1, groups: int = 1):
     fan_in, _ = fan_in_out(w, groups)
     gain /= max(1.0, fan_in)  # fan in
     # gain /= max(1., (fan_in + fan_out) / 2.)  # fan
@@ -14,7 +16,7 @@ def variance_scaling(w, gain=1, groups=1):
     w.data.normal_(std=std)
 
 
-def fan_in_out(w, groups=1):
+def fan_in_out(w: torch.Tensor, groups: int = 1) -> tuple[int, int]:
     dimensions = w.dim()
     if dimensions < 2:
         raise ValueError(
@@ -31,7 +33,7 @@ def fan_in_out(w, groups=1):
     return fan_in, fan_out
 
 
-def glorot_uniform(w, gain=1, groups=1):
+def glorot_uniform(w: torch.Tensor, gain: float = 1, groups: int = 1):
     fan_in, fan_out = fan_in_out(w, groups)
     gain /= max(1.0, (fan_in + fan_out) / 2.0)  # fan avg
     limit = math.sqrt(3.0 * gain)

@@ -48,7 +48,7 @@ def fix_seed(seed: int) -> int:
     return seed
 
 
-def time_synchronized() -> time:
+def time_synchronized() -> float:
     """Return time at synhronized CUDA and CPU.
 
     CUDAとCPUの計算が非同期なため，同期してから時間計算する．
@@ -63,14 +63,14 @@ def time_synchronized() -> time:
 
 
 def set_device(
-    global_gpu_index,
-    rank=-1,
-    is_cpu=False,
-    use_cudnn=True,
-    cudnn_deterministic=False,
-    allow_tf32=False,
-    pci_device_order=True,
-    verbose=True,
+    global_gpu_index: int,
+    rank: int = -1,
+    is_cpu: bool = False,
+    use_cudnn: bool = True,
+    cudnn_deterministic: bool = False,
+    allow_tf32: bool = False,
+    pci_device_order: bool = True,
+    verbose: bool = True,
 ) -> torch.device:
     """Set use GPU or CPU Device
 
@@ -118,7 +118,7 @@ def set_device(
     return device
 
 
-def cuda_info(global_cuda_index=0, logger=None):
+def cuda_info(global_cuda_index: int = 0, logger=None):
     """Show using GPU Info
 
     Args:
@@ -134,7 +134,7 @@ def cuda_info(global_cuda_index=0, logger=None):
             print(infostr)
 
 
-def is_distributed():
+def is_distributed() -> bool:
     return dist.is_initialized()
 
 
@@ -168,7 +168,7 @@ def is_multi_node() -> bool:
     return is_distributed() and (get_local_size() != get_world_size())
 
 
-def reduce_tensor(tensor, n=1) -> torch.Tensor:
+def reduce_tensor(tensor: torch.Tensor, n: int = 1) -> torch.Tensor:
     """分散学習時に，指定したtensorを各プロセスから集めて総和を取る
 
     Args:
@@ -242,7 +242,7 @@ def remove_parallel_prefix_from_weight(state_dict: OrderedDict) -> OrderedDict:
     return state_dict
 
 
-def load_model_weight(weight_path: str, model: torch.nn.Module):
+def load_model_weight(weight_path: str | PathLike, model: torch.nn.Module):
     """Load PreTrained or Continued Model
 
     Args:
@@ -313,7 +313,7 @@ def save_model_info(
     input_size: list[int] | None = None,
     input_data: list[torch.Tensor] | None = None,
     prefix: str = "",
-):
+) -> str:
     """Output PyTorch Model Summary to log.
 
     Args:
@@ -341,7 +341,8 @@ def save_model_info(
         model_summary = str(summary(model, device=device, verbose=0))
 
     # Model Summary
-    with open(os.path.join(output_dir, f"model_summary{prefix}.log"), "a") as f:
-        print(model, file=f)
-        print(model_summary, file=f)
+    if output_dir is not None:
+        with open(Path(output_dir) / f"model_summary{prefix}.log", "a") as f:
+            print(model, file=f)
+            print(model_summary, file=f)
     return model_summary
