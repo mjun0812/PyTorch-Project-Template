@@ -1,8 +1,5 @@
-import cv2
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from src.config import ConfigManager, ExperimentConfig
 from src.optimizer import build_optimizer
@@ -14,7 +11,7 @@ def main(cfg: ExperimentConfig) -> None:
     dummy_model = torch.nn.Linear(1, 1)
     optimizer = build_optimizer(cfg.optimizer, dummy_model)
     iter_lr_scheduler, epoch_lr_scheduler = build_lr_scheduler(
-        cfg.lr_scheduler, optimizer, cfg.epoch, cfg.max_iter, cfg.max_iter
+        cfg.lr_scheduler, optimizer, cfg.epoch, cfg.max_iter
     )
 
     print(cfg.optimizer)
@@ -44,15 +41,7 @@ def main(cfg: ExperimentConfig) -> None:
     ax1.set_xlabel("epoch")
     ax1.set_ylabel("lr")
 
-    canvas = FigureCanvasAgg(fig)
-    canvas.draw()
-    img = np.array(canvas.renderer.buffer_rgba())
-    img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
-
-    # OpenCVでグラフを表示
-    cv2.imshow("Learning Rate Schedule", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    plt.show()
 
 
 if __name__ == "__main__":

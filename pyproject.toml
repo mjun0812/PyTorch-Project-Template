@@ -67,17 +67,17 @@ exclude = [".git", ".ruff_cache", ".venv", ".vscode", "dataset", "result"]
 [tool.ruff.lint]
 preview = true
 select = [
+    "ANN", # type annotation
+    "B",   # flake8-bugbear
     "D",   # pydocstyle
     "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
     "F",   # pyflakes
-    "B",   # flake8-bugbear
-    "SIM", # flake8-simplify
     "I",   # isort
-    "UP",  # pyupgrade
-    "RUF", # ruff specific rules
     "PTH", # use `pathlib.Path` instead of `os.path`
-    "ANN", # type annotation
+    "RUF", # ruff specific rules
+    "SIM", # flake8-simplify
+    "UP",  # pyupgrade
+    "W",   # pycodestyle warnings
 ]
 ignore = [
     "ANN401", # Checks that function arguments are annotated with a more specific type than Any.

@@ -25,11 +25,6 @@ from ..config import ExperimentConfig, LogParamsConfig
 from ..types import PathLike, PhaseStr
 from .utils import get_cmd, get_git_hash
 
-matplotlib.use("Agg")
-# 論文用にFontを変更する
-font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
-plt.rcParams.update({"font.family": "Times New Roman", "font.size": 18})
-
 load_dotenv()
 
 
@@ -141,6 +136,11 @@ class MetricLogger:
         return fig
 
     def log_history_figure(self, output_dir: PathLike) -> None:
+        matplotlib.use("Agg")
+        # 論文用にFontを変更する
+        font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
+        plt.rcParams.update({"font.family": "Times New Roman", "font.size": 18})
+
         metrics_names = list(self.histories.keys())
         output_dir = Path(output_dir)
 

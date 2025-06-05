@@ -10,16 +10,14 @@ from types import ModuleType
 from typing import Any
 
 import matplotlib
+import matplotlib.font_manager as font_manager
+import matplotlib.pyplot as plt
 import numpy as np
 import requests
 import torch
 from dotenv import load_dotenv
 
 from ..types import PathLike
-
-matplotlib.use("Agg")
-import matplotlib.font_manager as font_manager
-import matplotlib.pyplot as plt
 
 
 def get_git_hash() -> str:
@@ -107,6 +105,8 @@ def make_result_dirs(base_path: PathLike, prefix: str = "") -> Path:
 
 
 def plot_graph(title: str, labels: list[str], data: list, output_dir: PathLike) -> None:
+    matplotlib.use("Agg")
+
     plt.gcf().clear()
 
     # 論文用にFontを変更する
@@ -121,8 +121,10 @@ def plot_graph(title: str, labels: list[str], data: list, output_dir: PathLike) 
 
 
 def plot_multi_graph(filename: str, titles: list[str], data: dict, dpi: int = 300) -> None:
+    matplotlib.use("Agg")
     font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
     plt.rcParams.update({"font.family": "Times New Roman", "font.size": 10})
+
     col = len(titles)
     # 比率が合わないときはfigsizeをいじる
     _, axs = plt.subplots(1, col, figsize=(col * 5, 5))
