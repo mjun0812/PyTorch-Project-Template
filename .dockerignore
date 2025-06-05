@@ -3,3 +3,5 @@ outputs
 model_zoo
 dataset
 **/.venv
+.cache
+.ruff_cache

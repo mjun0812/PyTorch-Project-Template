@@ -2,11 +2,13 @@
 	"name": "pytorch-project",
 	"image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 	"containerEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}",
 		"PYTHONUNBUFFERED": "1",
+		"PYTHONDONTWRITEBYTECODE": "1",
+		"UV_CACHE_DIR": "${containerWorkspaceFolder}/.cache/uv",
 		"UV_LINK_MODE": "copy",
 		"UV_PROJECT_ENVIRONMENT": "/home/vscode/.venv",
-		"UV_CACHE_DIR": "${containerWorkspaceFolder}/.cache/uv",
-		"DISPLAY": "dummy"
+		"UV_COMPILE_BYTECODE": "1"
 	},
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {},
@@ -29,6 +31,9 @@
 	},
 	"customizations": {
 		"vscode": {
+			"settings": {
+				"python.defaultInterpreterPath": "/home/vscode/.venv/bin/python"
+			},
 			"extensions": [
 				"ms-python.python",
 				"charliermarsh.ruff",
@@ -39,5 +44,6 @@
 			]
 		}
 	},
-	"postCreateCommand": "uv sync --frozen"
+	"postCreateCommand": "uv sync --frozen",
+	"postStartCommand": "uv run pre-commit install"
 }

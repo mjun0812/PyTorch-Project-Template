@@ -5,8 +5,8 @@ description = ""
 authors = [{ name = "Junya Morioka", email = "mjun@mjunya.com" }]
 requires-python = ">=3.11"
 dependencies = [
-    "torch==2.7.0",
-    "torchvision==0.22.0",
+    "torch==2.7.1",
+    "torchvision==0.22.1",
     "mlflow>=2.20.3",
     "torchmetrics>=1.4.1",
     "tqdm>=4.66.5",
@@ -41,12 +41,12 @@ dev-dependencies = ["pre-commit>=4.2.0", "pytest>=8.3.2", "ruff>=0.6.2"]
 
 [tool.uv.sources]
 torch = [
-    { index = "torch-cuda", marker = "sys_platform == 'linux'" },
-    { index = "torch-cpu", marker = "sys_platform == 'darwin'" },
+    { index = "torch-cuda", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
+    { index = "torch-cpu", marker = "sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')" },
 ]
 torchvision = [
-    { index = "torch-cuda", marker = "sys_platform == 'linux'" },
-    { index = "torch-cpu", marker = "sys_platform == 'darwin'" },
+    { index = "torch-cuda", marker = "sys_platform == 'linux' and platform_machine == 'x86_64'" },
+    { index = "torch-cpu", marker = "sys_platform == 'darwin' or (sys_platform == 'linux' and platform_machine == 'aarch64')" },
 ]
 
 [[tool.uv.index]]
