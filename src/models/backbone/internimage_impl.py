@@ -4,6 +4,8 @@
 # Licensed under The MIT License [see LICENSE for details]
 # --------------------------------------------------------
 
+from typing import Any
+
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -16,7 +18,7 @@ except ImportError:
 
 
 class to_channels_first(nn.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
     def forward(self, x):

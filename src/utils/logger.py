@@ -54,31 +54,31 @@ class MlflowLogger:
             tracking_uri = mlflow.get_tracking_uri()
             return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
 
-    def log_metric(self, name: str, metric: int | float | Tensor, step: int):
+    def log_metric(self, name: str, metric: int | float | Tensor, step: int) -> None:
         mlflow.log_metric(name, metric, step)
 
-    def log_metrics(self, metrics: dict, step: int):
+    def log_metrics(self, metrics: dict, step: int) -> None:
         mlflow.log_metrics(metrics, step)
 
-    def log_params(self, parameters: dict):
+    def log_params(self, parameters: dict) -> None:
         mlflow.log_params(parameters)
 
-    def log_tag(self, key: str, value: str):
+    def log_tag(self, key: str, value: str) -> None:
         mlflow.set_tag(key, value)
 
-    def log_artifact(self, path: str | Path):
+    def log_artifact(self, path: str | Path) -> None:
         mlflow.log_artifact(str(path))
 
-    def log_figure(self, fig: matplotlib.figure.Figure, path: str | Path):
+    def log_figure(self, fig: matplotlib.figure.Figure, path: str | Path) -> None:
         mlflow.log_figure(fig, str(path))
 
-    def log_artifacts(self, path: str | Path):
+    def log_artifacts(self, path: str | Path) -> None:
         mlflow.log_artifacts(str(path))
 
-    def log_table(self, dict_data):
+    def log_table(self, dict_data) -> None:
         mlflow.log_table(data=dict_data)
 
-    def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED"):
+    def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED") -> None:
         mlflow.end_run(status=status)
 
 
@@ -94,19 +94,19 @@ class WandbLogger:
     def get_run_uri(self) -> str:
         return self.run.get_url()
 
-    def log_metric(self, name: str, metric: int | float | Tensor, step: int):
+    def log_metric(self, name: str, metric: int | float | Tensor, step: int) -> None:
         wandb.log({name: metric}, step=step)
 
-    def log_metrics(self, metrics: dict, step: int):
+    def log_metrics(self, metrics: dict, step: int) -> None:
         wandb.log(metrics, step=step)
 
-    def log_params(self, parameters: dict):
+    def log_params(self, parameters: dict) -> None:
         wandb.config.update(parameters)
 
-    def log_tag(self, key: str, value: str):
+    def log_tag(self, key: str, value: str) -> None:
         wandb.run.tags.append(value)
 
-    def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED"):
+    def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED") -> None:
         wandb.finish(exit_code=0 if status == "FINISHED" else 1)
 
 
@@ -118,10 +118,10 @@ class MetricLogger:
     def __init__(self) -> None:
         self.histories = defaultdict(lambda: defaultdict(list))
 
-    def log_metric(self, metric_name: str, metric: int | float | str, phase: PhaseStr):
+    def log_metric(self, metric_name: str, metric: int | float | str, phase: PhaseStr) -> None:
         self.histories[metric_name][phase].append(metric)
 
-    def log_metrics(self, metrics: dict[str, int | float | str], phase: PhaseStr):
+    def log_metrics(self, metrics: dict[str, int | float | str], phase: PhaseStr) -> None:
         for name, value in metrics.items():
             self.log_metric(phase, name, value)
 
@@ -137,7 +137,7 @@ class MetricLogger:
         ax.set_xlim(0, len(data[0]))
         return fig
 
-    def log_history_figure(self, output_dir: PathLike):
+    def log_history_figure(self, output_dir: PathLike) -> None:
         metrics_names = list(self.histories.keys())
         output_dir = Path(output_dir)
 
@@ -262,22 +262,22 @@ class Logger:
             return None
         return self.wandb_logger.get_run_uri()
 
-    def info(self, message: str):
+    def info(self, message: str) -> None:
         self.logger.info(message)
 
-    def warning(self, message: str):
+    def warning(self, message: str) -> None:
         self.logger.warning(message)
 
-    def error(self, message: str):
+    def error(self, message: str) -> None:
         self.logger.error(message)
 
-    def exception(self, message: str):
+    def exception(self, message: str) -> None:
         self.logger.exception(message)
 
-    def critical(self, message: str):
+    def critical(self, message: str) -> None:
         self.logger.critical(message)
 
-    def debug(self, message: str):
+    def debug(self, message: str) -> None:
         self.logger.debug(message)
 
     def log_metric(
@@ -286,7 +286,7 @@ class Logger:
         metric: int | float | Tensor,
         step: int,
         phase: PhaseStr | None = None,
-    ):
+    ) -> None:
         if phase is None:
             phase = self.phase
         if isinstance(metric, Tensor):
@@ -302,7 +302,7 @@ class Logger:
             with self._safe_operation("wandb.log"):
                 self.wandb_logger.log_metric(f"{phase}/{name}", metric, step)
 
-    def log_metrics(self, metrics: dict, step: int, phase: PhaseStr | None = None):
+    def log_metrics(self, metrics: dict, step: int, phase: PhaseStr | None = None) -> None:
         if phase is None:
             phase = self.phase
 
@@ -326,7 +326,7 @@ class Logger:
             with self._safe_operation("wandb.log"):
                 self.wandb_logger.log_metrics(log_metrics, step)
 
-    def log_params(self, parameters: dict):
+    def log_params(self, parameters: dict) -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_params"):
                 self.mlflow_logger.log_params(parameters)
@@ -334,7 +334,7 @@ class Logger:
             with self._safe_operation("wandb.log_params"):
                 self.wandb_logger.log_params(parameters)
 
-    def log_tag(self, key: str, value: str):
+    def log_tag(self, key: str, value: str) -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_tag"):
                 self.mlflow_logger.log_tag(key, value)
@@ -342,22 +342,22 @@ class Logger:
             with self._safe_operation("wandb.log_tag"):
                 self.wandb_logger.log_tag(key, value)
 
-    def log_figure(self, fig: matplotlib.figure.Figure, path: str | Path):
+    def log_figure(self, fig: matplotlib.figure.Figure, path: str | Path) -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_figure"):
                 self.mlflow_logger.log_figure(fig, str(path))
 
-    def log_artifact(self, path: str | Path):
+    def log_artifact(self, path: str | Path) -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_artifact"):
                 self.mlflow_logger.log_artifact(str(path))
 
-    def log_artifacts(self, path: str | Path):
+    def log_artifacts(self, path: str | Path) -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_artifacts"):
                 self.mlflow_logger.log_artifacts(str(path))
 
-    def log_result_dir(self, path: str | Path, ignore_dirs: list[str] | None = None):
+    def log_result_dir(self, path: str | Path, ignore_dirs: list[str] | None = None) -> None:
         """結果ディレクトリをログに記録する
 
         Args:
@@ -386,12 +386,12 @@ class Logger:
                 with self._safe_operation("mlflow.log_artifact"):
                     self.mlflow_logger.log_artifact(target)
 
-    def log_table(self, dict_data):
+    def log_table(self, dict_data) -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.log_table"):
                 self.mlflow_logger.log_table(data=dict_data)
 
-    def log_history_figure(self, output_dir: PathLike):
+    def log_history_figure(self, output_dir: PathLike) -> None:
         histories = defaultdict_to_dict(self.metric_logger.histories)
         self.logger.info(f"Histories:\n{pformat(histories)}")
         output_dir = Path(output_dir)
@@ -399,7 +399,7 @@ class Logger:
         with self._safe_operation("log_history_figure"):
             self.metric_logger.log_history_figure(output_dir)
 
-    def log_config(self, cfg: ExperimentConfig, params: LogParamsConfig):
+    def log_config(self, cfg: ExperimentConfig, params: LogParamsConfig) -> None:
         log_params = {}
         for p in params:
             value = OmegaConf.select(cfg, p.value)
@@ -411,7 +411,7 @@ class Logger:
                 log_params[p.name] = value
         self.log_params(log_params)
 
-    def close(self, status: str = "FINISHED"):
+    def close(self, status: str = "FINISHED") -> None:
         if self.mlflow_logger:
             with self._safe_operation("mlflow.end_run"):
                 self.mlflow_logger.close(status)

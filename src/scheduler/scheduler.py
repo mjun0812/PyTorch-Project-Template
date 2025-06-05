@@ -78,7 +78,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
                 for base_lr in self.base_lrs
             ]
 
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         if epoch is None:
             epoch = self.last_epoch + 1
             self.step_in_cycle = self.step_in_cycle + 1
@@ -138,7 +138,7 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
         self.last_step = 0
         super().__init__(optimizer)
 
-    def get_lr(self):
+    def get_lr(self) -> list[float]:
         if self.last_step > self.max_decay_steps:
             return [self.end_learning_rate for _ in self.base_lrs]
 
@@ -149,7 +149,7 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
             for base_lr in self.base_lrs
         ]
 
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         if epoch is None:
             epoch = self.last_step + 1
         self.last_step = epoch if epoch != 0 else 1
@@ -166,31 +166,31 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
 
 @SCHEDULER_REGISTRY.register()
 class ReduceLROnPlateau(optim.lr_scheduler.ReduceLROnPlateau):
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         super().step(metric, epoch=None)
 
 
 @SCHEDULER_REGISTRY.register()
 class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts):
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         super().step(epoch=epoch)
 
 
 @SCHEDULER_REGISTRY.register()
 class MultiStepLR(optim.lr_scheduler.MultiStepLR):
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         super().step()
 
 
 @SCHEDULER_REGISTRY.register()
 class StepLR(optim.lr_scheduler.StepLR):
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         super().step()
 
 
 @SCHEDULER_REGISTRY.register()
 class LinearLR(optim.lr_scheduler.LinearLR):
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         super().step()
 
 
@@ -205,7 +205,7 @@ class ChainedScheduler(optim.lr_scheduler.ChainedScheduler):
         self.step_ranges = step_ranges
         super().__init__(schedulers, optimizer)
 
-    def step(self, epoch=None, metric=None):
+    def step(self, epoch=None, metric=None) -> None:
         for scheduler, step_range in zip(self._schedulers, self.step_ranges):
             if step_range and step_range[0] <= epoch < step_range[1]:
                 scheduler.step(epoch=epoch, metric=metric)

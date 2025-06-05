@@ -9,7 +9,7 @@ from src.scheduler import SCHEDULER_REGISTRY
 from src.transform import BATCHED_TRANSFORM_REGISTRY, TRANSFORM_REGISTRY
 
 
-def main():
+def main() -> None:
     blue = "\033[94m"
     reset = "\033[0m"
 

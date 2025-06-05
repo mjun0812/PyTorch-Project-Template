@@ -5,14 +5,14 @@ BYTES_PER_GIB = 1024**3
 
 
 class TensorCache:
-    def __init__(self, size_limit_gb: int):
+    def __init__(self, size_limit_gb: int) -> None:
         self.size_limit = size_limit_gb * BYTES_PER_GIB
         self.manager = Manager()
         self.cache = self.manager.dict()
         self.current_cache_size = Value("L", 0)  # 符号なしlong型
         self.is_full = False
 
-    def __contains__(self, key: str):
+    def __contains__(self, key: str) -> bool:
         return key in self.cache
 
     def _calc_elm_size(self, elm: torch.Tensor) -> int:
@@ -33,11 +33,11 @@ class TensorCache:
     def get(self, key: str) -> torch.Tensor | None:
         return self.cache.get(key, None)
 
-    def clear(self):
+    def clear(self) -> None:
         self.cache.clear()
         self.current_cache_size.value = 0
 
-    def remove(self, key: str):
+    def remove(self, key: str) -> None:
         if key in self.cache:
             size = self._calc_elm_size(self.cache[key])
             del self.cache[key]

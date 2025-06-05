@@ -16,7 +16,7 @@ class DummyLossConfig(LossConfig):
 
 @LOSS_REGISTRY.register()
 class DummyLoss(BaseLoss):
-    def __init__(self, cfg: LossConfig):
+    def __init__(self, cfg: LossConfig) -> None:
         super().__init__(cfg)
         self.cfg = DummyLossConfig(**cfg.args)
 

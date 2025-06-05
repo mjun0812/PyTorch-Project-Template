@@ -21,7 +21,7 @@ class DummyDataset(BaseDataset):
         cfg: DummyDatasetConfig,
         transforms: Compose | None = None,
         cache: TensorCache | None = None,
-    ):
+    ) -> None:
         self.cfg = DummyDatasetConfig(**cfg)
         self.transforms = transforms
         self.cache = cache

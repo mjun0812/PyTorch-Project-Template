@@ -1,3 +1,5 @@
+from typing import Any
+
 import kornia
 import torch
 from omegaconf import OmegaConf
@@ -8,15 +10,15 @@ from .base import BaseTransform
 
 # Use below Compose when using transforms has multi input.
 class MultiCompose:
-    def __init__(self, transforms: list[BaseTransform]):
+    def __init__(self, transforms: list[BaseTransform]) -> None:
         self.transforms = transforms
 
-    def __call__(self, img, data):
+    def __call__(self, img: Any, data: Any) -> tuple[Any, Any]:
         for t in self.transforms:
             img, data = t(img, data)
         return img, data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         for t in self.transforms:
             format_string += "\n"
@@ -26,7 +28,7 @@ class MultiCompose:
 
 
 class BatchedTransformCompose:
-    def __init__(self, cfg: list[TransformConfig]):
+    def __init__(self, cfg: list[TransformConfig]) -> None:
         """このクラスは、設定ファイルから変換操作のリストを作成し、それらを順番に適用します。
         バッチ処理に対応した変換の適用と、assign_label機能をサポートしています。
 
@@ -74,7 +76,7 @@ class BatchedTransformCompose:
             else:
                 self.assign_labels.append(False)
 
-    def _create_transform(self, config: TransformConfig, registry):
+    def _create_transform(self, config: TransformConfig, registry: Any) -> Any:
         if config.args is None:
             return registry.get(config.name)()
         else:
@@ -83,12 +85,12 @@ class BatchedTransformCompose:
                 args.pop("assign_label")
             return registry.get(config.name)(**args)
 
-    def to(self, device: torch.device):
+    def to(self, device: torch.device) -> None:
         for t in self.transforms:
             if isinstance(t, torch.nn.Module):
                 t.to(device)
 
-    def __call__(self, data):
+    def __call__(self, data: dict) -> dict:
         for i, t in enumerate(self.transforms):
             # Korniaの場合
             if isinstance(t, kornia.augmentation.AugmentationBase2D):
@@ -100,7 +102,7 @@ class BatchedTransformCompose:
                 data = t(data)
         return data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         for t in self.transforms:
             format_string += "\n"

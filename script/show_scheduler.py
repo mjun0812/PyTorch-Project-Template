@@ -10,7 +10,7 @@ from src.scheduler import build_lr_scheduler
 
 
 @ConfigManager.argparse
-def main(cfg: ExperimentConfig):
+def main(cfg: ExperimentConfig) -> None:
     dummy_model = torch.nn.Linear(1, 1)
     optimizer = build_optimizer(cfg.optimizer, dummy_model)
     iter_lr_scheduler, epoch_lr_scheduler = build_lr_scheduler(

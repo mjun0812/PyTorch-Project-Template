@@ -102,7 +102,7 @@ def build_phase_dataloader(
 
 
 @record
-def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger):
+def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger) -> None:
     fix_seed(cfg.seed + int(os.environ.get("LOCAL_RANK", -1)))
 
     # ###### Build Model #######

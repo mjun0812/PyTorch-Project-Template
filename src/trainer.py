@@ -119,7 +119,7 @@ class BaseTrainer:
     def _before_train(self, state: TrainingState):
         pass
 
-    def train(self, start_epoch: int):
+    def train(self, start_epoch: int) -> None:
         self._before_train(self.training_state)
 
         for epoch in range(start_epoch, self.params.epochs):
@@ -371,7 +371,7 @@ class BaseTrainer:
         optimizer_path: PathLike,
         epoch_scheduler_path: PathLike,
         iter_scheduler_path: PathLike,
-    ):
+    ) -> None:
         self.training_state.current_epoch = start_epoch
         self.training_state.best_metric = best_metric
         self.training_state.best_epoch = best_epoch

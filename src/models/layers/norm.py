@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Literal
+from typing import Any, Literal
 
 import torch
 from torch import nn
@@ -9,7 +9,7 @@ NormLayerTypes = Literal[
 ]
 
 
-def get_norm_layer(norm_type: NormLayerTypes, **kwargs) -> nn.Module:
+def get_norm_layer(norm_type: NormLayerTypes, **kwargs: Any) -> type[nn.Module]:
     if norm_type == "BatchNorm2d":
         return nn.BatchNorm2d
     elif norm_type == "GroupNorm":
@@ -24,7 +24,7 @@ def get_norm_layer(norm_type: NormLayerTypes, **kwargs) -> nn.Module:
         return nn.Identity
 
 
-def build_norm_layer(input_dim, norm_type: NormLayerTypes, **kwargs):
+def build_norm_layer(input_dim: int, norm_type: NormLayerTypes, **kwargs: Any) -> nn.Module:
     if norm_type == "BatchNorm2d":
         return nn.BatchNorm2d(input_dim, **kwargs)
     elif norm_type == "GroupNorm":
@@ -48,7 +48,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
     produce nans.
     """
 
-    def __init__(self, n):
+    def __init__(self, n: int) -> None:
         super().__init__()
         self.register_buffer("weight", torch.ones(n))
         self.register_buffer("bias", torch.zeros(n))
@@ -56,17 +56,16 @@ class FrozenBatchNorm2d(torch.nn.Module):
         self.register_buffer("running_var", torch.ones(n))
 
     def _load_from_state_dict(
-        self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
-    ):
+        self, state_dict: dict[str, Any], prefix: str, local_metadata: Any, strict: bool, missing_keys: list[str], unexpected_keys: list[str], error_msgs: list[str]
+    ) -> None:
         num_batches_tracked_key = prefix + "num_batches_tracked"
-        if num_batches_tracked_key in state_dict:
-            del state_dict[num_batches_tracked_key]
+        state_dict.pop(num_batches_tracked_key, None)
 
         super()._load_from_state_dict(
             state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # move reshapes to the beginning
         # to make it fuser-friendly
         w = self.weight.reshape(1, -1, 1, 1)

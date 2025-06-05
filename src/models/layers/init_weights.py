@@ -3,7 +3,7 @@ import math
 import torch
 
 
-def variance_scaling(w: torch.Tensor, gain: float = 1, groups: int = 1):
+def variance_scaling(w: torch.Tensor, gain: float = 1, groups: int = 1) -> None:
     fan_in, _ = fan_in_out(w, groups)
     gain /= max(1.0, fan_in)  # fan in
     # gain /= max(1., (fan_in + fan_out) / 2.)  # fan
@@ -33,7 +33,7 @@ def fan_in_out(w: torch.Tensor, groups: int = 1) -> tuple[int, int]:
     return fan_in, fan_out
 
 
-def glorot_uniform(w: torch.Tensor, gain: float = 1, groups: int = 1):
+def glorot_uniform(w: torch.Tensor, gain: float = 1, groups: int = 1) -> None:
     fan_in, fan_out = fan_in_out(w, groups)
     gain /= max(1.0, (fan_in + fan_out) / 2.0)  # fan avg
     limit = math.sqrt(3.0 * gain)

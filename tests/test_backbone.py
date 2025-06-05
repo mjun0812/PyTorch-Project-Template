@@ -4,14 +4,14 @@ from omegaconf import OmegaConf
 from src.models.backbone import BackboneConfig, build_backbone, get_available_backbones
 
 
-def test_available_backbones():
+def test_available_backbones() -> None:
     """利用可能なバックボーンモデルのリストをテスト"""
     available_backbones = get_available_backbones()
     assert len(available_backbones) > 0
     print(available_backbones[:10])
 
 
-def test_torchvision_backbone():
+def test_torchvision_backbone() -> None:
     """torchvisionモデルの構築をテスト"""
     cfg = BackboneConfig(
         name="torchvision_resnet18",
@@ -27,7 +27,7 @@ def test_torchvision_backbone():
     assert len(outputs) == 4
 
 
-def test_timm_backbone():
+def test_timm_backbone() -> None:
     """timmモデルの構築をテスト(GPUなしでも実行可能)"""
     cfg = BackboneConfig(
         name="resnet18",
@@ -43,7 +43,7 @@ def test_timm_backbone():
     assert len(outputs) == 4
 
 
-def test_internimage_backbone():
+def test_internimage_backbone() -> None:
     """InternImageモデルの構築をテスト"""
     cfg = BackboneConfig(
         name="internimage_t_1k_224",

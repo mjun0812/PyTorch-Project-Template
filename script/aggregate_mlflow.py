@@ -18,7 +18,7 @@ load_dotenv()
 TEMP_DIR = "./.tmp"
 
 
-def arg_parse():
+def arg_parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="fetch result from mlflow")
     parser.add_argument("dataset", help="Dataset Name or all")
     parser.add_argument(
@@ -28,8 +28,8 @@ def arg_parse():
 
 
 def get_artifact_list_recursive(
-    client: mlflow.tracking.MlflowClient, run: mlflow.entities.Run, path=""
-):
+    client: mlflow.tracking.MlflowClient, run: mlflow.entities.Run, path: str = ""
+) -> list[mlflow.entities.FileInfo]:
     run_id = run.info.run_id
     artifacts = client.list_artifacts(run_id=run_id, path=path)
     artifact_list = []
@@ -41,7 +41,9 @@ def get_artifact_list_recursive(
     return artifact_list
 
 
-def get_artifacts_from_mlflow(client: mlflow.tracking.MlflowClient, run: mlflow.entities.Run):
+def get_artifacts_from_mlflow(
+    client: mlflow.tracking.MlflowClient, run: mlflow.entities.Run
+) -> tuple[dict | None, str]:
     run_id = run.info.run_id
     run_name = run.data.tags["mlflow.runName"]
     artifacts = get_artifact_list_recursive(client, run)
@@ -68,7 +70,7 @@ def get_artifacts_from_mlflow(client: mlflow.tracking.MlflowClient, run: mlflow.
     return config, f"./.tmp/{run.data.tags['mlflow.runName']}_result.json"
 
 
-def main():
+def main() -> None:
     args = arg_parse()
     Path(TEMP_DIR).mkdir(exist_ok=True, parents=True)
     mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "./result/mlruns")

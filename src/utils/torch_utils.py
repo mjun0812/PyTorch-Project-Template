@@ -15,7 +15,7 @@ from torchinfo import summary
 from ..types import PathLike
 
 
-def worker_init_fn(worker_id: int):
+def worker_init_fn(worker_id: int) -> None:
     """Reset numpy random seed in PyTorch Dataloader
 
     Args:
@@ -118,7 +118,7 @@ def set_device(
     return device
 
 
-def cuda_info(global_cuda_index: int = 0, logger=None):
+def cuda_info(global_cuda_index: int = 0, logger=None) -> None:
     """Show using GPU Info
 
     Args:
@@ -242,7 +242,7 @@ def remove_parallel_prefix_from_weight(state_dict: OrderedDict) -> OrderedDict:
     return state_dict
 
 
-def load_model_weight(weight_path: str | PathLike, model: torch.nn.Module):
+def load_model_weight(weight_path: str | PathLike, model: torch.nn.Module) -> None:
     """Load PreTrained or Continued Model
 
     Args:
@@ -283,7 +283,7 @@ def load_model_weight(weight_path: str | PathLike, model: torch.nn.Module):
     logger.info(f"Unexpected weight key: {unexpexted}")
 
 
-def save_model(model: torch.nn.Module, file_path: str | Path):
+def save_model(model: torch.nn.Module, file_path: str | Path) -> None:
     if is_model_compiled(model):
         model = model._orig_mod
     if is_model_parallel(model):
@@ -295,14 +295,16 @@ def save_model(model: torch.nn.Module, file_path: str | Path):
     logger.info(f"Saving model at {file_path!s}")
 
 
-def save_optimizer(optimizer: torch.optim.Optimizer, file_path: str | Path):
+def save_optimizer(optimizer: torch.optim.Optimizer, file_path: str | Path) -> None:
     state_dict = optimizer.state_dict()
     if is_world_main_process():
         torch.save(state_dict, str(file_path))
     logger.info(f"Saving optimizer at {file_path!s}")
 
 
-def save_lr_scheduler(lr_scheduler: torch.optim.lr_scheduler._LRScheduler, file_path: str | Path):
+def save_lr_scheduler(
+    lr_scheduler: torch.optim.lr_scheduler._LRScheduler, file_path: str | Path
+) -> None:
     torch.save(lr_scheduler.state_dict(), str(file_path))
     logger.info(f"Saving lr_scheduler at {file_path!s}")
 

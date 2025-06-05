@@ -7,7 +7,7 @@ from src.models import build_model
 
 
 @ConfigManager.argparse
-def main(cfg: ExperimentConfig):
+def main(cfg: ExperimentConfig) -> None:
     cfg.batch = 2
     phase = "test"
     cfg.model.pre_trained_weight = None

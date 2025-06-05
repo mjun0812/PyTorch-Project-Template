@@ -1,3 +1,5 @@
+from typing import Any
+
 import torch
 
 from .build import BACKBONE_REGISTRY
@@ -23,7 +25,7 @@ DEFAULT_CONFIG = dict(
 )
 
 
-def get_config_internimage_t_1k_224(features_only, **kwargs) -> dict:
+def get_config_internimage_t_1k_224(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -41,7 +43,7 @@ def get_config_internimage_t_1k_224(features_only, **kwargs) -> dict:
     return config
 
 
-def get_config_internimage_s_1k_224(features_only, **kwargs) -> dict:
+def get_config_internimage_s_1k_224(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -61,7 +63,7 @@ def get_config_internimage_s_1k_224(features_only, **kwargs) -> dict:
     return config
 
 
-def get_config_internimage_b_1k_224(features_only, **kwargs) -> dict:
+def get_config_internimage_b_1k_224(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -81,7 +83,7 @@ def get_config_internimage_b_1k_224(features_only, **kwargs) -> dict:
     return config
 
 
-def get_config_internimage_l_22kto1k_384(features_only, **kwargs) -> dict:
+def get_config_internimage_l_22kto1k_384(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -101,7 +103,7 @@ def get_config_internimage_l_22kto1k_384(features_only, **kwargs) -> dict:
     return config
 
 
-def get_config_internimage_xl_22kto1k_384(features_only, **kwargs) -> dict:
+def get_config_internimage_xl_22kto1k_384(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -121,7 +123,7 @@ def get_config_internimage_xl_22kto1k_384(features_only, **kwargs) -> dict:
     return config
 
 
-def get_config_internimage_h_22kto1k_384(features_only, **kwargs) -> dict:
+def get_config_internimage_h_22kto1k_384(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -146,7 +148,7 @@ def get_config_internimage_h_22kto1k_384(features_only, **kwargs) -> dict:
     return config
 
 
-def get_config_internimage_h_22kto1k_640(features_only, **kwargs) -> dict:
+def get_config_internimage_h_22kto1k_640(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -171,7 +173,7 @@ def get_config_internimage_h_22kto1k_640(features_only, **kwargs) -> dict:
     return config
 
 
-def get_config_internimage_g_22kto1k_512(features_only, **kwargs) -> dict:
+def get_config_internimage_g_22kto1k_512(features_only: bool, **kwargs: Any) -> dict:
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -246,8 +248,8 @@ def create_model(
     weight_path: str | None = None,
     features_only: bool = False,
     out_indices: list[int] | None = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> Any:
     out_indices = out_indices or [0, 1, 2, 3]
 
     model_info = MODELS[model_name]
@@ -268,8 +270,8 @@ def create_model(
 
 @BACKBONE_REGISTRY.register()
 def internimage_t_1k_224(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_t_1k_224",
         pretrained=pretrained,
@@ -283,8 +285,8 @@ def internimage_t_1k_224(
 
 @BACKBONE_REGISTRY.register()
 def internimage_s_1k_224(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_s_1k_224",
         pretrained=pretrained,
@@ -298,8 +300,8 @@ def internimage_s_1k_224(
 
 @BACKBONE_REGISTRY.register()
 def internimage_b_1k_224(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_b_1k_224",
         pretrained=pretrained,
@@ -313,8 +315,8 @@ def internimage_b_1k_224(
 
 @BACKBONE_REGISTRY.register()
 def internimage_l_22kto1k_384(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_l_22kto1k_384",
         pretrained=pretrained,
@@ -328,8 +330,8 @@ def internimage_l_22kto1k_384(
 
 @BACKBONE_REGISTRY.register()
 def internimage_xl_22kto1k_384(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_xl_22kto1k_384",
         pretrained=pretrained,
@@ -343,8 +345,8 @@ def internimage_xl_22kto1k_384(
 
 @BACKBONE_REGISTRY.register()
 def internimage_h_22kto1k_384(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_h_22kto1k_384",
         pretrained=pretrained,
@@ -358,8 +360,8 @@ def internimage_h_22kto1k_384(
 
 @BACKBONE_REGISTRY.register()
 def internimage_h_22kto1k_640(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_h_22kto1k_640",
         pretrained=pretrained,
@@ -373,8 +375,8 @@ def internimage_h_22kto1k_640(
 
 @BACKBONE_REGISTRY.register()
 def internimage_g_22kto1k_512(
-    pretrained, weight_path, features_only=True, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, features_only: bool = True, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = create_model(
         "internimage_g_22kto1k_512",
         pretrained=pretrained,

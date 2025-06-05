@@ -18,7 +18,7 @@ font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
 plt.rcParams.update({"font.family": "Times New Roman", "font.size": 18})
 
 
-def test_train_test_resume():
+def test_train_test_resume() -> None:
     common_options = [
         "mlflow.use=false",
         "output=/tmp/test",
@@ -80,12 +80,12 @@ def _load_config(path: str) -> ExperimentConfig:
     return cfg
 
 
-def test_config():
+def test_config() -> None:
     cfg = _load_config(Path(__file__).parent.parent / "config/dummy.yaml")
     print(ConfigManager.pretty_text(cfg))
 
 
-def test_dataloader():
+def test_dataloader() -> None:
     from src.config import DatasetsConfig
     from src.dataloaders import build_dataloader, build_dataset, build_sampler
     from src.transform import build_batched_transform, build_transforms
@@ -113,7 +113,7 @@ def test_dataloader():
                 break
 
 
-def test_lr_scheduler():
+def test_lr_scheduler() -> None:
     from src.config import LrSchedulersConfig
     from src.scheduler import build_lr_scheduler
 
@@ -171,7 +171,7 @@ def test_lr_scheduler():
         fig.savefig(Path(__file__).parent.parent / f"doc/lr_scheduler/{scheduler_name}.png")
 
 
-def test_optimizer():
+def test_optimizer() -> None:
     from src.config import OptimizerConfig, OptimizerGroupConfig
     from src.optimizer import build_optimizer
 
@@ -179,11 +179,11 @@ def test_optimizer():
     config_dir = Path(__file__).parent.parent / "config/__base__/optimizer"
 
     class Model(torch.nn.Module):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
             self.fc = torch.nn.Linear(1, 1)
 
-        def forward(self, x):
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
             return self.fc(x)
 
     model = Model()
@@ -203,7 +203,7 @@ def test_optimizer():
         print(f"grouped optimizer: {optimizer}")
 
 
-def test_scripts():
+def test_scripts() -> None:
     common_options = [
         Path(__file__).parent.parent / "config/dummy.yaml",
         "use_cpu=true",
@@ -225,7 +225,7 @@ def test_scripts():
         print("end", script)
 
 
-def test_backbone():
+def test_backbone() -> None:
     from src.models import build_backbone
     from src.models.backbone import BackboneConfig
 

@@ -7,7 +7,7 @@ from .types import ModelOutput
 
 
 class BaseModel(nn.Module):
-    def __init__(self, cfg: ModelConfig, phase: PhaseStr = "train"):
+    def __init__(self, cfg: ModelConfig, phase: PhaseStr = "train") -> None:
         super().__init__()
         self.cfg = cfg
         self.phase = phase

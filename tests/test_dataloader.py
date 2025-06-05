@@ -1,6 +1,7 @@
 """Dataloaderを回して速度を計測"""
 
 import time
+from typing import Any
 
 import torch
 
@@ -9,17 +10,17 @@ from src.dataloaders import build_dataset
 
 
 class TimeCompose:
-    def __init__(self, transforms: list):
+    def __init__(self, transforms: list[Any]) -> None:
         self.transforms = transforms
 
-    def __call__(self, data: dict) -> dict:
+    def __call__(self, data: dict[str, Any]) -> dict[str, Any]:
         for t in self.transforms:
             start = time.time()
             data = t(data)
             print(f"    {t.__class__.__name__}: {time.time() - start:.4f}")
         return data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         for t in self.transforms:
             format_string += f"{t}, "
@@ -28,7 +29,7 @@ class TimeCompose:
 
 
 @ConfigManager.argparse
-def main(cfg: ExperimentConfig):
+def main(cfg: ExperimentConfig) -> None:
     cfg.batch = 2
     device = torch.device("cpu" if cfg.use_cpu else "cuda:0")
 

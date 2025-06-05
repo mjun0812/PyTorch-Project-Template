@@ -7,7 +7,7 @@ class DummyEvaluator(BaseEvaluator):
     def __init__(self) -> None:
         super().__init__()
 
-    def update(self, targets: dict, preds: dict):
+    def update(self, targets: dict, preds: dict) -> None:
         pass
 
     def compute(self) -> dict:

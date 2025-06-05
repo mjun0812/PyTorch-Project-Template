@@ -5,6 +5,8 @@
 # Written by Ze Liu, Yutong Lin, Yixuan Wei
 # --------------------------------------------------------
 
+from typing import Any
+
 import torch
 
 from .build import BACKBONE_REGISTRY
@@ -13,7 +15,7 @@ from .swin_transformer_impl import SwinTransformer
 
 # ####### Tiny Model #######
 @BACKBONE_REGISTRY.register()
-def swin_tiny_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_tiny_patch4_window7_224_22k(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 6, 2],
@@ -36,8 +38,8 @@ def swin_tiny_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1,
 
 @BACKBONE_REGISTRY.register()
 def swin_tiny_patch4_window7_224_22kto1k(
-    pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 6, 2],
@@ -61,7 +63,7 @@ def swin_tiny_patch4_window7_224_22kto1k(
 
 
 @BACKBONE_REGISTRY.register()
-def swin_tiny_patch4_window7_224(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_tiny_patch4_window7_224(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 6, 2],
@@ -84,7 +86,7 @@ def swin_tiny_patch4_window7_224(pretrained, weight_path, out_indices=(0, 1, 2, 
 
 # ####### Small Model #######
 @BACKBONE_REGISTRY.register()
-def swin_small_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_small_patch4_window7_224_22k(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 18, 2],
@@ -107,8 +109,8 @@ def swin_small_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1
 
 @BACKBONE_REGISTRY.register()
 def swin_small_patch4_window7_224_22kto1k(
-    pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 18, 2],
@@ -132,7 +134,7 @@ def swin_small_patch4_window7_224_22kto1k(
 
 
 @BACKBONE_REGISTRY.register()
-def swin_small_patch4_window7_224(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_small_patch4_window7_224(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 18, 2],
@@ -155,7 +157,7 @@ def swin_small_patch4_window7_224(pretrained, weight_path, out_indices=(0, 1, 2,
 
 # ####### Base Model #######
 @BACKBONE_REGISTRY.register()
-def swin_base_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_base_patch4_window7_224_22k(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=128,
         depths=[2, 2, 18, 2],
@@ -178,8 +180,8 @@ def swin_base_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1,
 
 @BACKBONE_REGISTRY.register()
 def swin_base_patch4_window7_224_22kto1k(
-    pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = SwinTransformer(
         embed_dim=128,
         depths=[2, 2, 18, 2],
@@ -201,7 +203,7 @@ def swin_base_patch4_window7_224_22kto1k(
 
 
 @BACKBONE_REGISTRY.register()
-def swin_base_patch4_window7_224(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_base_patch4_window7_224(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=128,
         depths=[2, 2, 18, 2],
@@ -223,7 +225,7 @@ def swin_base_patch4_window7_224(pretrained, weight_path, out_indices=(0, 1, 2, 
 
 
 @BACKBONE_REGISTRY.register()
-def swin_base_patch4_window12_384(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_base_patch4_window12_384(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=128,
         depths=[2, 2, 18, 2],
@@ -245,7 +247,7 @@ def swin_base_patch4_window12_384(pretrained, weight_path, out_indices=(0, 1, 2,
 
 
 @BACKBONE_REGISTRY.register()
-def swin_base_patch4_window12_384_22k(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_base_patch4_window12_384_22k(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=128,
         depths=[2, 2, 18, 2],
@@ -268,8 +270,8 @@ def swin_base_patch4_window12_384_22k(pretrained, weight_path, out_indices=(0, 1
 
 @BACKBONE_REGISTRY.register()
 def swin_base_patch4_window12_384_22kto1k(
-    pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = SwinTransformer(
         embed_dim=128,
         depths=[2, 2, 18, 2],
@@ -292,7 +294,7 @@ def swin_base_patch4_window12_384_22kto1k(
 
 # ####### Large Model #######
 @BACKBONE_REGISTRY.register()
-def swin_large_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_large_patch4_window7_224_22k(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=192,
         depths=[2, 2, 18, 2],
@@ -315,8 +317,8 @@ def swin_large_patch4_window7_224_22k(pretrained, weight_path, out_indices=(0, 1
 
 @BACKBONE_REGISTRY.register()
 def swin_large_patch4_window7_224_22kto1k(
-    pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = SwinTransformer(
         embed_dim=192,
         depths=[2, 2, 18, 2],
@@ -338,7 +340,7 @@ def swin_large_patch4_window7_224_22kto1k(
 
 
 @BACKBONE_REGISTRY.register()
-def swin_large_patch4_window12_384_22k(pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs):
+def swin_large_patch4_window12_384_22k(pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any) -> Any:
     model = SwinTransformer(
         embed_dim=192,
         depths=[2, 2, 18, 2],
@@ -361,8 +363,8 @@ def swin_large_patch4_window12_384_22k(pretrained, weight_path, out_indices=(0, 
 
 @BACKBONE_REGISTRY.register()
 def swin_large_patch4_window12_384_22kto1k(
-    pretrained, weight_path, out_indices=(0, 1, 2, 3), **kwargs
-):
+    pretrained: bool, weight_path: str | None, out_indices: tuple[int, ...] = (0, 1, 2, 3), **kwargs: Any
+) -> Any:
     model = SwinTransformer(
         embed_dim=192,
         depths=[2, 2, 18, 2],

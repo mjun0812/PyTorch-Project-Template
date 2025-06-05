@@ -18,7 +18,7 @@ class DummyModelConfig:
 
 @MODEL_REGISTRY.register()
 class DummyModel(BaseModel):
-    def __init__(self, cfg: ModelConfig, phase: PhaseStr = "train"):
+    def __init__(self, cfg: ModelConfig, phase: PhaseStr = "train") -> None:
         super().__init__(cfg, phase)
         self.cfg_model = DummyModelConfig(**self.cfg.args)
         self.fc = nn.Linear(8, 4)

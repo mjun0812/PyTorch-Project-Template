@@ -10,7 +10,7 @@ from mlflow.entities import ViewType
 load_dotenv()
 
 
-def main():
+def main() -> None:
     work_dir = Path(__file__).resolve().parent.parent
     os.chdir(work_dir)
 

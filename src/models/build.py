@@ -40,7 +40,7 @@ def calc_model_parameters(model: nn.Module) -> tuple[int, int, int]:
     return num_params, num_trainable_params, num_backbone_params
 
 
-def log_model_parameters(model: nn.Module):
+def log_model_parameters(model: nn.Module) -> None:
     num_params, num_trainable_params, num_backbone_params = calc_model_parameters(model)
     logger.info(f"Num Model Parameters: {num_params}")
     logger.info(f"Num Trainable Model Parameters: {num_trainable_params}")

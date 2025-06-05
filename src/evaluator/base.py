@@ -17,10 +17,10 @@ class BaseEvaluator(Metric):
     def __init__(self) -> None:
         super().__init__()
 
-    def update(self, targets: dict, preds: dict):
+    def update(self, targets: dict, preds: dict) -> None:
         raise NotImplementedError
 
-    def reset(self):
+    def reset(self) -> None:
         super().reset()
 
     def compute(self) -> dict:

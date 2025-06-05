@@ -8,7 +8,7 @@ TRANSFORM_REGISTRY = Registry("TRANSFORM")
 BATCHED_TRANSFORM_REGISTRY = Registry("BATCHED_TRANSFORM")
 
 
-def build_transform(cfg: TransformConfig):
+def build_transform(cfg: TransformConfig) -> T.Transform:
     if cfg.args is None:
         transform = TRANSFORM_REGISTRY.get(cfg.class_name)()
     else:

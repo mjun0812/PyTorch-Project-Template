@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 
 
@@ -15,7 +16,7 @@ class SeparableConv2d(nn.Module):
         pointwise_conv: チャンネル方向の畳み込み層
     """
 
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels: int, out_channels: int) -> None:
         super().__init__()
         # 空間方向の畳み込み
         self.depthwise_conv = nn.Conv2d(
@@ -30,5 +31,5 @@ class SeparableConv2d(nn.Module):
         # チャンネル方向の畳み込み
         self.pointwise_conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.pointwise_conv(self.depthwise_conv(x))

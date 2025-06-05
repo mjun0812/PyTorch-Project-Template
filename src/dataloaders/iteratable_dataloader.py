@@ -1,4 +1,6 @@
 import time
+from collections.abc import Iterator
+from typing import Any
 
 from torch.utils.data import DataLoader
 
@@ -14,13 +16,13 @@ class IterBasedDataloader:
         self.batch_size = self.dataloader.batch_size
         self.sampler = self.dataloader.sampler
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.step_iter
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         if self.current_iter + self.step_iter * self.epoch > self.max_iter:
             raise StopIteration
         if self.current_iter != 0 and self.current_iter % self.step_iter == 0:
@@ -39,10 +41,10 @@ class InfiniteDataLoader:
         self.iterator = iter(self.dataloader)
         self.epoch = 0
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         try:
             data = next(self.iterator)
         except StopIteration:

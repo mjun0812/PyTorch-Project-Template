@@ -18,7 +18,7 @@ denormalize = T.Normalize(
 
 
 @ConfigManager.argparse
-def main(cfg: ExperimentConfig):
+def main(cfg: ExperimentConfig) -> None:
     phase = cfg.get("phase", "train")
     cfg.use_cpu = True
 

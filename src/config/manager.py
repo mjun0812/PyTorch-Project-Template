@@ -1,7 +1,8 @@
 import argparse
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from omegaconf import DictConfig, OmegaConf
 
@@ -14,8 +15,8 @@ class ConfigManager:
     IMPORT_KEY: str = "__import__"
 
     @staticmethod
-    def argparse(func):
-        def decorator(*args, **kwargs):
+    def argparse(func: Callable[[DictConfig], Any]) -> Callable[[], Any]:
+        def decorator(*args: Any, **kwargs: Any) -> Any:
             cfg = ConfigManager.build()
 
             return func(cfg)
@@ -23,7 +24,7 @@ class ConfigManager:
         return decorator
 
     @classmethod
-    def build(cls):
+    def build(cls) -> DictConfig:
         partial_parser = argparse.ArgumentParser(description=cls.description)
         partial_parser.add_argument("config", help="config file path")
         args, override_args = partial_parser.parse_known_args()
@@ -40,7 +41,7 @@ class ConfigManager:
         return cfg
 
     @staticmethod
-    def recursive_set_struct(cfg: DictConfig, value: bool):
+    def recursive_set_struct(cfg: DictConfig, value: bool) -> None:
         OmegaConf.set_struct(cfg, value)
         for key, val in cfg.items():
             if isinstance(val, (DictConfig, dict)):
@@ -51,7 +52,7 @@ class ConfigManager:
                         ConfigManager.recursive_set_struct(item, value)
 
     @staticmethod
-    def build_config_from_file(filename: str | Path):
+    def build_config_from_file(filename: str | Path) -> DictConfig:
         if Path(filename).suffix == ".json":
             cfg_dict = ConfigManager._load_json(filename)
         elif Path(filename).suffix in [".yaml", ".yml"]:
@@ -73,7 +74,7 @@ class ConfigManager:
         return cfg_om
 
     @staticmethod
-    def from_dict(data: dict):
+    def from_dict(data: dict) -> DictConfig:
         cfg = OmegaConf.create(data)
         return ConfigManager._load_base_config(cfg)
 
@@ -121,5 +122,5 @@ class ConfigManager:
             return json.dumps(OmegaConf.to_object(text), indent=4, sort_keys=False)
 
     @staticmethod
-    def to_object(cfg: DictConfig):
+    def to_object(cfg: DictConfig) -> Any:
         return OmegaConf.to_container(cfg, resolve=True)

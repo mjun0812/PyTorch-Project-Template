@@ -1,5 +1,7 @@
 import math
+from typing import Any
 
+import torch
 import torch.nn.functional as F
 from torch import nn
 
@@ -37,13 +39,13 @@ class MaxPool2dSame(nn.Module):
 
     def __init__(
         self,
-        kernel_size,
-        stride=None,
-        padding=0,
-        dilation=1,
-        return_indices=False,
-        ceil_mode=False,
-    ):
+        kernel_size: int | tuple[int, int],
+        stride: int | tuple[int, int] | None = None,
+        padding: int = 0,
+        dilation: int = 1,
+        return_indices: bool = False,
+        ceil_mode: bool = False,
+    ) -> None:
         super().__init__()
         self.kernel_size = kernel_size
         self.stride = stride
@@ -64,7 +66,7 @@ class MaxPool2dSame(nn.Module):
             ceil_mode=ceil_mode,
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         h, w = x.shape[-2:]
 
         pad_h = (

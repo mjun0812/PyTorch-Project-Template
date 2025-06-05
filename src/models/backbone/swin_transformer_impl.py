@@ -162,7 +162,7 @@ class SwinTransformer(nn.Module):
                 for param in m.parameters():
                     param.requires_grad = False
 
-    def init_weights(self, pretrained=None):
+    def init_weights(self, pretrained=None) -> None:
         """Initialize the weights in backbone.
 
         Args:
@@ -210,7 +210,7 @@ class SwinTransformer(nn.Module):
 
         return tuple(outs)
 
-    def train(self, mode=True):
+    def train(self, mode=True) -> None:
         """Convert the model into training mode while keep layers freezed."""
         super().train(mode)
         self._freeze_stages()

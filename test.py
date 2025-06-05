@@ -21,7 +21,9 @@ from src.utils import (
 )
 
 
-def do_test(cfg: ExperimentConfig, output_dir: Path | str, device: torch.device, logger: Logger):
+def do_test(
+    cfg: ExperimentConfig, output_dir: Path | str, device: torch.device, logger: Logger
+) -> None:
     output_dir = Path(output_dir)
 
     logger.info("Loading Dataset...")
@@ -78,7 +80,7 @@ def do_test(cfg: ExperimentConfig, output_dir: Path | str, device: torch.device,
     tester.save_results(output_dir, results.targets, results.results)
 
 
-def main(cfg: ExperimentConfig):
+def main(cfg: ExperimentConfig) -> None:
     # set Device
     device = set_device(cfg.gpu.use, use_cudnn=cfg.gpu.use_cudnn, is_cpu=cfg.use_cpu)
 

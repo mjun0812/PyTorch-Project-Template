@@ -4,7 +4,7 @@ from pathlib import Path
 from omegaconf import OmegaConf
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Edit Config")
     parser.add_argument("config_path_or_dir", type=str, help="Path to the config file or dir")
     parser.add_argument(

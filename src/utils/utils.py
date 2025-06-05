@@ -5,6 +5,8 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 
 import matplotlib
 import numpy as np
@@ -103,7 +105,7 @@ def make_result_dirs(base_path: PathLike, prefix: str = "") -> Path:
     return output_dir
 
 
-def plot_graph(title: str, labels: list[str], data: list, output_dir: PathLike):
+def plot_graph(title: str, labels: list[str], data: list, output_dir: PathLike) -> None:
     plt.gcf().clear()
 
     # 論文用にFontを変更する
@@ -117,7 +119,7 @@ def plot_graph(title: str, labels: list[str], data: list, output_dir: PathLike):
     plt.close()
 
 
-def plot_multi_graph(filename: str, titles: list[str], data: dict, dpi: int = 300):
+def plot_multi_graph(filename: str, titles: list[str], data: dict, dpi: int = 300) -> None:
     font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
     plt.rcParams.update({"font.family": "Times New Roman", "font.size": 10})
     col = len(titles)
@@ -141,7 +143,7 @@ def plot_multi_graph(filename: str, titles: list[str], data: dict, dpi: int = 30
     plt.close()
 
 
-def post_slack(channel: str = "#通知", username: str = "通知", message: str = ""):
+def post_slack(channel: str = "#通知", username: str = "通知", message: str = "") -> None:
     load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
     load_dotenv()
     token = os.getenv("SLACK_TOKEN")
@@ -177,7 +179,7 @@ def _post_slack(
 
 
 class JsonEncoder(json.JSONEncoder):
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         elif isinstance(obj, (np.floating, np.complexfloating)):
@@ -191,7 +193,7 @@ class JsonEncoder(json.JSONEncoder):
             return super().default(obj)
 
 
-def import_submodules(module) -> list:
+def import_submodules(module: ModuleType) -> list[ModuleType]:
     return [
         importlib.import_module(f"{module.__name__}.{f.stem}")
         for f in Path(module.__file__).parent.glob("[a-zA-Z0-9]*.py")
@@ -211,15 +213,15 @@ class HidePrints:
     def __init__(self) -> None:
         self.stdout = None
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.stdout = sys.stdout
         sys.stdout = open(os.devnull, "w")
 
-    def __exit__(self, ex_type, ex_value, trace):
+    def __exit__(self, ex_type: Any, ex_value: Any, trace: Any) -> None:
         sys.stdout = self.stdout
 
 
-def create_symlink(target: PathLike, dst: PathLike):
+def create_symlink(target: PathLike, dst: PathLike) -> None:
     """Creates a symbolic link from the target path to the destination path.
 
     Both paths are relative to the current working directory.

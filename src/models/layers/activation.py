@@ -41,7 +41,7 @@ class MemoryEfficientSwish(nn.Module):
         return memory_efficient_swish_fn(x)
 
 
-def get_activation_fn(activation: ActivationNames) -> nn.Module:
+def get_activation_fn(activation: ActivationNames) -> callable:
     """Return an activation function given a string"""
     if activation == "ReLU":
         return F.relu
@@ -61,7 +61,7 @@ def get_activation_fn(activation: ActivationNames) -> nn.Module:
         return F.silu
 
 
-def get_activation_layer(activation: ActivationNames) -> nn.Module:
+def get_activation_layer(activation: ActivationNames) -> type[nn.Module]:
     if activation == "ReLU":
         return nn.ReLU
     elif activation == "GELU":

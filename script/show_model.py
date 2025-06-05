@@ -10,7 +10,7 @@ from src.transform import (
 
 
 @ConfigManager.argparse
-def main(cfg: ExperimentConfig):
+def main(cfg: ExperimentConfig) -> None:
     cfg.model.checkpoint = None
 
     if cfg.use_cpu or not torch.cuda.is_available():

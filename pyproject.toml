@@ -80,6 +80,7 @@ select = [
     "ANN", # type annotation
 ]
 ignore = [
+    "ANN401", # Checks that function arguments are annotated with a more specific type than Any.
     "B007",   # Unused loop variable
     "B008",   # Function call in default argument
     "B905",   # `zip()` without `strict=True`

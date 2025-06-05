@@ -80,7 +80,7 @@ class BaseTester:
             data = self.batched_transform(data)
         return data
 
-    def update_metrics(self, data: dict, preds: dict):
+    def update_metrics(self, data: dict, preds: dict) -> None:
         if self.evaluator is not None:
             self.evaluator.update(*self.generate_input_evaluator(data, preds))
 
@@ -122,10 +122,10 @@ class BaseTester:
                 batch_list.append(batch)
         return batch_list
 
-    def generate_input_evaluator(self, targets, preds):
+    def generate_input_evaluator(self, targets, preds) -> tuple[Any, Any]:
         return targets, preds
 
-    def save_results(self, output_dir, targets, results):
+    def save_results(self, output_dir, targets, results) -> None:
         pass
 
 
