@@ -22,12 +22,9 @@ for OPT in "$@"; do
     esac
 done
 
-IMAGE_NAME=$(basename $(pwd))
-IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')
-BUILDER_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu22.04"
 RUNNER_IMAGE="ubuntu:22.04"
-
-mkdir -p result
+BUILDER_IMAGE="nvcr.io/nvidia/cuda:${CUDA_VERSION}-cudnn-devel-ubuntu22.04"
+IMAGE_NAME=$(basename $(pwd) | tr '[:upper:]' '[:lower:]')
 
 docker build \
     --build-arg BUILDER_IMAGE=${BUILDER_IMAGE} \
