@@ -13,6 +13,7 @@ A comprehensive, production-ready PyTorch project template with modular architec
 - **Cross-Platform**: Development support on macOS and Linux
 - **Development Environment**: Devcontainer and Jupyter Lab integration
 - **RAM Caching**: Optional dataset caching for faster training
+- **Documentation**: Auto-generated API docs with MkDocs and live reloading
 
 ## Requirements
 
@@ -142,6 +143,9 @@ python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
 
 # Aggregate MLflow results
 python script/aggregate_mlflow.py all
+
+# Start documentation server (auto-reloads on changes)
+./script/run_docs.sh
 ```
 
 ### Distributed Training
@@ -252,6 +256,57 @@ python train.py config/dummy.yaml use_amp=true amp_dtype="bf16"
 # Enable PyTorch 2.0 compilation
 python train.py config/dummy.yaml use_compile=true compile_backend="inductor"
 ```
+
+## Documentation
+
+This project includes comprehensive documentation built with MkDocs:
+
+### Features
+
+- **Auto-generated API Reference**: Automatically generated from docstrings and type hints
+- **Architecture Guides**: Detailed explanations of the registry system and configuration management
+- **Tutorials**: Step-by-step guides for getting started and creating custom components
+- **Live Reloading**: Documentation automatically updates when you modify code or docs
+
+### Viewing Documentation
+
+```bash
+# Start the documentation server
+./script/run_docs.sh
+
+# Open your browser to http://127.0.0.1:8000
+```
+
+The documentation server automatically watches for changes in:
+
+- `doc/docs/` - Documentation markdown files
+- `src/` - Python source code (for API docs)
+- `config/` - Configuration files
+- `mkdocs.yml` - Documentation configuration
+
+### Building Documentation
+
+```bash
+# Build static documentation
+uv run mkdocs build
+
+# Documentation will be generated in doc/site/
+```
+
+### Documentation Structure
+
+- **[Home](doc/docs/index.md)**: Project overview and quick start
+- **[Architecture](doc/docs/architecture/)**: Core concepts and design patterns
+  - Registry system explained
+  - Configuration management
+  - Component architecture
+- **[API Reference](doc/docs/api/)**: Auto-generated API documentation
+  - All modules, classes, and functions
+  - Type information and docstrings
+- **[Tutorials](doc/docs/tutorials/)**: Step-by-step guides
+  - Getting started guide
+  - Training best practices
+  - Creating custom components
 
 ## Architecture
 

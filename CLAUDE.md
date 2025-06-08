@@ -42,11 +42,32 @@ Follow these guidelines precisely.
 
 This is a PyTorch project template with modular components connected through a registry system:
 
-### Core Components
+### Core Design Patterns
 
-- **Registry System**: All modules (models, datasets, optimizers, etc.) use a registration decorator pattern for dynamic instantiation
-- **Config Management**: OmegaConf + dataclasses for hierarchical configuration with CLI override support
-- **Build Pattern**: Each component type has a `build.py` module that instantiates objects from config using registries
+- **Registry System**: All modules use `@REGISTRY.register()` decorators for dynamic component discovery. Registry objects in `src/utils/registry.py` provide name-to-class mapping
+- **Config Management**: `ConfigManager` in `src/config/manager.py` merges dataclass defaults → YAML files → CLI overrides. Supports `__base__` and `__import__` keys for config inheritance
+- **Build Pattern**: Each component type has a `build.py` module that instantiates objects from config using registries. Pattern: `build_*()` functions take config and return instantiated objects
+
+### Component Registration
+
+All components must be registered to be discoverable:
+
+```python
+from src.models import MODEL_REGISTRY
+
+@MODEL_REGISTRY.register()  # Auto-registers with class name
+class MyModel(nn.Module): ...
+
+@MODEL_REGISTRY.register("custom_name")  # Registers with custom name
+class AnotherModel(nn.Module): ...
+```
+
+### Configuration Hierarchy
+
+1. **Dataclass Defaults**: `src/config/config.py` defines `ExperimentConfig` with type-safe defaults
+2. **Base Configs**: `config/__base__/` contains component-specific YAML templates
+3. **Experiment Configs**: `config/*.yaml` files inherit from base configs using `__base__` key
+4. **CLI Overrides**: Dot notation supported: `optimizer.lr=0.001`
 
 ### Key Modules
 
@@ -93,10 +114,19 @@ uv sync
 # Setup pre-commit
 uv run pre-commit install
 
-# Run specific test
-uv run --frozen pytest tests/test_modules.py::test_function
+# Run all tests
+uv run --frozen pytest
 
-# Show registered modules
+# Run specific test function
+uv run --frozen pytest tests/test_modules.py::test_config
+
+# Run specific test file
+uv run --frozen pytest tests/test_modules.py
+
+# Run with verbose output
+uv run --frozen pytest -v
+
+# Show registered modules (useful for debugging)
 python script/show_registers.py
 ```
 
@@ -119,3 +149,23 @@ python script/show_registers.py
 # Config editing
 python script/edit_configs.py config/dummy.yaml "optimizer.lr=0.01,batch=64"
 ```
+
+### Documentation
+
+```bash
+# Start documentation server (auto-reloads on changes)
+./script/run_docs.sh
+
+# Build documentation
+uv run mkdocs build
+
+# Deploy to GitHub Pages (if configured)
+uv run mkdocs gh-deploy
+```
+
+## important-instruction-reminders
+
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.

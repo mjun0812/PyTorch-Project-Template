@@ -38,6 +38,10 @@ exclude = ["dataset", "result", ".tmp", ".git", ".venv", ".vscode"]
 
 [tool.uv]
 dev-dependencies = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.14",
+    "mkdocstrings>=0.29.1",
+    "mkdocstrings-python>=1.16.12",
     "mypy>=1.16.0",
     "pre-commit>=4.2.0",
     "pytest>=8.3.2",
