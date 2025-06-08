@@ -1,206 +1,304 @@
 # PyTorch Project Template
 
-My project template using PyTorch.
+A comprehensive, production-ready PyTorch project template with modular architecture, distributed training support, and modern tooling.
 
 ## Features
 
-- Docker + uv environment setup.
-- Single-node or multi-node and multi-GPU training on DDP.
-- Experiment management with MLflow and wandb.
-- Config management with OmegaConf and dataclasses.
-- Resume training support.
-- Supports development on macOS and Linux.
-- Devcontainer support.
-- CI support with pre-commit and GitHub Actions.
+- **Modular Architecture**: Registry-based component system for easy extensibility
+- **Configuration Management**: OmegaConf + dataclasses with CLI override support  
+- **Distributed Training**: Single-node/multi-node training with DDP, FSDP, and DataParallel
+- **Experiment Tracking**: MLflow and Weights & Biases integration
+- **Modern Tooling**: uv package management, pre-commit hooks, Docker support
+- **Resume Training**: Automatic checkpoint saving and loading
+- **Cross-Platform**: Development support on macOS and Linux
+- **Development Environment**: Devcontainer and Jupyter Lab integration
+- **RAM Caching**: Optional dataset caching for faster training
 
-## Environments
+## Requirements
 
-- Python 3.11
-- CUDA 12.8
-- PyTorch 2.7.1
+- **Python**: 3.11+
+- **CUDA**: 12.8 (for GPU training)
+- **PyTorch**: 2.7.1
+- **Package Manager**: uv (recommended) or pip
 
-### Use this template
+## Quick Start
 
-You can use this as a GitHub template or merge updates from this repository as needed.
+### 1. Use this Template
+
+Create a new project using this template:
 
 ```bash
-# Setup new project
-mkdir my-project
-cd my-project
-git init
-git commit --allow-empty -m "Initial commit"
+# Option 1: Use as GitHub template (recommended)
+# Click "Use this template" on GitHub
 
-# Link this template
-git remote add upstream git@github.com:mjun0812/PyTorch-Project-Template.git
+# Option 2: Clone and setup manually
+git clone <your-repo-url>
+cd your-project-name
 
-# Merge update from this template
+# Option 3: Merge updates from this template
+git remote add upstream https://github.com/mjun0812/PyTorch-Project-Template.git
 git fetch upstream main
 git merge --allow-unrelated-histories --squash upstream/main
 ```
 
-## Install
-
-Create env file.
+Configure environment variables:
 
 ```bash
 cp template.env .env
-vim .env
+# Edit .env with your API keys and settings
 ```
 
-```bash
-# Notice to Slack when finished trianing and evaluation.
-SLACK_TOKEN="HOGE"
+Example `.env` configuration:
 
-# Write local path or remote uri
-MLFLOW_TRACKING_URI="./result/mlruns"
-# Basic Auth
-# MLFLOW_TRACKING_USERNAME=""
+```bash
+# Slack notifications (optional)
+SLACK_TOKEN="your-slack-token"
+
+# MLflow tracking
+MLFLOW_TRACKING_URI="./result/mlruns"  # or remote URI
+# MLFLOW_TRACKING_USERNAME=""  # for remote MLflow
 # MLFLOW_TRACKING_PASSWORD=""
 
-WANDB_API_KEY=""
+# Weights & Biases (optional)
+WANDB_API_KEY="your-wandb-key"
 ```
 
-- Docker Install
+### 3. Installation
+
+Choose your preferred installation method:
+
+#### Option A: Local Development (Recommended)
 
 ```bash
-./docker/build.sh
-./docker/run.sh [command]
-```
-
-- Local Install
-
-```bash
+# Install dependencies
 uv sync
-uv run [command]
-```
 
-- Build develop environment
-
-Use devcontainer or local development.
-
-```bash
-uv sync
+# Setup development environment
 uv run pre-commit install
+
+# Run training
+uv run python train.py config/dummy.yaml
 ```
+
+#### Option B: Docker
+
+```bash
+# Build container
+./docker/build.sh
+
+# Run training in container
+./docker/run.sh python train.py config/dummy.yaml
+```
+
+#### Option C: Development Container
+
+Open the project in VS Code and use the devcontainer configuration for a consistent development environment.
 
 ## Usage
 
-### Tools
+### Basic Training
+
+Start with the dummy configuration to test your setup:
 
 ```bash
-# JupyterLab Server
+# Basic training with dummy dataset
+python train.py config/dummy.yaml
+
+# Override configuration from command line
+python train.py config/dummy.yaml batch=32 gpu.use=0 optimizer.lr=0.001
+```
+
+### Configuration Management
+
+This template uses hierarchical configuration with OmegaConf and dataclasses:
+
+```bash
+# Use dot notation to modify nested values
+python train.py config/dummy.yaml gpu.use=0,1 model.backbone.depth=50
+
+# Multiple overrides
+python train.py config/dummy.yaml batch=64 epoch=100 optimizer.lr=0.01
+```
+
+Configuration files are located in `config/` with base configurations in `config/__base__/`.
+
+### Development Tools
+
+```bash
+# Launch Jupyter Lab for experimentation
 ./script/run_notebook.sh
 
-# MLflow WebUI
+# Start MLflow UI for experiment tracking
 ./script/run_mlflow.sh
 
-# Replace Config value
-python script/edit_configs.py [yaml or dir] "params.hoge=aa,params.fuga=bb"
+# View all registered components
+python script/show_registers.py
 
-# Show deleted local result from mlflow
-# Delete experiment results from the local `./result/` directory that have been removed from MLflow.
+# Batch edit configuration files
+python script/edit_configs.py config/dummy.yaml "optimizer.lr=0.01,batch=64"
+
+# Clean up orphaned result directories
 python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
 
-# Aggregate mlflow result
-python script/aggregate_mlflow.py [dataset_name or all]
-
-# Check Registered Modules
-python script/show_registers.py
+# Aggregate MLflow results
+python script/aggregate_mlflow.py all
 ```
 
-### Config management
+### Distributed Training
 
-This template uses OmegaConf and dataclasses for config management.
+Scale your training across multiple GPUs and nodes:
 
-You can change the Config values in the yaml file from the CLI.
-Use `.` to concatenate and `=` to specify the value.
-
-```yaml
-gpu:
-  use: 1
-```
+#### Single Node, Multiple GPUs
 
 ```bash
-python train.py config/model/ResNet.yaml gpu.use=2
+# Use torchrun for DDP training
+./torchrun.sh 4 train.py config/dummy.yaml gpu.use="0,1,2,3"
+
+# Alternative: DataParallel (not recommended for production)
+python train.py config/dummy.yaml gpu.use="0,1,2,3" gpu.multi_strategy="dp"
 ```
 
-### Training
-
-To perform training, use `train.py`. This script also runs the auto test after training.
-In `train.py`, specify the yaml file under `config`.
+#### Multi-Node Training
 
 ```bash
-python train.py [config_file_path]
-# Example
-python train.py config/model/ResNet.yaml batch=8
+# Master node (node 0)
+./multinode.sh 2 4 12345 0 master-ip:12345 train.py config/dummy.yaml gpu.use="0,1,2,3"
+
+# Worker nodes (node 1+)
+./multinode.sh 2 4 12345 1 master-ip:12345 train.py config/dummy.yaml gpu.use="0,1,2,3"
 ```
 
-Training results are saved under the directory `result/[train_dataset.name]/[date]_[model.name]_[tag]`.
-
-#### Single Node Multi GPU Training
-
-To perform training with a single node and multiple GPUs,
-remove `python` from the command and add `./torchrun.sh [number of GPUs]` before it,
-and change the Config value like `gpu.use="0,1"`.
-At this time, the order of GPU IDs is the order of PCIe as shown by the `nvidia-smi` command.
+#### FSDP (Fully Sharded Data Parallel)
 
 ```bash
-./torchrun.sh 4 train.py config/model/ResNet.yaml gpu.use="0,1,2,3"
+# For very large models
+python train.py config/dummy.yaml gpu.multi_strategy="fsdp" gpu.fsdp.min_num_params=100000000
 ```
 
-#### Multi Node Multi GPU Training
+### Results and Checkpointing
 
-To perform training with multiple nodes and multiple GPUs,
-remove `python` from the command and add `./multinode.sh [number of nodes] [number of GPUs] [job ID] [node rank] [master node hostname:master node port]` before it,
-and change the Config value like `gpu.use="0,1"`.
+Training results are automatically saved to:
+
+```
+result/[dataset_name]/[date]_[model_name]_[tag]/
+├── config.yaml          # Complete configuration used
+├── models/              # Model checkpoints
+├── optimizers/          # Optimizer states  
+├── schedulers/          # Scheduler states
+└── mlruns/             # MLflow artifacts
+```
+
+### Resume Training
+
+Resume interrupted training using saved checkpoints:
 
 ```bash
-# Master Node
-./multinode.sh 2 4 12345 0 localhost:12345 train.py config/model/ResNet.yaml gpu.use=0,1,2,3
+# Resume from automatically saved checkpoint
+python train.py result/dataset_name/20240108_ResNet_experiment/config.yaml
 
-# Worker Node
-./multinode.sh 2 4 12345 1 192.168.1.10:12345 train.py config/model/ResNet.yaml gpu.use=4,5,6,7
+# Resume and extend training
+python train.py result/dataset_name/20240108_ResNet_experiment/config.yaml epoch=200
+
+# Resume with different configuration
+python train.py result/dataset_name/20240108_ResNet_experiment/config.yaml gpu.use=1 batch=64
 ```
 
-#### RAM Cache
+### Evaluation
 
-There is a function to cache part of the dataset in RAM. The cache only supports `torch.Tensor`.
+Run evaluation separately from training:
 
 ```bash
-python train.py config/model/ResNet.yaml gpu.use=1 use_ram_cache=true ram_cache_size_gb=16
+# Evaluate using saved model configuration
+python test.py result/dataset_name/20240108_ResNet_experiment/config.yaml
+
+# Evaluate with different GPU
+python test.py result/dataset_name/20240108_ResNet_experiment/config.yaml gpu.use=1
 ```
 
-To use this function, you need to implement the dataset as follows.
+### Performance Optimization
+
+#### RAM Caching
+
+Speed up training by caching datasets in RAM:
+
+```bash
+python train.py config/dummy.yaml use_ram_cache=true ram_cache_size_gb=16
+```
+
+Implement caching in your custom dataset:
 
 ```python
 if self.cache is not None and idx in self.cache:
-    image = self.cache.get(idx)
+    data = self.cache.get(idx)
 else:
-    image = read_image(str(image_path), mode=ImageReadMode.RGB)
+    data = self.load_data(idx)  # Your data loading logic
     if self.cache is not None:
-        self.cache.set(idx, image)
+        self.cache.set(idx, data)
 ```
 
-#### Resume Training
-
-After training is completed or interrupted,
-you can resume training by specifying the `config.yaml` saved in the result directory,
-`result/[train_dataset.name]/[date]_[model.name]_[tag]/config.yaml`.
-At this time, even if the original epoch was 100, if you specify `epoch=150` on the command line, the config will be overwritten and training will continue until 150 epochs.
+#### Mixed Precision Training
 
 ```bash
-python train.py config/config.yaml # Completed up to 100 epochs
+# Enable automatic mixed precision
+python train.py config/dummy.yaml use_amp=true amp_dtype="fp16"
 
-# Resume or continue training using the above results
-python train.py result/ImageNet/hoge_hoge/config.yaml epoch=150 gpu.use=7 # Continue training until 150 epochs
+# Use bfloat16 for newer hardware
+python train.py config/dummy.yaml use_amp=true amp_dtype="bf16"
 ```
 
-### Evaluate
-
-The script for evaluation is `test.py`.
-Evaluation is also executed in `train.py` for training, but use this if you want to do it manually.
-In `test.py`, specify the `config.yaml` in the directory where the training results are saved as the first argument.
+#### torch.compile
 
 ```bash
-python test.py result/ImageNet/hoge_hoge/config.yaml gpu.use=7
+# Enable PyTorch 2.0 compilation
+python train.py config/dummy.yaml use_compile=true compile_backend="inductor"
 ```
+
+## Architecture
+
+### Project Structure
+
+```
+src/
+├── config/          # Configuration management
+├── dataloaders/     # Dataset and DataLoader implementations  
+├── models/          # Model definitions and backbones
+├── optimizer/       # Optimizer builders
+├── scheduler/       # Learning rate schedulers
+├── transform/       # Data preprocessing and augmentation
+├── evaluator/       # Metrics and evaluation
+├── trainer.py       # Training loop implementation
+└── utils/           # Utilities and helpers
+
+config/
+├── __base__/        # Base configuration templates
+└── *.yaml          # Experiment configurations
+```
+
+### Registry System
+
+Components are registered using decorators for dynamic instantiation:
+
+```python
+from src.models import MODEL_REGISTRY
+
+@MODEL_REGISTRY.register()
+class MyModel(BaseModel):
+    def __init__(self, ...):
+        super().__init__()
+        # Model implementation
+```
+
+### Configuration Flow
+
+1. Load base configuration from `config/__base__/config.yaml`
+2. Merge with experiment-specific YAML file
+3. Apply CLI overrides
+4. Instantiate components using registry system
+
+## Contributing
+
+1. Install development dependencies: `uv sync`
+2. Setup pre-commit hooks: `uv run pre-commit install`
+3. Run tests: `uv run pytest`
+4. Format code: `uv run ruff format .`
+5. Check linting: `uv run ruff check .`
