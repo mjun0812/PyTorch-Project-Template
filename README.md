@@ -18,9 +18,9 @@ A comprehensive, production-ready PyTorch project template with modular architec
 ## Requirements
 
 - **Python**: 3.11+
+- **Package Manager**: uv
 - **CUDA**: 12.8 (for GPU training)
 - **PyTorch**: 2.7.1
-- **Package Manager**: uv (recommended) or pip
 
 ## Quick Start
 
@@ -188,8 +188,7 @@ result/[dataset_name]/[date]_[model_name]_[tag]/
 ├── config.yaml          # Complete configuration used
 ├── models/              # Model checkpoints
 ├── optimizers/          # Optimizer states  
-├── schedulers/          # Scheduler states
-└── mlruns/             # MLflow artifacts
+└── schedulers/          # Scheduler states
 ```
 
 ### Resume Training
