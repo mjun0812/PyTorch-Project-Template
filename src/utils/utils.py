@@ -150,8 +150,21 @@ def post_slack(channel: str = "#通知", username: str = "通知", message: str 
     load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
     load_dotenv()
     token = os.getenv("SLACK_TOKEN")
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+    env_channel = os.getenv("SLACK_CHANNEL")
+    env_username = os.getenv("SLACK_USERNAME")
+
+    # 環境変数でchannelが設定されている場合は優先
+    if env_channel:
+        channel = env_channel
+    # 環境変数でusernameが設定されている場合は優先
+    if env_username:
+        username = env_username
+
     if token:
         _post_slack(token, channel, username, message)
+    elif webhook_url:
+        _post_slack_webhook(webhook_url, channel, username, message)
 
 
 def _post_slack(
@@ -177,6 +190,34 @@ def _post_slack(
             "text": message,
             "username": username,
         },
+    )
+    return response.status_code
+
+
+def _post_slack_webhook(
+    webhook_url: str, channel: str = "#通知", username: str = "通知", message: str = ""
+) -> int:
+    """slackにwebhook経由でメッセージを送る. send slack message via webhook
+
+    Args:
+        webhook_url (str): Slack Webhook URL
+        channel (str, optional): メッセージを送る通知先. Defaults to "#通知".
+        username (str, optional): メッセージを送るユーザーの名前. Defaults to "通知".
+        message (str, optional): send message. Defaults to "".
+
+    Returns:
+        int: http status code
+    """
+    payload = {
+        "channel": channel,
+        "username": username,
+        "text": message,
+    }
+
+    response = requests.post(
+        webhook_url,
+        headers={"Content-Type": "application/json"},
+        json=payload,
     )
     return response.status_code
 

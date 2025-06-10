@@ -16,15 +16,17 @@
 			"configureZshAsDefaultShell": true
 		},
 		"ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
-			"packages": "curl,wget,git,jq,ca-certificates,build-essential"
+			"packages": "curl,wget,git,jq,ca-certificates,build-essential,ripgrep"
 		},
 		"ghcr.io/va-h/devcontainers-features/uv:1": {
 			"shellAutocompletion": true
 		},
+		"ghcr.io/devcontainers/features/node:1": {},
 		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
 	},
 	"mounts": [
-		"source=claude-code-config,target=/home/vscode/.claude,type=volume"
+		"source=claude-code-config,target=/home/vscode/.claude,type=volume",
+		"source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind"
 	],
 	"runArgs": [
 		"--init",
