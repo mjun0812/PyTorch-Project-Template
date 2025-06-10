@@ -20,8 +20,12 @@
 		},
 		"ghcr.io/va-h/devcontainers-features/uv:1": {
 			"shellAutocompletion": true
-		}
+		},
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
 	},
+	"mounts": [
+		"source=claude-code-config,target=/home/vscode/.claude,type=volume"
+	],
 	"runArgs": [
 		"--init",
 		"--rm"

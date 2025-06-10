@@ -265,7 +265,6 @@ This project includes comprehensive documentation built with MkDocs:
 
 - **Auto-generated API Reference**: Automatically generated from docstrings and type hints
 - **Architecture Guides**: Detailed explanations of the registry system and configuration management
-- **Tutorials**: Step-by-step guides for getting started and creating custom components
 - **Live Reloading**: Documentation automatically updates when you modify code or docs
 
 ### Viewing Documentation
@@ -273,15 +272,12 @@ This project includes comprehensive documentation built with MkDocs:
 ```bash
 # Start the documentation server
 ./script/run_docs.sh
-
 # Open your browser to http://127.0.0.1:8000
 ```
 
 The documentation server automatically watches for changes in:
 
 - `doc/docs/` - Documentation markdown files
-- `src/` - Python source code (for API docs)
-- `config/` - Configuration files
 - `mkdocs.yml` - Documentation configuration
 
 ### Building Documentation
@@ -303,10 +299,6 @@ uv run mkdocs build
 - **[API Reference](doc/docs/api/)**: Auto-generated API documentation
   - All modules, classes, and functions
   - Type information and docstrings
-- **[Tutorials](doc/docs/tutorials/)**: Step-by-step guides
-  - Getting started guide
-  - Training best practices
-  - Creating custom components
 
 ## Architecture
 
@@ -349,11 +341,3 @@ class MyModel(BaseModel):
 2. Merge with experiment-specific YAML file
 3. Apply CLI overrides
 4. Instantiate components using registry system
-
-## Contributing
-
-1. Install development dependencies: `uv sync`
-2. Setup pre-commit hooks: `uv run pre-commit install`
-3. Run tests: `uv run pytest`
-4. Format code: `uv run ruff format .`
-5. Check linting: `uv run ruff check .`

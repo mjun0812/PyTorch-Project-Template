@@ -16,10 +16,6 @@ nav:
     - Transform: api/transform.md
     - Evaluator: api/evaluator.md
     - Utils: api/utils.md
-  - Tutorials:
-    - Getting Started: tutorials/getting-started.md
-    - Training: tutorials/training.md
-    - Custom Components: tutorials/custom-components.md
 
 theme:
   name: material
@@ -84,9 +80,7 @@ site_dir: doc/site
 # Watch additional directories for changes
 watch:
   - src/
-  - config/
   - README.md
-  - CLAUDE.md
 
 # Development server settings
 dev_addr: 127.0.0.1:8000
