@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Docker build Test
+        run: |
+          ./docker/build.sh
+
+      - name: Docker run Test
+        run: |
+          ./docker/run.sh echo "success"
