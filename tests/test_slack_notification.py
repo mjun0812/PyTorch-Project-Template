@@ -1,4 +1,7 @@
+import os
 from unittest.mock import Mock, patch
+
+from dotenv import load_dotenv
 
 
 def test_post_slack_with_webhook_url() -> None:
@@ -58,3 +61,29 @@ def test_post_slack_with_token() -> None:
             },
         )
         assert status_code == 200
+
+
+def test_post_slack_webhook_url() -> None:
+    from src.utils.utils import _post_slack_webhook
+
+    load_dotenv()
+
+    _post_slack_webhook(
+        webhook_url=os.getenv("SLACK_WEBHOOK_URL"),
+        channel="#test",
+        username="test-bot",
+        message="Test message",
+    )
+
+
+def test_post_slack_token() -> None:
+    from src.utils.utils import _post_slack
+
+    load_dotenv()
+
+    _post_slack(
+        token=os.getenv("SLACK_TOKEN"),
+        channel="#test",
+        username="test-bot",
+        message="Test message",
+    )

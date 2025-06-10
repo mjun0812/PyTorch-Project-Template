@@ -53,7 +53,13 @@ Example `.env` configuration:
 
 ```bash
 # Slack notifications (optional)
+# You can use either SLACK_TOKEN or SLACK_WEBHOOK_URL
+# If you set both, SLACK_TOKEN will be used
 SLACK_TOKEN="your-slack-token"
+SLACK_CHANNEL="your-slack-channel"
+SLACK_USERNAME="your-slack-username"
+
+SLACK_WEBHOOK_URL="your-slack-webhook-url"
 
 # MLflow tracking
 MLFLOW_TRACKING_URI="./result/mlruns"  # or remote URI
