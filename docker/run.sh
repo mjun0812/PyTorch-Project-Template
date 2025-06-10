@@ -11,24 +11,19 @@ GROUP_NAME=`id -gn`
 USER_NAME=$USER
 PWD=$(pwd)
 
-USE_QUEUE="-i"
-
-for OPT in "$@"; do
-    case $OPT in
-        '-q' | '--queue')
-            USE_QUEUE=""
-            shift 1;
-        ;;
-    esac
-done
-
+# Use GPU if available
 GPU_OPTION=""
 if docker system info | grep -qE '^\s*Runtimes: .*nvidia.*'; then
-    # Use GPU
     GPU_OPTION="--gpus all"
 fi
 
-# datasetディレクトリ以下のシンボリックリンクを探し、リンク先をマウントする
+# Check if TTY is available (not in CI environment)
+TTY_OPTION=""
+if [ -t 0 ] && [ -t 1 ]; then
+    TTY_OPTION="-it"
+fi
+
+# Mount symlinks in dataset directory
 SYMLINK_MOUNTS=""
 for symlink in $(find "${PWD}/dataset" -type l); do
     target=$(dirname "$symlink")/$(readlink "$symlink")
@@ -36,8 +31,7 @@ for symlink in $(find "${PWD}/dataset" -type l); do
 done
 
 docker run \
-    -t \
-    $USE_QUEUE \
+    $TTY_OPTION \
     $GPU_OPTION \
     --rm \
     --shm-size=128g \
