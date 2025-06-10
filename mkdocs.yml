@@ -61,10 +61,6 @@ plugins:
             docstring_section_style: table
             members_order: source
             show_submodules: false
-            watch:
-              - src/
-      watch:
-        - src/
 
 markdown_extensions:
   - pymdownx.highlight:

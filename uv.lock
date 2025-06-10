@@ -1607,6 +1607,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/98/14/22533a578bf8b187e05d67e2c1721ce10e3f526610eebaf7a149d557ea7a/mkdocstrings-0.29.1-py3-none-any.whl", hash = "sha256:37a9736134934eea89cbd055a513d40a020d87dfcae9e3052c2a6b8cd4af09b6", size = 1631075, upload-time = "2025-03-31T08:33:09.661Z" },
 ]
 
+[package.optional-dependencies]
+python = [
+    { name = "mkdocstrings-python" },
+]
+
 [[package]]
 name = "mkdocstrings-python"
 version = "1.16.12"
@@ -2548,7 +2553,7 @@ dependencies = [
 dev = [
     { name = "mkdocs" },
     { name = "mkdocs-material" },
-    { name = "mkdocstrings" },
+    { name = "mkdocstrings", extra = ["python"] },
     { name = "mkdocstrings-python" },
     { name = "mypy" },
     { name = "pre-commit" },
@@ -2586,7 +2591,7 @@ requires-dist = [
 dev = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.6.14" },
-    { name = "mkdocstrings", specifier = ">=0.29.1" },
+    { name = "mkdocstrings", extras = ["python"], specifier = ">=0.29.1" },
     { name = "mkdocstrings-python", specifier = ">=1.16.12" },
     { name = "mypy", specifier = ">=1.16.0" },
     { name = "pre-commit", specifier = ">=4.2.0" },
