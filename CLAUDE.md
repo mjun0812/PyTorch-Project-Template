@@ -87,6 +87,28 @@ class AnotherModel(nn.Module): ...
 3. `Trainer` handles epoch/iteration loops, checkpointing, distributed training
 4. Results saved to `result/[dataset]/[date]_[model]_[tag]/`
 
+### Slack Notifications
+
+The project includes built-in Slack notification support for training completion and errors:
+
+- **Environment Variables**: Set `SLACK_TOKEN` or `SLACK_WEBHOOK_URL` in `.env`
+- **Channel Override**: Use `SLACK_CHANNEL` to set default notification channel
+- **Username Override**: Use `SLACK_USERNAME` to set default notification username
+- **Priority**: Webhook URL > Token, Environment variables > function arguments
+- **Auto-notifications**: Training completion, errors, and test results sent automatically
+
+Configuration in `.env`:
+
+```bash
+# Option 1: Slack API Token (recommended)
+SLACK_TOKEN="xoxb-your-token"
+SLACK_CHANNEL="#notifications"  # Optional: default channel
+SLACK_USERNAME="Bot Name"       # Optional: default username
+
+# Option 2: Webhook URL (simpler setup)
+SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+```
+
 ## Common Commands
 
 ### Training
@@ -95,14 +117,33 @@ class AnotherModel(nn.Module): ...
 # Basic training
 python train.py config/dummy.yaml
 
-# With config overrides
-python train.py config/dummy.yaml batch=32 gpu.use=0,1
+# With config overrides (dot notation for nested values)
+python train.py config/dummy.yaml batch=32 gpu.use=0,1 optimizer.lr=0.001
 
-# Multi-GPU training
+# Multi-GPU training (DDP recommended)
 ./torchrun.sh 4 train.py config/dummy.yaml gpu.use="0,1,2,3"
 
-# Resume training
+# FSDP for very large models
+python train.py config/dummy.yaml gpu.multi_strategy="fsdp" gpu.fsdp.min_num_params=100000000
+
+# Resume training from checkpoint
 python train.py result/dataset_name/timestamp_model_tag/config.yaml epoch=200
+
+# Multi-node training (run on each node)
+./multinode.sh 2 4 12345 0 master-ip:12345 train.py config/dummy.yaml gpu.use="0,1,2,3"
+```
+
+### Testing/Evaluation
+
+```bash
+# Run evaluation
+python test.py config/dummy.yaml
+
+# Evaluate saved model
+python test.py result/dataset_name/timestamp_model_tag/config.yaml
+
+# Test with different GPU
+python test.py result/dataset_name/timestamp_model_tag/config.yaml gpu.use=1
 ```
 
 ### Development
@@ -128,6 +169,30 @@ uv run --frozen pytest -v
 
 # Show registered modules (useful for debugging)
 python script/show_registers.py
+
+# Run specific Slack notification tests
+uv run --frozen pytest tests/test_slack_notification.py -v
+
+# View model architecture  
+python script/show_model.py
+
+# View scheduler visualization
+python script/show_scheduler.py
+
+# View transform pipeline
+python script/show_transform.py
+
+# View current config
+python script/show_config.py config/dummy.yaml
+
+# Batch edit configs
+python script/edit_configs.py config/dummy.yaml "optimizer.lr=0.01,batch=64"
+
+# Clean orphaned results
+python script/clean_result.py
+
+# Aggregate MLflow results
+python script/aggregate_mlflow.py all
 ```
 
 ### Docker
@@ -137,17 +202,23 @@ python script/show_registers.py
 ./docker/run.sh python train.py config/dummy.yaml
 ```
 
-### Tools
+### Tools and Environment
 
 ```bash
-# MLflow UI
+# Copy environment template
+cp template.env .env
+# Edit .env with your API keys and settings
+
+# MLflow UI for experiment tracking
 ./script/run_mlflow.sh
 
-# Jupyter Lab
+# Jupyter Lab for experimentation
 ./script/run_notebook.sh
 
-# Config editing
-python script/edit_configs.py config/dummy.yaml "optimizer.lr=0.01,batch=64"
+# Performance optimization options
+python train.py config/dummy.yaml use_ram_cache=true ram_cache_size_gb=16
+python train.py config/dummy.yaml use_amp=true amp_dtype="fp16"
+python train.py config/dummy.yaml use_compile=true compile_backend="inductor"
 ```
 
 ### Documentation
@@ -162,6 +233,39 @@ uv run mkdocs build
 # Deploy to GitHub Pages (if configured)
 uv run mkdocs gh-deploy
 ```
+
+## Key Project Information
+
+### Result Structure
+
+Training outputs are saved to `result/[dataset]/[date]_[model]_[tag]/` containing:
+
+- `config.yaml`: Complete configuration used for training
+- `models/`: Model checkpoints (latest.pth, best.pth, epoch_N.pth)
+- `optimizers/`: Optimizer state dictionaries
+- `schedulers/`: Learning rate scheduler states
+
+### Environment Variables (.env)
+
+Required/Optional settings in `.env` file:
+
+- `SLACK_TOKEN` or `SLACK_WEBHOOK_URL`: Slack notifications
+- `SLACK_CHANNEL`, `SLACK_USERNAME`: Default Slack settings
+- `MLFLOW_TRACKING_URI`: MLflow tracking server
+- `WANDB_API_KEY`: Weights & Biases integration
+
+### Registry System Usage
+
+All components must be registered for discovery:
+
+```python
+from src.models import MODEL_REGISTRY
+
+@MODEL_REGISTRY.register()  # Use class name
+@MODEL_REGISTRY.register("custom_name")  # Use custom name
+```
+
+Available registries: `MODEL_REGISTRY`, `DATASET_REGISTRY`, `TRANSFORM_REGISTRY`, `OPTIMIZER_REGISTRY`, `LR_SCHEDULER_REGISTRY`, `EVALUATOR_REGISTRY`
 
 ## important-instruction-reminders
 
