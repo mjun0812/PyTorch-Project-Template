@@ -20,6 +20,7 @@ denormalize = T.Normalize(
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig) -> None:
     phase = cfg.get("phase", "train")
+    print(f"Phase: {phase}")
     cfg.use_cpu = True
 
     cfg_dataset = cfg.dataset.get(phase)

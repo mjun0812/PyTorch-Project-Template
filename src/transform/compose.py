@@ -1,23 +1,12 @@
 import torch
-from omegaconf import OmegaConf
+import torch.nn as nn
 
-from ..config import TransformConfig
 from ..dataloaders import DatasetOutput
 
 
 class BatchedTransformCompose:
-    def __init__(self, cfg: list[TransformConfig]) -> None:
-        from .build import BATCHED_TRANSFORM_REGISTRY
-
-        self.transforms = []
-
-        for c in cfg:
-            if c.args is None:
-                transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)()
-            else:
-                args = OmegaConf.to_object(c.args)
-                transform = BATCHED_TRANSFORM_REGISTRY.get(c.name)(**args)
-            self.transforms.append(transform)
+    def __init__(self, transforms: list[nn.Module]) -> None:
+        self.transforms = transforms
 
     def to(self, device: torch.device) -> None:
         for t in self.transforms:

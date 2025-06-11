@@ -16,6 +16,14 @@ def build_transform(cfg: TransformConfig) -> T.Transform:
     return transform
 
 
+def build_batch_transform(cfg: TransformConfig) -> BatchedTransformCompose:
+    if cfg.args is None:
+        batch_transform = BATCHED_TRANSFORM_REGISTRY.get(cfg.class_name)()
+    else:
+        batch_transform = BATCHED_TRANSFORM_REGISTRY.get(cfg.class_name)(**cfg.args)
+    return batch_transform
+
+
 def build_transforms(cfg: list[TransformConfig]) -> T.Compose:
     transforms = []
     for cfg_transform in cfg:
@@ -25,6 +33,6 @@ def build_transforms(cfg: list[TransformConfig]) -> T.Compose:
 
 def build_batched_transform(cfg: list[TransformConfig]) -> BatchedTransformCompose:
     batched_transforms = []
-    for cfg_batched_transform in cfg:
-        batched_transforms.append(build_transform(cfg_batched_transform))
+    for cfg_transform in cfg:
+        batched_transforms.append(build_batch_transform(cfg_transform))
     return BatchedTransformCompose(batched_transforms)
