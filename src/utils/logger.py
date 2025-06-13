@@ -375,9 +375,7 @@ class Logger:
 
         path = Path(path)
 
-        for p in path.iterdir():
-            target = path / p
-
+        for target in path.iterdir():
             if target.is_dir():
                 # ディレクトリが無視リストに含まれているかチェック
                 if any(ignore_dir_name in str(target) for ignore_dir_name in ignore_dirs):
