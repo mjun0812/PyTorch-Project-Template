@@ -10,5 +10,5 @@ def build_evaluator(cfg: list[EvaluatorConfig]) -> MetricCollection:
     evaluators = []
     for c in cfg:
         args = ConfigManager.to_object(c.args.copy()) if c.args is not None else {}
-        evaluators.append(EVALUATOR_REGISTRY.get(c.name)(**args))
+        evaluators.append(EVALUATOR_REGISTRY.get(c.class_name)(**args))
     return MetricCollection(evaluators)
