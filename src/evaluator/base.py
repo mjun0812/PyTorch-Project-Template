@@ -14,8 +14,9 @@ class BaseEvaluator(Metric):
     # batch states are independent and we will optimize the runtime of 'forward'
     full_state_update: bool = True
 
-    def __init__(self) -> None:
+    def __init__(self, prefix: str | None = None) -> None:
         super().__init__()
+        self.prefix = prefix
 
     def update(self, targets: dict, preds: dict) -> None:
         raise NotImplementedError
