@@ -181,6 +181,7 @@ class Logger:
         use_mlflow: bool = False,
         use_wandb: bool = False,
         mlflow_experiment_name: str | None = None,
+        mlflow_run_name: str | None = None,
         wandb_project_name: str | None = None,
     ) -> None:
         self.output_dir = output_dir
@@ -195,7 +196,9 @@ class Logger:
         self.metric_logger = MetricLogger()
 
         # 外部ロガーの設定
-        self._setup_mlflow_logger(use_mlflow, mlflow_experiment_name, output_dir)
+        if mlflow_run_name is None and output_dir is not None:
+            mlflow_run_name = Path(output_dir).name
+        self._setup_mlflow_logger(use_mlflow, mlflow_experiment_name, mlflow_run_name)
         self._setup_wandb_logger(use_wandb, wandb_project_name, output_dir)
 
         self._log_initial_info()
@@ -214,16 +217,16 @@ class Logger:
         self.logger = logger
 
     def _setup_mlflow_logger(
-        self, use_mlflow: bool, experiment_name: str | None, output_dir: PathLike | None
+        self, use_mlflow: bool, experiment_name: str | None, run_name: str | None
     ) -> None:
         """MLflowロガーを設定する"""
         self.mlflow_logger: MlflowLogger | None = None
-        if use_mlflow and experiment_name is not None and output_dir is not None:
-            self.mlflow_logger = MlflowLogger(experiment_name, output_dir.name)
+        if use_mlflow and experiment_name is not None and run_name is not None:
+            self.mlflow_logger = MlflowLogger(experiment_name, run_name)
             self.logger.info(f"MLflow Tracking: {self.mlflow_logger.get_run_uri()}")
             self.logger.info(
                 f"Start MLflow Tracking: experiment_name={experiment_name} "
-                f"run_name={output_dir.name} "
+                f"run_name={run_name} "
                 f"experiment_id: {self.mlflow_logger.run.info.experiment_id} "
                 f"run_id: {self.mlflow_logger.run.info.run_id}"
             )

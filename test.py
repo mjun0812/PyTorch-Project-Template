@@ -95,6 +95,7 @@ def main(cfg: ExperimentConfig) -> None:
         use_wandb=cfg.log.use_wandb,
         mlflow_experiment_name=cfg.log.mlflow_experiment_name,
         wandb_project_name=cfg.log.wandb_project_name,
+        mlflow_run_name=f"{output_dir.parents[1].name}_{output_dir.name}",
     )
     logger.log_config(cfg, cfg.log.log_params)
     if cfg.tag:
