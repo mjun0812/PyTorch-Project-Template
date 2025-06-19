@@ -262,49 +262,6 @@ python train.py config/dummy.yaml use_amp=true amp_dtype="bf16"
 python train.py config/dummy.yaml use_compile=true compile_backend="inductor"
 ```
 
-## Documentation
-
-This project includes comprehensive documentation built with MkDocs:
-
-### Features
-
-- **Auto-generated API Reference**: Automatically generated from docstrings and type hints
-- **Architecture Guides**: Detailed explanations of the registry system and configuration management
-- **Live Reloading**: Documentation automatically updates when you modify code or docs
-
-### Viewing Documentation
-
-```bash
-# Start the documentation server
-./script/run_docs.sh
-# Open your browser to http://127.0.0.1:8000
-```
-
-The documentation server automatically watches for changes in:
-
-- `doc/docs/` - Documentation markdown files
-- `mkdocs.yml` - Documentation configuration
-
-### Building Documentation
-
-```bash
-# Build static documentation
-uv run mkdocs build
-
-# Documentation will be generated in doc/site/
-```
-
-### Documentation Structure
-
-- **[Home](doc/docs/index.md)**: Project overview and quick start
-- **[Architecture](doc/docs/architecture/)**: Core concepts and design patterns
-  - Registry system explained
-  - Configuration management
-  - Component architecture
-- **[API Reference](doc/docs/api/)**: Auto-generated API documentation
-  - All modules, classes, and functions
-  - Type information and docstrings
-
 ## Architecture
 
 ### Project Structure
