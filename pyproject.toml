@@ -71,7 +71,15 @@ explicit = true
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-exclude = [".git", ".ruff_cache", ".venv", ".vscode", "dataset", "result"]
+exclude = [
+    ".git",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "dataset",
+    "result",
+    "*.ipynb",
+]
 
 [tool.ruff.lint]
 preview = true
