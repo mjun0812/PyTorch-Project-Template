@@ -1,6 +1,7 @@
+from abc import abstractmethod
+
 from torch import nn
 
-from ..config import ModelConfig
 from ..dataloaders import DatasetOutput
 from ..types import PhaseStr
 from .losses import build_loss
@@ -8,21 +9,27 @@ from .types import ModelOutput
 
 
 class BaseModel(nn.Module):
-    def __init__(self, cfg: ModelConfig, phase: PhaseStr = "train") -> None:
+    def __init__(
+        self, cfg: dict | None, cfg_loss: dict | None = None, phase: PhaseStr = "train"
+    ) -> None:
         super().__init__()
         self.cfg = cfg
+        self.cfg_loss = cfg_loss
         self.phase = phase
 
         self.loss = None
-        if self.phase in ["train", "val"]:
-            self.loss = build_loss(self.cfg.loss)
+        if self.phase in ["train", "val"] and self.cfg_loss is not None:
+            self.loss = build_loss(self.cfg_loss)
 
+    @abstractmethod
     def train_forward(self, data: DatasetOutput) -> ModelOutput:
         raise NotImplementedError
 
+    @abstractmethod
     def val_forward(self, data: DatasetOutput) -> ModelOutput:
         raise NotImplementedError
 
+    @abstractmethod
     def test_forward(self, data: DatasetOutput) -> ModelOutput:
         raise NotImplementedError
 

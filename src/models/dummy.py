@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from torch import nn
 from torch.nn import functional as F
 
-from ..config import ModelConfig
 from ..dataloaders import DatasetOutput
 from ..types import PhaseStr
 from .base import BaseModel
@@ -18,9 +17,11 @@ class DummyModelConfig:
 
 @MODEL_REGISTRY.register()
 class DummyModel(BaseModel):
-    def __init__(self, cfg: ModelConfig, phase: PhaseStr = "train") -> None:
-        super().__init__(cfg, phase)
-        self.cfg_model = DummyModelConfig(**self.cfg.args)
+    def __init__(
+        self, cfg: dict | None, cfg_loss: dict | None = None, phase: PhaseStr = "train"
+    ) -> None:
+        super().__init__(cfg, cfg_loss, phase)
+        self.cfg = DummyModelConfig(**(self.cfg or {}))
         self.fc = nn.Linear(8, 4)
 
     def train_forward(self, data: DatasetOutput) -> ModelOutput:

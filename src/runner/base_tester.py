@@ -9,9 +9,9 @@ from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from tqdm import tqdm
 
-from .models import BaseModel, ModelOutput
-from .types import TORCH_DTYPE
-from .utils import time_synchronized
+from ..models import BaseModel, ModelOutput
+from ..types import TORCH_DTYPE
+from ..utils import time_synchronized
 
 
 @dataclass
@@ -128,7 +128,3 @@ class BaseTester:
 
     def save_results(self, output_dir: Path, targets: list, results: list) -> None:
         pass
-
-
-class Tester(BaseTester):
-    pass

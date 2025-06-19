@@ -52,19 +52,17 @@ from .models import (
 # Optimization
 from .optimizer import OPTIMIZER_REGISTRY, build_optimizer
 
+# Core Runners
+from .runner import EpochResult, Tester, TesterOutput, Trainer, TrainerParams, TrainingState
+
 # Scheduling
 from .scheduler import SCHEDULER_REGISTRY, build_lr_scheduler, get_lr_scheduler
-
-# Core components
-from .tester import BaseTester, Tester, TesterOutput
-from .trainer import BaseTrainer, EpochResult, Trainer, TrainerParams, TrainingState
 
 # Transforms
 from .transform import (
     BATCHED_TRANSFORM_REGISTRY,
     TRANSFORM_REGISTRY,
     BaseTransform,
-    BatchedTransformCompose,
     ToTensor,
     build_batched_transform,
     build_transform,

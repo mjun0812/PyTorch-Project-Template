@@ -31,7 +31,7 @@ def test_config() -> None:
 
 def test_train_test_resume() -> None:
     common_options = [
-        "mlflow.use=false",
+        "log.use_mlflow=false",
         "output=/tmp/test",
         "epoch=2",
         "val_interval=1",

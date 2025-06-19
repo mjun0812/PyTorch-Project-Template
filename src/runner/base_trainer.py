@@ -10,11 +10,11 @@ from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from torchmetrics import MetricCollection
 from tqdm import tqdm
 
-from .config import ConfigManager, ExperimentConfig
-from .dataloaders import DatasetOutput
-from .models import BaseModel, ModelOutput
-from .types import TORCH_DTYPE, PathLike, PhaseStr
-from .utils import (
+from ..config import ConfigManager, ExperimentConfig
+from ..dataloaders import DatasetOutput
+from ..models import BaseModel, ModelOutput
+from ..types import TORCH_DTYPE, PathLike, PhaseStr
+from ..utils import (
     Logger,
     create_symlink,
     is_distributed,
@@ -397,7 +397,3 @@ class BaseTrainer:
                 torch.load(iter_scheduler_path, map_location=self.device, weights_only=False)
             )
             self.logger.info(f"Load iter scheduler weight from {iter_scheduler_path}")
-
-
-class Trainer(BaseTrainer):
-    pass

@@ -8,7 +8,7 @@ from src.config import ConfigManager, ExperimentConfig
 from src.dataloaders import build_dataloader, build_dataset, build_sampler
 from src.evaluator import build_evaluator
 from src.models import build_model
-from src.tester import Tester
+from src.runner import Tester
 from src.transform import build_batched_transform, build_transforms
 from src.utils import (
     JsonEncoder,

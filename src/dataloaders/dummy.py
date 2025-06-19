@@ -17,17 +17,13 @@ class DummyDatasetConfig:
 @DATASET_REGISTRY.register()
 class DummyDataset(BaseDataset):
     def __init__(
-        self,
-        cfg: DummyDatasetConfig,
-        transforms: Compose | None = None,
-        cache: TensorCache | None = None,
+        self, cfg: dict | None, transforms: Compose | None = None, cache: TensorCache | None = None
     ) -> None:
-        self.cfg = DummyDatasetConfig(**cfg)
-        self.transforms = transforms
-        self.cache = cache
+        super().__init__(cfg, transforms, cache)
+        self.cfg = DummyDatasetConfig(**(cfg or {}))
 
     def __len__(self) -> int:
-        return 32
+        return 8
 
     def __getitem__(self, idx: int) -> DatasetOutput:
         return DatasetOutput(data=torch.ones(8), label=idx % 4)

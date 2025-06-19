@@ -7,10 +7,12 @@ import torch
 import torch.distributed as dist
 from torch.distributed.elastic.multiprocessing.errors import record
 from torch.nn import DataParallel
-from torch.utils.data import DataLoader, Dataset, Sampler
+from torch.utils.data import DataLoader, Sampler
+from torchmetrics import MetricCollection
+from torchvision.transforms.v2 import Compose
 
 from src.config import ConfigManager, DatasetConfig, ExperimentConfig
-from src.dataloaders import build_dataloader, build_dataset, build_sampler
+from src.dataloaders import BaseDataset, build_dataloader, build_dataset, build_sampler
 from src.evaluator import build_evaluator
 from src.models import (
     BaseModel,
@@ -20,13 +22,9 @@ from src.models import (
     setup_fsdp_model,
 )
 from src.optimizer import build_optimizer
+from src.runner import Trainer, TrainerParams
 from src.scheduler import build_lr_scheduler
-from src.trainer import Trainer, TrainerParams
-from src.transform import (
-    BatchedTransformCompose,
-    build_batched_transform,
-    build_transforms,
-)
+from src.transform import build_batched_transform, build_transforms
 from src.utils import (
     Logger,
     cuda_info,
@@ -74,8 +72,8 @@ def build_train_model(cfg: ExperimentConfig, device: torch.device, logger: Logge
 
 
 def build_phase_dataloader(
-    cfg: ExperimentConfig, phase: str, logger: Logger
-) -> tuple[Dataset, DataLoader, BatchedTransformCompose | None, Sampler]:
+    cfg: ExperimentConfig, phase: str
+) -> tuple[BaseDataset, DataLoader, Compose | None, Sampler]:
     cfg_dataset: DatasetConfig = cfg.dataset.get(phase)
 
     transform = build_transforms(cfg_dataset.transforms)
@@ -93,11 +91,6 @@ def build_phase_dataloader(
         max_iter=cfg.max_iter if phase == "train" else None,
         step_iter=cfg.step_iter if phase == "train" else None,
     )
-
-    phase_cap = phase.capitalize()
-    logger.info(f"{phase_cap} {cfg_dataset.name} Dataset sample num: {len(dataset)}")
-    logger.info(f"{phase_cap} transform: {transform}")
-    logger.info(f"{phase_cap} batched transform: {batched_transform}")
     return dataset, dataloader, batched_transform, sampler
 
 
@@ -112,12 +105,32 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
         logger.info(f"model architecture:\n{model}")
         logger.info(f"model summary:\n{model_summary}")
 
-    # ####### Build Dataset, Dataloader, Batched Transform, Sampler #######
-    datasets, dataloaders, batched_transforms, samplers = {}, {}, {}, {}
+    # ####### Build DataPipeline #######
+    datasets: dict[str, BaseDataset] = {}
+    dataloaders: dict[str, DataLoader] = {}
+    batched_transforms: dict[str, Compose | None] = {}
+    samplers: dict[str, Sampler] = {}
+    evaluators: dict[str, MetricCollection | None] = {}
     for phase in ["train", "val"]:
+        # Build Dataset, Dataloader, Batched Transform, Sampler
         datasets[phase], dataloaders[phase], batched_transforms[phase], samplers[phase] = (
-            build_phase_dataloader(cfg, phase, logger)
+            build_phase_dataloader(cfg, phase)
         )
+        phase_cap = phase.capitalize()
+        logger.info(
+            f"{phase_cap} {cfg.dataset.get(phase).name} Dataset sample num: {len(datasets[phase])}"
+        )
+        logger.info(f"{phase_cap} transform: {datasets[phase].transforms}")
+        if batched_transforms[phase] is not None:
+            batched_transforms[phase].to(device)
+            logger.info(f"{phase_cap} batched transform: {batched_transforms[phase]}")
+
+        # Build Evaluator
+        if cfg.evaluator.get(phase) is not None:
+            evaluators[phase] = build_evaluator(cfg.evaluator.get(phase)).to(device)
+            logger.info(f"{phase_cap} Evaluators: {evaluators[phase]}")
+        else:
+            evaluators[phase] = None
 
     # ####### Build Optimizer #######
     optimizer = build_optimizer(cfg.optimizer, model)
@@ -134,15 +147,6 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     if iter_lr_scheduler:
         logger.info(f"Iter Scheduler: {cfg.lr_scheduler.iter_scheduler.class_name}")
 
-    # ####### Build Evaluator #######
-    evaluators = {}
-    for phase in ["train", "val"]:
-        if cfg.evaluator.get(phase) is not None:
-            evaluators[phase] = build_evaluator(cfg.evaluator.get(phase)).to(device)
-            logger.info(f"{phase.capitalize()} Evaluators: {evaluators[phase]}")
-        else:
-            evaluators[phase] = None
-
     # ###### Setup Training Params #######
     if cfg.use_iter_loop:
         cfg.epoch = cfg.max_iter // cfg.step_iter
@@ -150,9 +154,10 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
             cfg.epoch += 1
         cfg.save_interval = 1
         cfg.val_interval = 1
-        logger.info(f"Iter based training ({cfg.epoch} iters)")
+        logger.info(f"Iteration based training ({cfg.epoch} iters)")
     else:
         logger.info(f"Epoch based training ({cfg.epoch} epochs)")
+
     trainer_params = TrainerParams(
         output_dir=output_dir,
         epochs=cfg.epoch,

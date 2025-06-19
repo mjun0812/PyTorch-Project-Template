@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from torchmetrics import Metric
 
 
@@ -18,6 +20,7 @@ class BaseEvaluator(Metric):
         super().__init__()
         self.prefix = prefix
 
+    @abstractmethod
     def update(self, targets: dict, preds: dict) -> None:
         raise NotImplementedError
 

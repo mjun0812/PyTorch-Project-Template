@@ -22,7 +22,7 @@ MODEL_REGISTRY = Registry("MODEL")
 
 
 def build_model(cfg: ModelConfig, phase: PhaseStr = "train") -> BaseModel:
-    model = MODEL_REGISTRY.get(cfg.class_name)(cfg, phase)
+    model = MODEL_REGISTRY.get(cfg.class_name)(cfg.args, cfg.loss, phase)
     if cfg.pre_trained_weight:
         load_model_weight(cfg.pre_trained_weight, model)
     return model
