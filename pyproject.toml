@@ -25,6 +25,16 @@ dependencies = [
     "timm>=1.0.15",
 ]
 
+[dependency-groups]
+doc = [
+    "furo>=2024.8.6",
+    "myst-parser>=4.0.1",
+    "sphinx>=8.2.3",
+    "sphinx-autoapi>=3.6.0",
+    "sphinx-autobuild>=2024.10.3",
+]
+dev = ["mypy>=1.16.0", "pre-commit>=4.2.0", "pytest>=8.3.2", "ruff>=0.6.2"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -37,12 +47,7 @@ typeCheckingMode = "off"
 exclude = ["dataset", "result", ".tmp", ".git", ".venv", ".vscode"]
 
 [tool.uv]
-dev-dependencies = [
-    "mypy>=1.16.0",
-    "pre-commit>=4.2.0",
-    "pytest>=8.3.2",
-    "ruff>=0.6.2",
-]
+default-groups = "all"
 
 [tool.uv.sources]
 torch = [

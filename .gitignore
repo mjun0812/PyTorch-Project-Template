@@ -338,3 +338,6 @@ result/*
 dataset/*
 !dataset/.gitkeep
 .claude
+
+doc/docs/build/
+doc/docs/api/

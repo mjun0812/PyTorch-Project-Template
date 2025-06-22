@@ -12,6 +12,14 @@ class BaseModel(nn.Module):
     def __init__(
         self, cfg: dict | None, cfg_loss: dict | None = None, phase: PhaseStr = "train"
     ) -> None:
+        """
+        Base model class.
+
+        Args:
+            cfg: Configuration dictionary.
+            cfg_loss: Configuration dictionary for loss.
+            phase: Phase of the model. (train, val, test)
+        """
         super().__init__()
         self.cfg = cfg
         self.cfg_loss = cfg_loss
