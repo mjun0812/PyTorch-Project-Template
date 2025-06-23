@@ -3,6 +3,7 @@ import torchvision.transforms.v2 as T
 from ..config import TransformConfig
 from ..utils import Registry
 from .base import BaseTransform
+from .batch_compose import BatchedTransformCompose
 
 TRANSFORM_REGISTRY = Registry("TRANSFORM")
 """Registry for data transformation classes."""
@@ -54,7 +55,7 @@ def build_transforms(cfg: list[TransformConfig]) -> T.Compose:
     return T.Compose(transforms)
 
 
-def build_batched_transform(cfg: list[TransformConfig]) -> T.Compose:
+def build_batched_transform(cfg: list[TransformConfig]) -> BatchedTransformCompose:
     """Build a composition of batch-level transformations.
 
     Args:
@@ -66,4 +67,4 @@ def build_batched_transform(cfg: list[TransformConfig]) -> T.Compose:
     batched_transforms = []
     for cfg_transform in cfg:
         batched_transforms.append(build_batch_transform(cfg_transform))
-    return T.Compose(batched_transforms)
+    return BatchedTransformCompose(batched_transforms)

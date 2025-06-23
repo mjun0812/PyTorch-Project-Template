@@ -5,6 +5,7 @@ from .base import BaseTransform
 from .build import (
     BATCHED_TRANSFORM_REGISTRY,
     TRANSFORM_REGISTRY,
+    BatchedTransformCompose,
     build_batched_transform,
     build_transform,
     build_transforms,

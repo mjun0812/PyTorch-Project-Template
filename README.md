@@ -10,7 +10,7 @@ A comprehensive, production-ready PyTorch project template with modular architec
 - **📊 Experiment Tracking**: MLflow and Weights & Biases integration with auto-visualization
 - **🔧 Modern Tooling**: uv package management, pre-commit hooks, Docker support
 - **💾 Resume Training**: Automatic checkpoint saving and loading with state preservation
-- **🌐 Cross-Platform**: Development support on macOS and Linux with optimized builds
+- **🌐 Cross-Platform**: Development support on macOS (Apple Silicon MPS), Linux with optimized builds
 - **🐳 Development Environment**: Devcontainer and Jupyter Lab integration
 - **⚡ Performance Optimization**: RAM caching, mixed precision, torch.compile support
 - **📚 Auto Documentation**: Sphinx-based API docs with live reloading
