@@ -4,27 +4,29 @@ A comprehensive, production-ready PyTorch project template with modular architec
 
 ## Features
 
-- **Modular Architecture**: Registry-based component system for easy extensibility
-- **Configuration Management**: OmegaConf + dataclasses with CLI override support  
-- **Distributed Training**: Single-node/multi-node training with DDP, FSDP, and DataParallel
-- **Experiment Tracking**: MLflow and Weights & Biases integration
-- **Modern Tooling**: uv package management, pre-commit hooks, Docker support
-- **Resume Training**: Automatic checkpoint saving and loading
-- **Cross-Platform**: Development support on macOS and Linux
-- **Development Environment**: Devcontainer and Jupyter Lab integration
-- **RAM Caching**: Optional dataset caching for faster training
-- **Documentation**: Auto-generated API docs with MkDocs and live reloading
+- **🧩 Modular Architecture**: Registry-based component system for easy extensibility
+- **⚙️ Configuration Management**: Hierarchical config system with inheritance and CLI overrides
+- **🚀 Distributed Training**: Multi-node/multi-GPU training with DDP, FSDP, and DataParallel
+- **📊 Experiment Tracking**: MLflow and Weights & Biases integration with auto-visualization
+- **🔧 Modern Tooling**: uv package management, pre-commit hooks, Docker support
+- **💾 Resume Training**: Automatic checkpoint saving and loading with state preservation
+- **🌐 Cross-Platform**: Development support on macOS and Linux with optimized builds
+- **🐳 Development Environment**: Devcontainer and Jupyter Lab integration
+- **⚡ Performance Optimization**: RAM caching, mixed precision, torch.compile support
+- **📚 Auto Documentation**: Sphinx-based API docs with live reloading
+- **📱 Slack Notifications**: Training completion and error notifications
+- **🛡️ Error Handling**: Robust error recovery and automatic retries
 
 ## Requirements
 
 - **Python**: 3.11+
 - **Package Manager**: uv
-- **CUDA**: 12.8
+- **CUDA**: 12.8 (for GPU training)
 - **PyTorch**: 2.7.1
 
 ## Quick Start
 
-### 1. Use this Template
+### 1. Setup Project
 
 Create a new project using this template:
 
@@ -42,9 +44,10 @@ git fetch upstream main
 git merge --allow-unrelated-histories --squash upstream/main
 ```
 
-Configure environment variables:
+### 2. Environment Configuration
 
 ```bash
+# Copy environment template
 cp template.env .env
 # Edit .env with your API keys and settings
 ```
@@ -54,17 +57,15 @@ Example `.env` configuration:
 ```bash
 # Slack notifications (optional)
 # You can use either SLACK_TOKEN or SLACK_WEBHOOK_URL
-# If you set both, SLACK_TOKEN will be used
-SLACK_TOKEN="your-slack-token"
-SLACK_CHANNEL="your-slack-channel"
-SLACK_USERNAME="your-slack-username"
+SLACK_TOKEN="xoxb-your-token"
+SLACK_CHANNEL="#notifications"
+SLACK_USERNAME="Training Bot"
 
-SLACK_WEBHOOK_URL="your-slack-webhook-url"
+# Alternative: Webhook URL (simpler setup)
+SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
 
 # MLflow tracking
 MLFLOW_TRACKING_URI="./result/mlruns"  # or remote URI
-# MLFLOW_TRACKING_USERNAME=""  # for remote MLflow
-# MLFLOW_TRACKING_PASSWORD=""
 
 # Weights & Biases (optional)
 WANDB_API_KEY="your-wandb-key"
@@ -117,7 +118,7 @@ python train.py config/dummy.yaml batch=32 gpu.use=0 optimizer.lr=0.001
 
 ### Configuration Management
 
-This template uses hierarchical configuration with OmegaConf and dataclasses:
+This template uses hierarchical configuration with inheritance support:
 
 ```bash
 # Use dot notation to modify nested values
@@ -125,9 +126,20 @@ python train.py config/dummy.yaml gpu.use=0,1 model.backbone.depth=50
 
 # Multiple overrides
 python train.py config/dummy.yaml batch=64 epoch=100 optimizer.lr=0.01
+
+# View current configuration
+python script/show_config.py config/dummy.yaml
+
+# Batch edit configuration files
+python script/edit_configs.py config/dummy.yaml "optimizer.lr=0.01,batch=64"
 ```
 
-Configuration files are located in `config/` with base configurations in `config/__base__/`.
+Configuration hierarchy:
+
+1. Dataclass defaults (`src/config/config.py`)
+2. Base configs (`config/__base__/`)
+3. Experiment configs (`config/*.yaml`) with `__base__` inheritance
+4. CLI overrides
 
 ### Development Tools
 
@@ -141,13 +153,19 @@ Configuration files are located in `config/` with base configurations in `config
 # View all registered components
 python script/show_registers.py
 
-# Batch edit configuration files
-python script/edit_configs.py config/dummy.yaml "optimizer.lr=0.01,batch=64"
+# View model architecture
+python script/show_model.py
+
+# Visualize learning rate schedules
+python script/show_scheduler.py
+
+# View data transformation pipeline
+python script/show_transform.py
 
 # Clean up orphaned result directories
-python script/clean_result.py | xargs -I{} -P 2 rm -rf {}
+python script/clean_result.py
 
-# Aggregate MLflow results
+# Aggregate MLflow results to CSV
 python script/aggregate_mlflow.py all
 
 # Start documentation server (auto-reloads on changes)
@@ -161,7 +179,7 @@ Scale your training across multiple GPUs and nodes:
 #### Single Node, Multiple GPUs
 
 ```bash
-# Use torchrun for DDP training
+# Use torchrun for DDP training (recommended)
 ./torchrun.sh 4 train.py config/dummy.yaml gpu.use="0,1,2,3"
 
 # Alternative: DataParallel (not recommended for production)
@@ -180,8 +198,9 @@ python train.py config/dummy.yaml gpu.use="0,1,2,3" gpu.multi_strategy="dp"
 
 #### FSDP (Fully Sharded Data Parallel)
 
+For very large models that don't fit in GPU memory:
+
 ```bash
-# For very large models
 python train.py config/dummy.yaml gpu.multi_strategy="fsdp" gpu.fsdp.min_num_params=100000000
 ```
 
@@ -192,7 +211,7 @@ Training results are automatically saved to:
 ```
 result/[dataset_name]/[date]_[model_name]_[tag]/
 ├── config.yaml          # Complete configuration used
-├── models/              # Model checkpoints
+├── models/              # Model checkpoints (latest.pth, best.pth, epoch_N.pth)
 ├── optimizers/          # Optimizer states  
 └── schedulers/          # Scheduler states
 ```
@@ -248,18 +267,33 @@ else:
 #### Mixed Precision Training
 
 ```bash
-# Enable automatic mixed precision
+# Enable automatic mixed precision with fp16
 python train.py config/dummy.yaml use_amp=true amp_dtype="fp16"
 
-# Use bfloat16 for newer hardware
+# Use bfloat16 for newer hardware (A100, H100)
 python train.py config/dummy.yaml use_amp=true amp_dtype="bf16"
 ```
 
 #### torch.compile
 
 ```bash
-# Enable PyTorch 2.0 compilation
+# Enable PyTorch 2.0 compilation for speedup
 python train.py config/dummy.yaml use_compile=true compile_backend="inductor"
+
+# Alternative backends
+python train.py config/dummy.yaml use_compile=true compile_backend="aot_eager"
+```
+
+### Slack Notifications
+
+Get notified about training progress and errors:
+
+```bash
+# Training will automatically send notifications on completion/error
+python train.py config/dummy.yaml
+
+# Manual notification testing
+uv run --frozen pytest tests/test_slack_notification.py -v
 ```
 
 ## Architecture
@@ -268,19 +302,27 @@ python train.py config/dummy.yaml use_compile=true compile_backend="inductor"
 
 ```
 src/
-├── config/          # Configuration management
+├── config/          # Configuration management with inheritance
 ├── dataloaders/     # Dataset and DataLoader implementations  
 ├── models/          # Model definitions and backbones
-├── optimizer/       # Optimizer builders
+│   ├── backbone/    # Pre-trained backbones (ResNet, Swin, etc.)
+│   ├── layers/      # Custom layers and building blocks
+│   └── losses/      # Loss function implementations
+├── optimizer/       # Optimizer builders (including ScheduleFree)
 ├── scheduler/       # Learning rate schedulers
 ├── transform/       # Data preprocessing and augmentation
 ├── evaluator/       # Metrics and evaluation
-├── trainer.py       # Training loop implementation
-└── utils/           # Utilities and helpers
+├── runner/          # Training and testing loops
+└── utils/           # Utilities (logger, registry, torch utils)
 
 config/
 ├── __base__/        # Base configuration templates
 └── *.yaml          # Experiment configurations
+
+script/              # Utility scripts
+├── run_*.sh         # Service startup scripts
+├── show_*.py        # Visualization tools
+└── aggregate_*.py   # Result aggregation tools
 ```
 
 ### Registry System
@@ -295,11 +337,92 @@ class MyModel(BaseModel):
     def __init__(self, ...):
         super().__init__()
         # Model implementation
+
+# Custom name registration
+@MODEL_REGISTRY.register("custom_name")
+class AnotherModel(BaseModel):
+    pass
 ```
 
-### Configuration Flow
+Available registries:
 
-1. Load base configuration from `config/__base__/config.yaml`
-2. Merge with experiment-specific YAML file
-3. Apply CLI overrides
-4. Instantiate components using registry system
+- `MODEL_REGISTRY`: Model architectures
+- `DATASET_REGISTRY`: Dataset implementations
+- `TRANSFORM_REGISTRY`: Data transformations
+- `OPTIMIZER_REGISTRY`: Optimizers
+- `LR_SCHEDULER_REGISTRY`: Learning rate schedulers
+- `EVALUATOR_REGISTRY`: Evaluation metrics
+
+### Configuration System
+
+The configuration system supports inheritance and modular composition:
+
+```yaml
+# config/my_experiment.yaml
+__base__: "__base__/config.yaml"
+
+# Override specific values
+batch: 64
+optimizer:
+  lr: 0.001
+  
+# Import specific sections
+transform:
+  __import__: "__base__/transform/imagenet.yaml"
+```
+
+### Error Handling and Notifications
+
+The template includes comprehensive error handling:
+
+- **Automatic Slack notifications** for training completion and errors
+- **Graceful error recovery** with detailed logging
+- **Checkpoint preservation** even during failures
+- **Distributed training fault tolerance**
+
+## Development
+
+### Testing
+
+```bash
+# Run all tests
+uv run --frozen pytest
+
+# Run specific test modules
+uv run --frozen pytest tests/test_modules.py
+uv run --frozen pytest tests/test_slack_notification.py -v
+
+# Run with verbose output
+uv run --frozen pytest -v
+```
+
+### Code Quality
+
+```bash
+# Format code
+uv run --frozen ruff format .
+
+# Check code quality
+uv run --frozen ruff check .
+
+# Fix auto-fixable issues
+uv run --frozen ruff check . --fix
+```
+
+### Documentation
+
+```bash
+# Start documentation server with live reload
+./script/run_docs.sh
+```
+
+### Docker Development
+
+```bash
+# Build development image
+./docker/build.sh
+
+# Run commands in container
+./docker/run.sh python train.py config/dummy.yaml
+./docker/run.sh bash  # Interactive shell
+```

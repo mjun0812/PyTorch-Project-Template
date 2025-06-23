@@ -12,7 +12,7 @@ class DummyTransform(BaseTransform):
     without any changes.
     """
 
-    def __call__(self, data: dict) -> dict:
+    def forward(self, data: dict) -> dict:
         """Return input data unchanged.
 
         Args:

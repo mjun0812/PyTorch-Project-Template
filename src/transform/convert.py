@@ -21,7 +21,7 @@ class ToTensor(BaseTransform):
     - Other data types: Left unchanged
     """
 
-    def __call__(self, data: DatasetOutput) -> DatasetOutput:
+    def forward(self, data: DatasetOutput) -> DatasetOutput:
         """Convert applicable data types to PyTorch tensors.
 
         Args:

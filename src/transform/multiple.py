@@ -45,7 +45,7 @@ class RandomSelect(BaseTransform):
         self.transforms2 = T.Compose([build_transform(TransformConfig(**t)) for t in transforms2])
         self.p = p
 
-    def __call__(self, data: DatasetOutput) -> DatasetOutput:
+    def forward(self, data: DatasetOutput) -> DatasetOutput:
         """Apply randomly selected transformation pipeline.
 
         Args:
