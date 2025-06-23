@@ -18,7 +18,7 @@ from .torch_utils import (
     save_model,
     save_model_info,
     save_optimizer,
-    set_device,
+    setup_device,
     time_synchronized,
     worker_init_fn,
 )

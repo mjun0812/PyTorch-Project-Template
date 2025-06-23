@@ -1,3 +1,5 @@
+import platform
+
 import torch
 from loguru import logger
 from torch.utils.data import BatchSampler, DataLoader, Dataset
@@ -16,6 +18,35 @@ from .types import DatasetOutput
 
 DATASET_REGISTRY = Registry("DATASET")
 """Registry for dataset classes."""
+
+
+def is_ram_cache_supported() -> bool:
+    """Check if RAM cache is supported on the current platform.
+
+    Returns:
+        bool: True if RAM cache is supported (Linux only), False otherwise.
+    """
+    return platform.system() == "Linux"
+
+
+def validate_ram_cache_config(use_ram_cache: bool, verbose: bool = True) -> bool:
+    """Validate RAM cache configuration for current platform.
+
+    Args:
+        use_ram_cache: Whether RAM cache is requested.
+        verbose: Whether to log warnings.
+
+    Returns:
+        bool: True if RAM cache can be used, False otherwise.
+    """
+    if use_ram_cache and not is_ram_cache_supported():
+        if verbose:
+            logger.warning(
+                f"RAM cache is only supported on Linux. Current OS: {platform.system()}. "
+                "Disabling RAM cache."
+            )
+        return False
+    return use_ram_cache
 
 
 def build_dataset(
@@ -37,11 +68,14 @@ def build_dataset(
 
     Raises:
         AssertionError: If RAM cache size exceeds available shared memory.
+        RuntimeError: If RAM cache is requested on non-Linux systems.
     """
-    if use_ram_cache:
-        assert ram_cache_size_gb <= get_free_shm_size() / BYTES_PER_GIB, (
-            "RAM Cache size is too large"
-        )
+    # Validate RAM cache configuration
+    use_ram_cache = validate_ram_cache_config(use_ram_cache)
+
+    if use_ram_cache and ram_cache_size_gb is not None:
+        if ram_cache_size_gb > get_free_shm_size() / BYTES_PER_GIB:
+            raise RuntimeError("RAM Cache size is too large")
         cache = TensorCache(size_limit_gb=ram_cache_size_gb)
         logger.info(f"Use RAM Cache: {ram_cache_size_gb}GB")
     else:

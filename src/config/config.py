@@ -187,7 +187,8 @@ class GPUConfig:
     """Configuration for GPU usage and distributed training.
 
     Attributes:
-        use: GPU device(s) to use (string or int).
+        device: Device type to use ("cuda", "mps", "cpu").
+        use: GPU device(s) to use (string or int). Can be "mps" for MPS.
         multi: Whether to use multiple GPUs.
         use_cudnn: Whether to use cuDNN backend.
         use_tf32: Whether to use TensorFloat-32 format.
@@ -195,6 +196,7 @@ class GPUConfig:
         fsdp: Configuration for FSDP when using fsdp strategy.
     """
 
+    device: str = "cuda"
     use: str | int = 0
     multi: bool = False
     use_cudnn: bool = True
@@ -265,7 +267,6 @@ class ExperimentConfig:
         ram_cache_size_gb: Size of RAM cache in GB.
         seed: Random seed for reproducibility.
         gpu: GPU and distributed training configuration.
-        use_cpu: Whether to force CPU usage.
         use_amp: Whether to use Automatic Mixed Precision.
         amp_dtype: Data type for AMP (fp16 or bf16).
         amp_init_scale: Initial scale for AMP gradient scaler.
@@ -311,7 +312,6 @@ class ExperimentConfig:
 
     # device config
     gpu: GPUConfig = field(default_factory=GPUConfig)
-    use_cpu: bool = False
 
     # AutoMixedPrecision
     use_amp: bool = False

@@ -7,16 +7,19 @@ from src.transform import (
     build_batched_transform,
     build_transforms,
 )
+from src.utils import setup_device
 
 
 @ConfigManager.argparse
 def main(cfg: ExperimentConfig) -> None:
     cfg.model.checkpoint = None
 
-    if cfg.use_cpu or not torch.cuda.is_available():
-        device = torch.device("cpu")
-    else:
-        device = torch.device("cuda:0")
+    device = setup_device(
+        device_type=cfg.gpu.device,
+        device_index=cfg.gpu.use,
+        use_cudnn=cfg.gpu.use_cudnn,
+        verbose=False,
+    )
 
     model = build_model(cfg.model, phase="train")
     model = model.to(device)

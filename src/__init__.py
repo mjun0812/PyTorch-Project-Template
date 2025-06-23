@@ -28,6 +28,8 @@ from .dataloaders import (
     build_dataloader,
     build_dataset,
     build_sampler,
+    is_ram_cache_supported,
+    validate_ram_cache_config,
 )
 
 # Evaluation
@@ -104,7 +106,7 @@ from .utils import (
     save_model,
     save_model_info,
     save_optimizer,
-    set_device,
+    setup_device,
     time_synchronized,
     worker_init_fn,
 )

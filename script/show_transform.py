@@ -21,7 +21,7 @@ denormalize = T.Normalize(
 def main(cfg: ExperimentConfig) -> None:
     phase = cfg.get("phase", "train")
     print(f"Phase: {phase}")
-    cfg.use_cpu = True
+    cfg.gpu.device = "cpu"
 
     cfg_dataset = cfg.dataset.get(phase)
     transform = build_transforms(cfg_dataset.transforms)

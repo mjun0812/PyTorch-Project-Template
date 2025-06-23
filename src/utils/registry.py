@@ -52,9 +52,10 @@ class Registry:
         Raises:
             AssertionError: If an object with the same name is already registered.
         """
-        assert name not in self._obj_map, (
-            f"An object named '{name}' was already registered in '{self._name}' registry!"
-        )
+        if name in self._obj_map:
+            raise RuntimeError(
+                f"An object named '{name}' was already registered in '{self._name}' registry!"
+            )
         self._obj_map[name] = obj
 
     def register(self, obj: object | None = None, name: str | None = None) -> object | None:

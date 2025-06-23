@@ -38,9 +38,12 @@ def test_train_test_resume() -> None:
         "use_ram_cache=false",
     ]
     if torch.cuda.is_available():
-        common_options.append("use.gpu=0")
+        common_options.append("gpu.device=cuda")
+        common_options.append("gpu.use=0")
+    elif torch.backends.mps.is_available():
+        common_options.append("gpu.device=mps")
     else:
-        common_options.append("use_cpu=true")
+        common_options.append("gpu.device=cpu")
     print("start training test")
     cmd = ["python", "train.py", "config/dummy.yaml", *common_options]
     process = subprocess.run(
@@ -85,7 +88,7 @@ def test_train_test_resume() -> None:
 def test_scripts() -> None:
     common_options = [
         Path(__file__).parent.parent / "config/dummy.yaml",
-        "use_cpu=true",
+        "gpu.device=cpu",
         "use_ram_cache=false",
     ]
     scripts = [

@@ -12,7 +12,12 @@ from torchmetrics import MetricCollection
 from torchvision.transforms.v2 import Compose
 
 from src.config import ConfigManager, DatasetConfig, ExperimentConfig
-from src.dataloaders import BaseDataset, build_dataloader, build_dataset, build_sampler
+from src.dataloaders import (
+    BaseDataset,
+    build_dataloader,
+    build_dataset,
+    build_sampler,
+)
 from src.evaluator import build_evaluator
 from src.models import (
     BaseModel,
@@ -41,7 +46,7 @@ from src.utils import (
     make_result_dirs,
     post_slack,
     save_model_info,
-    set_device,
+    setup_device,
 )
 
 from test import do_test  # isort: skip
@@ -61,10 +66,15 @@ def build_train_model(cfg: ExperimentConfig, device: torch.device, logger: Logge
         elif cfg.gpu.multi_strategy == "fsdp":
             logger.info("Use FullyShardedDataParallel Training")
             model = setup_fsdp_model(cfg, model)
-    elif cfg.gpu.multi and cfg.gpu.multi_strategy == "dp" and torch.cuda.device_count() > 1:
+    elif (
+        cfg.gpu.multi
+        and cfg.gpu.multi_strategy == "dp"
+        and torch.cuda.device_count() > 1
+        and device.type != "mps"
+    ):
         logger.info("Use DataParallel Training")
         model = DataParallel(model, device_ids=list(range(torch.cuda.device_count())))
-    if cfg.use_compile and torch.__version__ >= "2.0.0":
+    if cfg.use_compile:
         logger.info("Use Torch Compile")
         model = torch.compile(model, backend=cfg.compile_backend)
 
@@ -235,17 +245,17 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
 def main(cfg: ExperimentConfig) -> None:
     # Set Local Rank for Multi GPU Training
     local_rank = get_local_rank()
+
     # set Device
-    device = set_device(
-        cfg.gpu.use,
-        rank=local_rank,
+    device = setup_device(
+        device_type=cfg.gpu.device,
+        device_index=cfg.gpu.use,
         use_cudnn=cfg.gpu.use_cudnn,
-        is_cpu=cfg.use_cpu,
         verbose=local_rank in [-1, 0],
         allow_tf32=cfg.gpu.use_tf32,
     )
     # DDP Mode
-    if cfg.gpu.multi:
+    if cfg.gpu.multi and device.type != "mps":
         dist.init_process_group(backend="nccl", init_method="env://")
 
     # create output dir
@@ -274,7 +284,8 @@ def main(cfg: ExperimentConfig) -> None:
         logger.log_tag("tag", cfg.tag)
         logger.log_params({"tag": cfg.tag})
     # logging Device Info
-    cuda_info(logger=logger)
+    if device.type == "cuda":
+        cuda_info(logger=logger)
     if is_distributed():
         logger.info("Use Distributed Data Parallel Training")
         if is_multi_node():

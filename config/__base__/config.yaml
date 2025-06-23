@@ -27,6 +27,7 @@ seed: 42
 
 # Device Params
 gpu:
+  device: "cuda"
   use: 0
   multi: false
   use_cudnn: true
@@ -35,7 +36,6 @@ gpu:
   fsdp:
     min_num_params: 100000000
     use_cpu_offload: false
-use_cpu: false
 
 # AutoMixedPrecision
 use_amp: false

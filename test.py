@@ -17,7 +17,7 @@ from src.utils import (
     load_model_weight,
     make_result_dirs,
     post_slack,
-    set_device,
+    setup_device,
 )
 
 
@@ -82,7 +82,9 @@ def do_test(
 
 def main(cfg: ExperimentConfig) -> None:
     # set Device
-    device = set_device(cfg.gpu.use, use_cudnn=cfg.gpu.use_cudnn, is_cpu=cfg.use_cpu)
+    device = setup_device(
+        device_type=cfg.gpu.device, device_index=cfg.gpu.use, use_cudnn=cfg.gpu.use_cudnn
+    )
 
     base_dir = Path(cfg.model.checkpoint).parents[1]
     output_dir = make_result_dirs(base_dir)

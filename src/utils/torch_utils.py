@@ -29,6 +29,7 @@ def worker_init_fn(worker_id: int) -> None:
     random.seed(random.getstate()[1][0] + worker_id)
     # Numpy
     np.random.seed(np.random.get_state()[1][0] + worker_id)
+    # PyTorch
     torch.manual_seed(np.random.get_state()[1][0] + worker_id + 1)
     torch.cuda.manual_seed_all(np.random.get_state()[1][0] + worker_id)
 
@@ -49,79 +50,93 @@ def fix_seed(seed: int) -> int:
     random.seed(seed)
     # Numpy
     np.random.seed(seed)
-    # Pytorch
+    # PyTorch
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     return seed
 
 
 def time_synchronized() -> float:
-    """Return synchronized time between CUDA and CPU.
+    """Return synchronized time between CUDA, MPS and CPU.
 
-    Synchronizes CUDA operations with CPU before getting the current time
+    Synchronizes CUDA/MPS operations with CPU before getting the current time
     to ensure accurate timing measurements.
 
     Returns:
-        Current time after CUDA synchronization.
+        Current time after device synchronization.
     """
     # pytorch-accurate time
     if torch.cuda.is_available():
         torch.cuda.synchronize()
+    elif torch.backends.mps.is_available():
+        torch.mps.synchronize()
     return time.time()
 
 
-def set_device(
-    global_gpu_index: int,
+def setup_device(
+    device_type: str,
+    device_index: str | int = 0,
     rank: int = -1,
-    is_cpu: bool = False,
     use_cudnn: bool = True,
     cudnn_deterministic: bool = False,
     allow_tf32: bool = False,
     pci_device_order: bool = True,
     verbose: bool = True,
 ) -> torch.device:
-    """Set use GPU or CPU Device
-
-    set using GPU or CPU Device(instead of CUDA_VISIBLE_DEVICES).
-    set also CUDNN.
+    """Setup device from configuration with all necessary settings.
 
     Args:
-        global_gpu_index (int): using gpu number in all gpu.
-        rank (int): process rank
-        is_cpu (bool, optional): use cpu or not. Defaults to False.
-        use_cudnn (bool, optional): use cudnn or not. Defaults to True.
-        cudnn_deterministic (bool, optional): use cudnn deterministic or not. Defaults to False.
-        allow_tf32 (bool, optional): use tf32 or not. Defaults to False.
-        pci_device_order (bool, optional): use pci device order or not. Defaults to True.
-        verbose (bool, optional): print verbose or not. Defaults to True.
+        device_type: Device type ("cuda", "mps", "cpu").
+        device_index: Device index for CUDA devices.
+        rank: Process rank for distributed training.
+        use_cudnn: Whether to use cuDNN backend.
+        cudnn_deterministic: Whether to use cuDNN deterministic.
+        allow_tf32: Whether to use TensorFloat-32 format.
+        pci_device_order: Whether to use PCI device order.
+        verbose: Whether to print verbose information.
 
     Returns:
-        torch.device: use device object.
+        torch.device: Configured PyTorch device.
     """
-    if not is_cpu:
-        if pci_device_order:
-            os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(global_gpu_index)
-        torch.backends.cuda.matmul.allow_tf32 = allow_tf32
+    device_type = device_type.lower()
 
-        # print using GPU Info
-        if verbose:
-            cuda_info(int(os.environ["CUDA_VISIBLE_DEVICES"].split(",")[0]))
-            print(f"Using GPU is CUDA:{global_gpu_index}")
-
-        if use_cudnn and cudnn.is_available():
-            cudnn.benchmark = True
-            cudnn.deterministic = cudnn_deterministic  # 乱数固定のため
-            if verbose:
-                print("Use CUDNN")
-        if rank == -1:
-            rank = 0
-        device = torch.device(rank)
-        torch.cuda.set_device(rank)
-    else:
+    if device_type == "cpu":
         device = torch.device("cpu")
         if verbose:
-            print("Use CPU")
+            print("Using CPU")
+    elif device_type == "mps":
+        if torch.backends.mps.is_available():
+            device = torch.device("mps")
+            if verbose:
+                print("Using MPS (Metal Performance Shaders)")
+        else:
+            raise RuntimeError("MPS not available")
+    elif device_type == "cuda":
+        if torch.cuda.is_available():
+            if pci_device_order:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(device_index)
+            torch.backends.cuda.matmul.allow_tf32 = allow_tf32
+
+            if verbose:
+                cuda_info(int(os.environ["CUDA_VISIBLE_DEVICES"].split(",")[0]))
+                print(f"Using CUDA:{device_index}")
+
+            if use_cudnn and cudnn.is_available():
+                cudnn.benchmark = True
+                cudnn.deterministic = cudnn_deterministic
+                if verbose:
+                    print("Using cuDNN")
+
+            # Handle rank for distributed training
+            if rank == -1:
+                rank = 0
+            device = torch.device(rank)
+            torch.cuda.set_device(rank)
+        else:
+            raise RuntimeError("CUDA not available")
+    else:
+        raise ValueError(f"Unsupported device type: {device_type}")
 
     return device
 

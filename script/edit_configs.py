@@ -8,7 +8,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Edit Config")
     parser.add_argument("config_path_or_dir", type=str, help="Path to the config file or dir")
     parser.add_argument(
-        "override", type=str, help="Override the config file ex: batch=2,use_cpu=True"
+        "override", type=str, help="Override the config file ex: batch=2,gpu.device=cpu"
     )
     args = parser.parse_args()
 
