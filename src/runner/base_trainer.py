@@ -34,11 +34,27 @@ except ImportError:
 
 
 class EpochResult(TypedDict, total=False):
+    """Type definition for epoch training results.
+
+    Attributes:
+        total_loss: Total loss value for the epoch.
+    """
+
     total_loss: float
 
 
 @dataclass
 class TrainingState:
+    """State information for the training process.
+
+    Attributes:
+        phase: Current training phase (train, val, test).
+        current_epoch: Current epoch number.
+        best_epoch: Epoch with the best validation metric.
+        best_metric: Best validation metric value achieved.
+        progress_bar: Progress bar or iterator for tracking.
+    """
+
     phase: PhaseStr
     current_epoch: int
     best_epoch: int
@@ -48,6 +64,24 @@ class TrainingState:
 
 @dataclass
 class TrainerParams:
+    """Parameters for configuring the trainer.
+
+    Attributes:
+        epochs: Number of training epochs.
+        output_dir: Directory for saving outputs.
+        use_clip_grad: Whether to use gradient clipping.
+        clip_grad: Maximum gradient norm for clipping.
+        gpu_multi_strategy: Multi-GPU strategy (ddp, fsdp, etc.).
+        use_amp: Whether to use automatic mixed precision.
+        amp_init_scale: Initial scale for AMP gradient scaler.
+        amp_dtype: Data type for AMP (fp16 or bf16).
+        gradient_accumulation_steps: Number of steps to accumulate gradients.
+        greater_is_better: Whether higher metric values are better.
+        metric_for_best_model: Metric name for model selection.
+        save_interval: Interval for saving checkpoints.
+        val_interval: Interval for running validation.
+    """
+
     epochs: int
     output_dir: Path
     use_clip_grad: bool = True
@@ -64,6 +98,17 @@ class TrainerParams:
 
 
 class BaseTrainer:
+    """Base trainer class for managing the training process.
+
+    Provides a comprehensive training framework with support for:
+    - Multi-GPU training (DDP, FSDP)
+    - Automatic mixed precision
+    - Learning rate scheduling
+    - Metric evaluation
+    - Checkpointing and model saving
+    - Progress tracking and logging
+    """
+
     def __init__(
         self,
         cfg: ExperimentConfig,
@@ -80,6 +125,23 @@ class BaseTrainer:
         iter_lr_scheduler: torch.optim.lr_scheduler._LRScheduler | None = None,
         evaluators: dict[PhaseStr, MetricCollection] | None = None,
     ) -> None:
+        """Initialize the base trainer.
+
+        Args:
+            cfg: Complete experiment configuration.
+            params: Trainer-specific parameters.
+            device: PyTorch device for computation.
+            logger: Logger instance for tracking metrics and artifacts.
+            model: Model to train.
+            datasets: Datasets for each phase.
+            dataloaders: DataLoaders for each phase.
+            samplers: Data samplers for each phase.
+            batched_transforms: Batch-level transformations for each phase.
+            optimizer: Optimizer for model parameters.
+            epoch_lr_scheduler: Optional epoch-based learning rate scheduler.
+            iter_lr_scheduler: Optional iteration-based learning rate scheduler.
+            evaluators: Optional metric evaluators for each phase.
+        """
         self.cfg = cfg
         self.params = params
         self.device = device
@@ -117,9 +179,22 @@ class BaseTrainer:
         )
 
     def _before_train(self, state: TrainingState) -> None:
+        """Hook called before training starts.
+
+        Args:
+            state: Current training state.
+        """
         pass
 
     def train(self, start_epoch: int) -> None:
+        """Main training loop.
+
+        Manages the complete training process including validation,
+        checkpointing, and metric logging.
+
+        Args:
+            start_epoch: Epoch number to start training from.
+        """
         self._before_train(self.training_state)
 
         for epoch in range(start_epoch, self.params.epochs):

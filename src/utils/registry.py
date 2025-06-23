@@ -8,61 +8,66 @@ from tabulate import tabulate
 
 
 class Registry:
-    """The registry that provides name -> object mapping,
-    to support third-party users' custom modules.
-    To create a registry (e.g. a backbone registry):
+    """Registry that provides name-to-object mapping for dynamic component discovery.
 
-    ```python
-    BACKBONE_REGISTRY = Registry('BACKBONE')
-    ```
+    This registry system supports third-party users' custom modules by allowing
+    dynamic registration and retrieval of classes and functions.
 
-    To register an object:
+    Examples:
+        Creating a registry:
 
-    ```python
-    @BACKBONE_REGISTRY.register()
-    class MyBackbone():
-    ```
+        >>> BACKBONE_REGISTRY = Registry('BACKBONE')
 
-    or
+        Registering an object using decorator:
 
-    ```python
-    BACKBONE_REGISTRY.register(MyBackbone)
-    ```
+        >>> @BACKBONE_REGISTRY.register()
+        ... class MyBackbone():
+        ...     pass
 
-    To get an object from registry
+        Registering an object using function call:
 
-    ```python
-    BACKBONE_REGISTRY.get("MyBackbone")
-    ```
+        >>> BACKBONE_REGISTRY.register(MyBackbone)
+
+        Getting an object from registry:
+
+        >>> backbone_cls = BACKBONE_REGISTRY.get("MyBackbone")
     """
 
     def __init__(self, name: str) -> None:
-        """Initialize Registry
+        """Initialize the registry.
 
         Args:
-            name (str): the name of this registry
+            name: The name identifier for this registry.
         """
         self._name: str = name
         self._obj_map: dict[str, object] = {}
 
     def _do_register(self, name: str, obj: object) -> None:
+        """Internal method to register an object.
+
+        Args:
+            name: Name to register the object under.
+            obj: Object to register.
+
+        Raises:
+            AssertionError: If an object with the same name is already registered.
+        """
         assert name not in self._obj_map, (
             f"An object named '{name}' was already registered in '{self._name}' registry!"
         )
         self._obj_map[name] = obj
 
     def register(self, obj: object | None = None, name: str | None = None) -> object | None:
-        """Register the given object under the the name `obj.__name__` or `name`.
+        """Register an object under the given name.
 
-        Can be used as either a decorator or not. See docstring of
-        this class for usage.
+        Can be used as either a decorator or function call.
 
         Args:
-            obj (object, optional): Object to register. Defaults to None.
-            name (str, optional): Name to register the object under. Defaults to None.
+            obj: Object to register. If None, returns a decorator.
+            name: Name to register the object under. If None, uses obj.__name__.
 
         Returns:
-            object: Registered Object
+            The registered object or a decorator function.
         """
         if obj is None:
             # used as a decorator
@@ -84,16 +89,16 @@ class Registry:
         self._do_register(register_name, obj)
 
     def get(self, name: str) -> object:
-        """Get object from Registry
+        """Get an object from the registry.
 
         Args:
-            name (str): Object Name
-
-        Raises:
-            KeyError: No object from registry
+            name: Name of the object to retrieve.
 
         Returns:
-            object: Registred Object
+            The registered object.
+
+        Raises:
+            KeyError: If no object with the given name is found in the registry.
         """
         ret = self._obj_map.get(name)
         if ret is None:
@@ -101,12 +106,30 @@ class Registry:
         return ret
 
     def __contains__(self, name: str) -> bool:
+        """Check if a name is registered in the registry.
+
+        Args:
+            name: Name to check.
+
+        Returns:
+            True if the name is registered, False otherwise.
+        """
         return name in self._obj_map
 
     def __repr__(self) -> str:
+        """Return a string representation of the registry.
+
+        Returns:
+            Formatted table showing all registered names and objects.
+        """
         table_headers = ["Names", "Objects"]
         table = tabulate(self._obj_map.items(), headers=table_headers, tablefmt="fancy_grid")
         return f"Registry of {self._name}:\n" + table
 
     def __iter__(self) -> Iterator[tuple[str, Any]]:
+        """Iterate over all registered name-object pairs.
+
+        Returns:
+            Iterator yielding (name, object) tuples.
+        """
         return iter(self._obj_map.items())

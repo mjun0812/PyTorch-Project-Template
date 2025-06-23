@@ -21,6 +21,17 @@ def swin_tiny_patch4_window7_224_22k(
     out_indices: tuple[int, ...] = (0, 1, 2, 3),
     **kwargs: Any,
 ) -> Any:
+    """Create Swin Transformer Tiny model pretrained on ImageNet-22K.
+
+    Args:
+        pretrained: Whether to load pretrained weights.
+        weight_path: Custom path to pretrained weights. If None, uses default path.
+        out_indices: Indices of output layers for feature extraction.
+        **kwargs: Additional arguments passed to SwinTransformer constructor.
+
+    Returns:
+        Configured Swin Transformer Tiny model.
+    """
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 6, 2],
@@ -48,6 +59,17 @@ def swin_tiny_patch4_window7_224_22kto1k(
     out_indices: tuple[int, ...] = (0, 1, 2, 3),
     **kwargs: Any,
 ) -> Any:
+    """Create Swin Transformer Tiny model pretrained on ImageNet-22K and finetuned on ImageNet-1K.
+
+    Args:
+        pretrained: Whether to load pretrained weights.
+        weight_path: Custom path to pretrained weights. If None, uses default path.
+        out_indices: Indices of output layers for feature extraction.
+        **kwargs: Additional arguments passed to SwinTransformer constructor.
+
+    Returns:
+        Configured Swin Transformer Tiny model.
+    """
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 6, 2],
@@ -77,6 +99,17 @@ def swin_tiny_patch4_window7_224(
     out_indices: tuple[int, ...] = (0, 1, 2, 3),
     **kwargs: Any,
 ) -> Any:
+    """Create Swin Transformer Tiny model pretrained on ImageNet-1K.
+
+    Args:
+        pretrained: Whether to load pretrained weights.
+        weight_path: Custom path to pretrained weights. If None, uses default path.
+        out_indices: Indices of output layers for feature extraction.
+        **kwargs: Additional arguments passed to SwinTransformer constructor.
+
+    Returns:
+        Configured Swin Transformer Tiny model.
+    """
     model = SwinTransformer(
         embed_dim=96,
         depths=[2, 2, 6, 2],

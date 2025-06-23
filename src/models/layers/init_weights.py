@@ -4,6 +4,13 @@ import torch
 
 
 def variance_scaling(w: torch.Tensor, gain: float = 1, groups: int = 1) -> None:
+    """Initialize tensor weights using variance scaling.
+
+    Args:
+        w: Weight tensor to initialize.
+        gain: Scaling factor for the initialization. Defaults to 1.
+        groups: Number of groups for grouped convolution. Defaults to 1.
+    """
     fan_in, _ = fan_in_out(w, groups)
     gain /= max(1.0, fan_in)  # fan in
     # gain /= max(1., (fan_in + fan_out) / 2.)  # fan
@@ -17,6 +24,18 @@ def variance_scaling(w: torch.Tensor, gain: float = 1, groups: int = 1) -> None:
 
 
 def fan_in_out(w: torch.Tensor, groups: int = 1) -> tuple[int, int]:
+    """Calculate fan-in and fan-out for a tensor.
+
+    Args:
+        w: Weight tensor to analyze.
+        groups: Number of groups for grouped convolution. Defaults to 1.
+
+    Returns:
+        Tuple of (fan_in, fan_out) values.
+
+    Raises:
+        ValueError: If tensor has fewer than 2 dimensions.
+    """
     dimensions = w.dim()
     if dimensions < 2:
         raise ValueError(
@@ -34,6 +53,13 @@ def fan_in_out(w: torch.Tensor, groups: int = 1) -> tuple[int, int]:
 
 
 def glorot_uniform(w: torch.Tensor, gain: float = 1, groups: int = 1) -> None:
+    """Initialize tensor weights using Glorot uniform initialization.
+
+    Args:
+        w: Weight tensor to initialize.
+        gain: Scaling factor for the initialization. Defaults to 1.
+        groups: Number of groups for grouped convolution. Defaults to 1.
+    """
     fan_in, fan_out = fan_in_out(w, groups)
     gain /= max(1.0, (fan_in + fan_out) / 2.0)  # fan avg
     limit = math.sqrt(3.0 * gain)

@@ -26,6 +26,15 @@ DEFAULT_CONFIG = dict(
 
 
 def get_config_internimage_t_1k_224(features_only: bool, **kwargs: Any) -> dict:
+    """Get configuration for InternImage-T 1K 224 model.
+
+    Args:
+        features_only: Whether to configure for feature extraction only.
+        **kwargs: Additional configuration parameters to override defaults.
+
+    Returns:
+        Dictionary containing model configuration.
+    """
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -44,6 +53,15 @@ def get_config_internimage_t_1k_224(features_only: bool, **kwargs: Any) -> dict:
 
 
 def get_config_internimage_s_1k_224(features_only: bool, **kwargs: Any) -> dict:
+    """Get configuration for InternImage-S 1K 224 model.
+
+    Args:
+        features_only: Whether to configure for feature extraction only.
+        **kwargs: Additional configuration parameters to override defaults.
+
+    Returns:
+        Dictionary containing model configuration.
+    """
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -64,6 +82,15 @@ def get_config_internimage_s_1k_224(features_only: bool, **kwargs: Any) -> dict:
 
 
 def get_config_internimage_b_1k_224(features_only: bool, **kwargs: Any) -> dict:
+    """Get configuration for InternImage-B 1K 224 model.
+
+    Args:
+        features_only: Whether to configure for feature extraction only.
+        **kwargs: Additional configuration parameters to override defaults.
+
+    Returns:
+        Dictionary containing model configuration.
+    """
     config = DEFAULT_CONFIG.copy()
     config.update(
         dict(
@@ -250,6 +277,19 @@ def create_model(
     out_indices: list[int] | None = None,
     **kwargs: Any,
 ) -> Any:
+    """Create InternImage model with specified configuration.
+
+    Args:
+        model_name: Name of the model variant to create.
+        pretrained: Whether to load pretrained weights.
+        weight_path: Custom path to pretrained weights. If None, uses default.
+        features_only: Whether to configure for feature extraction only.
+        out_indices: Indices of output layers for feature extraction.
+        **kwargs: Additional arguments passed to model configuration.
+
+    Returns:
+        Configured InternImage model.
+    """
     out_indices = out_indices or [0, 1, 2, 3]
 
     model_info = MODELS[model_name]

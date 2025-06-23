@@ -15,6 +15,7 @@ from .tensor_cache import BYTES_PER_GIB, TensorCache
 from .types import DatasetOutput
 
 DATASET_REGISTRY = Registry("DATASET")
+"""Registry for dataset classes."""
 
 
 def build_dataset(
@@ -23,6 +24,20 @@ def build_dataset(
     use_ram_cache: bool = False,
     ram_cache_size_gb: int | None = None,
 ) -> Dataset:
+    """Build a dataset instance from configuration.
+
+    Args:
+        cfg: Dataset configuration containing class name and arguments.
+        transforms: Optional data transformations to apply.
+        use_ram_cache: Whether to enable RAM caching for improved performance.
+        ram_cache_size_gb: Size limit for RAM cache in GB.
+
+    Returns:
+        Instantiated dataset with optional caching and transforms.
+
+    Raises:
+        AssertionError: If RAM cache size exceeds available shared memory.
+    """
     if use_ram_cache:
         assert ram_cache_size_gb <= get_free_shm_size() / BYTES_PER_GIB, (
             "RAM Cache size is too large"
@@ -45,6 +60,19 @@ def build_dataloader(
     max_iter: int | None = None,
     step_iter: int | None = None,
 ) -> DataLoader:
+    """Build a DataLoader from dataset and configuration.
+
+    Args:
+        dataset: PyTorch dataset to load data from.
+        num_workers: Number of worker processes for data loading.
+        batch_sampler: Batch sampler for organizing data into batches.
+        use_iter_loop: Whether to use iteration-based training.
+        max_iter: Maximum number of iterations for iter-based training.
+        step_iter: Number of iterations per step for iter-based training.
+
+    Returns:
+        DataLoader instance, optionally wrapped for iteration-based training.
+    """
     common_kwargs = {
         "pin_memory": True,
         "num_workers": num_workers,
@@ -65,6 +93,20 @@ def build_sampler(
     batch_size: int = 32,
     batch_sampler: str | None = None,
 ) -> tuple[Sampler, BatchSampler]:
+    """Build data samplers for training phases.
+
+    Creates appropriate samplers based on the training phase and distributed
+    training configuration.
+
+    Args:
+        dataset: PyTorch dataset to sample from.
+        phase: Training phase (train, val, test).
+        batch_size: Number of samples per batch.
+        batch_sampler: Optional custom batch sampler name.
+
+    Returns:
+        Tuple of (sampler, batch_sampler) instances.
+    """
     # Build Sampler
     if is_distributed():
         sampler = DistributedSampler(dataset, shuffle=(phase == "train"))
@@ -84,6 +126,17 @@ def build_sampler(
 
 
 def collate(batch: list[DatasetOutput]) -> dict[str, torch.Tensor]:
+    """Collate function for combining dataset outputs into batches.
+
+    Automatically handles stacking of tensors and conversion of numeric
+    values to tensors.
+
+    Args:
+        batch: List of dataset outputs to combine.
+
+    Returns:
+        Dictionary mapping keys to batched tensors.
+    """
     keys = list(batch[0].keys())
     output = {k: [] for k in keys}
     for b in batch:

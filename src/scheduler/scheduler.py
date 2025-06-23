@@ -9,7 +9,23 @@ from .build import SCHEDULER_REGISTRY
 
 @SCHEDULER_REGISTRY.register()
 class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
-    """https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup"""
+    """Cosine annealing scheduler with warmup and restarts.
+
+    Implements cosine annealing with linear warmup and cycling restarts.
+    Based on: https://github.com/katsura-jp/pytorch-cosine-annealing-with-warmup
+
+    Attributes:
+        first_cycle_steps: Number of steps in the first cycle.
+        cycle_mult: Multiplier for cycle length after each restart.
+        base_max_lr: Base maximum learning rate.
+        max_lr: Current maximum learning rate.
+        min_lr: Minimum learning rate.
+        warmup_steps: Number of warmup steps.
+        gamma: Decay factor for maximum learning rate after each cycle.
+        cur_cycle_steps: Current cycle step count.
+        cycle: Current cycle number.
+        step_in_cycle: Current step within the cycle.
+    """
 
     def __init__(
         self,
@@ -120,14 +136,16 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
 
 @SCHEDULER_REGISTRY.register()
 class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
-    """Polynomial learning rate decay until step reach to max_decay_step
+    """Polynomial learning rate decay scheduler.
 
-    Args:
-        optimizer (Optimizer): Wrapped optimizer.
-        max_decay_steps: after this step, we stop decreasing learning rate
-        end_learning_rate: scheduler stoping learning rate decay,
-        value of learning rate must be this value
-        power: The power of the polynomial.
+    Decays learning rate using polynomial function until reaching
+    max_decay_steps, then maintains end_learning_rate.
+
+    Attributes:
+        max_decay_steps: Maximum number of decay steps.
+        end_learning_rate: Final learning rate after decay.
+        power: Power of the polynomial decay function.
+        last_step: Current step number.
     """
 
     def __init__(
@@ -173,46 +191,129 @@ class PolynomialLRDecay(optim.lr_scheduler._LRScheduler):
 
 @SCHEDULER_REGISTRY.register()
 class ReduceLROnPlateau(optim.lr_scheduler.ReduceLROnPlateau):
+    """Reduce learning rate on plateau with custom step interface.
+
+    Extends PyTorch's ReduceLROnPlateau to match the common step interface
+    used by other schedulers in the framework.
+    """
+
     def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
+        """Step the scheduler.
+
+        Args:
+            epoch: Current epoch (unused for this scheduler).
+            metric: Metric value to monitor for plateau detection.
+        """
         super().step(metric, epoch=None)
 
 
 @SCHEDULER_REGISTRY.register()
 class CosineAnnealingWarmRestarts(optim.lr_scheduler.CosineAnnealingWarmRestarts):
+    """Cosine annealing with warm restarts.
+
+    Extends PyTorch's CosineAnnealingWarmRestarts to match the common
+    step interface used by other schedulers in the framework.
+    """
+
     def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
+        """Step the scheduler.
+
+        Args:
+            epoch: Current epoch for scheduling.
+            metric: Metric value (unused for this scheduler).
+        """
         super().step(epoch=epoch)
 
 
 @SCHEDULER_REGISTRY.register()
 class MultiStepLR(optim.lr_scheduler.MultiStepLR):
+    """Multi-step learning rate scheduler.
+
+    Extends PyTorch's MultiStepLR to match the common step interface
+    used by other schedulers in the framework.
+    """
+
     def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
+        """Step the scheduler.
+
+        Args:
+            epoch: Current epoch (unused, uses internal counter).
+            metric: Metric value (unused for this scheduler).
+        """
         super().step()
 
 
 @SCHEDULER_REGISTRY.register()
 class StepLR(optim.lr_scheduler.StepLR):
+    """Step learning rate scheduler.
+
+    Extends PyTorch's StepLR to match the common step interface
+    used by other schedulers in the framework.
+    """
+
     def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
+        """Step the scheduler.
+
+        Args:
+            epoch: Current epoch (unused, uses internal counter).
+            metric: Metric value (unused for this scheduler).
+        """
         super().step()
 
 
 @SCHEDULER_REGISTRY.register()
 class LinearLR(optim.lr_scheduler.LinearLR):
+    """Linear learning rate scheduler.
+
+    Extends PyTorch's LinearLR to match the common step interface
+    used by other schedulers in the framework.
+    """
+
     def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
+        """Step the scheduler.
+
+        Args:
+            epoch: Current epoch (unused, uses internal counter).
+            metric: Metric value (unused for this scheduler).
+        """
         super().step()
 
 
 @SCHEDULER_REGISTRY.register()
 class ChainedScheduler(optim.lr_scheduler.ChainedScheduler):
+    """Chained scheduler with step range support.
+
+    Extends PyTorch's ChainedScheduler to support step ranges,
+    allowing different schedulers to be active during different
+    training phases.
+
+    Attributes:
+        step_ranges: List of (start, end) tuples defining when each scheduler is active.
+    """
+
     def __init__(
         self,
         schedulers: Sequence[optim.lr_scheduler._LRScheduler],
         optimizer: optim.Optimizer | None = None,
         step_ranges: Sequence[int] | None = None,
     ) -> None:
+        """Initialize the chained scheduler.
+
+        Args:
+            schedulers: Sequence of schedulers to chain.
+            optimizer: Optimizer to schedule (optional).
+            step_ranges: Step ranges for each scheduler.
+        """
         self.step_ranges = step_ranges
         super().__init__(schedulers, optimizer)
 
     def step(self, epoch: int | None = None, metric: Any | None = None) -> None:
+        """Step the active schedulers based on current epoch.
+
+        Args:
+            epoch: Current epoch.
+            metric: Metric value to pass to schedulers.
+        """
         for scheduler, step_range in zip(self._schedulers, self.step_ranges):
             if step_range and step_range[0] <= epoch < step_range[1]:
                 scheduler.step(epoch=epoch, metric=metric)

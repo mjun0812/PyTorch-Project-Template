@@ -6,11 +6,25 @@ from ..config import ConfigManager, LrSchedulerConfig, LrSchedulersConfig
 from ..utils import Registry
 
 SCHEDULER_REGISTRY = Registry("SCHEDULER")
+"""Registry for learning rate scheduler classes."""
 
 
 def build_lr_scheduler(
     cfg: LrSchedulersConfig, optimizer: optim.Optimizer, epoch: int, max_iter: int
 ) -> tuple[_LRScheduler | None, _LRScheduler | None]:
+    """Build learning rate schedulers for training.
+
+    Creates both iteration-based and epoch-based schedulers based on configuration.
+
+    Args:
+        cfg: Scheduler configuration containing iter and epoch scheduler settings.
+        optimizer: PyTorch optimizer to schedule.
+        epoch: Total number of epochs for epoch-based scheduling.
+        max_iter: Maximum number of iterations for iteration-based scheduling.
+
+    Returns:
+        Tuple of (iter_scheduler, epoch_scheduler), either can be None.
+    """
     epoch_scheduler, iter_scheduler = None, None
 
     if cfg.epoch_scheduler:
@@ -25,6 +39,19 @@ def build_lr_scheduler(
 def get_lr_scheduler(
     optimizer: optim.Optimizer, cfg: LrSchedulerConfig, num_loop: int
 ) -> _LRScheduler:
+    """Create a learning rate scheduler instance.
+
+    Handles scheduler-specific parameter adjustments and automatic
+    calculation of step sizes based on total iterations/epochs.
+
+    Args:
+        optimizer: PyTorch optimizer to schedule.
+        cfg: Scheduler configuration with class name and arguments.
+        num_loop: Total number of loops (epochs or iterations).
+
+    Returns:
+        Configured learning rate scheduler instance.
+    """
     args = cfg.args
     if args and not isinstance(args, dict):
         args = ConfigManager.to_object(args)

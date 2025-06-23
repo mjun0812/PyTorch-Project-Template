@@ -41,6 +41,19 @@ def get_available_backbones() -> list[str]:
 
 
 def build_backbone(cfg: BackboneConfig) -> tuple[torch.nn.Module, list[int]]:
+    """Build backbone model from configuration.
+
+    Args:
+        cfg: Backbone configuration containing model name, pretrained settings, etc.
+
+    Returns:
+        Tuple of (backbone_model, feature_channels) where:
+            - backbone_model: The constructed backbone model
+            - feature_channels: List of feature channel numbers for each output level
+
+    Raises:
+        ValueError: If the specified model name is not found in any registry.
+    """
     model_name = cfg.name
     args = cfg.args
     if args is None:

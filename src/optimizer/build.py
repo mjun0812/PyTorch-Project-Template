@@ -7,11 +7,25 @@ from ..config import ConfigManager, OptimizerConfig, OptimizerGroupConfig
 from ..utils import Registry, is_model_parallel
 
 OPTIMIZER_REGISTRY = Registry("OPTIMIZER")
+"""Registry for optimizer classes."""
 
 
 def get_param_group(
     model: torch.nn.Module, cfg: list[OptimizerGroupConfig], base_lr: float
 ) -> list:
+    """Create parameter groups with different learning rates.
+
+    Organizes model parameters into groups based on parameter names,
+    allowing different learning rates for different model components.
+
+    Args:
+        model: PyTorch model to extract parameters from.
+        cfg: List of parameter group configurations.
+        base_lr: Base learning rate for default parameters.
+
+    Returns:
+        List of parameter group dictionaries for optimizer.
+    """
     optimizer_dict = [{"params": [], "lr": base_lr}]
     keys = []
     for info in cfg:
@@ -38,6 +52,19 @@ def param_groups_weight_decay(
     weight_decay: float = 1e-5,
     no_weight_decay_list: tuple[str, ...] = (),
 ) -> list[dict[str, Any]]:
+    """Create parameter groups with selective weight decay.
+
+    Separates parameters into groups with and without weight decay,
+    typically excluding bias terms and 1D parameters from weight decay.
+
+    Args:
+        model: PyTorch model to extract parameters from.
+        weight_decay: Weight decay coefficient for applicable parameters.
+        no_weight_decay_list: Parameter names to exclude from weight decay.
+
+    Returns:
+        List of parameter group dictionaries with weight decay settings.
+    """
     no_weight_decay_list = set(no_weight_decay_list)
     decay = []
     no_decay = []
@@ -57,6 +84,15 @@ def param_groups_weight_decay(
 
 
 def build_optimizer(cfg: OptimizerConfig, model: torch.nn.Module) -> optim.Optimizer:
+    """Build an optimizer instance from configuration.
+
+    Args:
+        cfg: Optimizer configuration containing class name, parameters, and checkpoints.
+        model: PyTorch model to optimize.
+
+    Returns:
+        Configured optimizer instance with optional loaded state.
+    """
     optimizer_cls_name = cfg.class_name
     lr = cfg.lr
 

@@ -20,6 +20,11 @@ class FrozenBatchNorm2d(nn.Module):
     """
 
     def __init__(self, n: int) -> None:
+        """Initialize FrozenBatchNorm2d layer.
+
+        Args:
+            n: Number of features/channels.
+        """
         super().__init__()
         self.register_buffer("weight", torch.ones(n))
         self.register_buffer("bias", torch.zeros(n))
@@ -36,6 +41,17 @@ class FrozenBatchNorm2d(nn.Module):
         unexpected_keys: list[str],
         error_msgs: list[str],
     ) -> None:
+        """Load parameters from state dict, removing num_batches_tracked key.
+
+        Args:
+            state_dict: State dictionary containing parameters.
+            prefix: Parameter name prefix.
+            local_metadata: Local metadata.
+            strict: Whether to strictly enforce that the keys match.
+            missing_keys: List to store missing parameter names.
+            unexpected_keys: List to store unexpected parameter names.
+            error_msgs: List to store error messages.
+        """
         num_batches_tracked_key = prefix + "num_batches_tracked"
         state_dict.pop(num_batches_tracked_key, None)
 
@@ -44,6 +60,14 @@ class FrozenBatchNorm2d(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply frozen batch normalization.
+
+        Args:
+            x: Input tensor.
+
+        Returns:
+            Normalized tensor.
+        """
         # move reshapes to the beginning
         # to make it fuser-friendly
         w = self.weight.reshape(1, -1, 1, 1)
@@ -57,6 +81,14 @@ class FrozenBatchNorm2d(nn.Module):
 
 
 def get_norm_layer(norm_type: NormLayerNames) -> nn.Module:
+    """Get normalization layer class by name.
+
+    Args:
+        norm_type: Name of the normalization layer.
+
+    Returns:
+        Normalization layer class.
+    """
     norm_classes = {
         "BatchNorm2d": nn.BatchNorm2d,
         "GroupNorm": nn.GroupNorm,
@@ -69,6 +101,15 @@ def get_norm_layer(norm_type: NormLayerNames) -> nn.Module:
 
 
 def build_norm_layer(norm_type: NormLayerNames, **kwargs: Any) -> nn.Module:
+    """Build normalization layer with filtered kwargs.
+
+    Args:
+        norm_type: Name of the normalization layer.
+        **kwargs: Additional arguments for the layer constructor.
+
+    Returns:
+        Initialized normalization layer.
+    """
     cls = get_norm_layer(norm_type)
     filtered_kwargs = filter_kwargs(cls, kwargs)
     return cls(**filtered_kwargs)

@@ -9,16 +9,27 @@ from .types import ModelOutput
 
 
 class BaseModel(nn.Module):
+    """Abstract base class for all models in the framework.
+
+    Provides a common interface for models with phase-aware forward passes
+    and automatic loss function integration.
+
+    Attributes:
+        cfg: Model configuration dictionary.
+        cfg_loss: Loss function configuration dictionary.
+        phase: Current training phase (train, val, test).
+        loss: Loss function instance (only available for train/val phases).
+    """
+
     def __init__(
         self, cfg: dict | None, cfg_loss: dict | None = None, phase: PhaseStr = "train"
     ) -> None:
-        """
-        Base model class.
+        """Initialize the base model.
 
         Args:
-            cfg: Configuration dictionary.
-            cfg_loss: Configuration dictionary for loss.
-            phase: Phase of the model. (train, val, test)
+            cfg: Model configuration dictionary.
+            cfg_loss: Loss function configuration dictionary.
+            phase: Training phase (train, val, test).
         """
         super().__init__()
         self.cfg = cfg
@@ -31,17 +42,52 @@ class BaseModel(nn.Module):
 
     @abstractmethod
     def train_forward(self, data: DatasetOutput) -> ModelOutput:
+        """Forward pass for training phase.
+
+        Args:
+            data: Input data from the dataset.
+
+        Returns:
+            Model output containing predictions and losses.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def val_forward(self, data: DatasetOutput) -> ModelOutput:
+        """Forward pass for validation phase.
+
+        Args:
+            data: Input data from the dataset.
+
+        Returns:
+            Model output containing predictions and optionally losses.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def test_forward(self, data: DatasetOutput) -> ModelOutput:
+        """Forward pass for testing phase.
+
+        Args:
+            data: Input data from the dataset.
+
+        Returns:
+            Model output containing predictions.
+        """
         raise NotImplementedError
 
     def forward(self, data: DatasetOutput) -> ModelOutput:
+        """Phase-aware forward pass.
+
+        Automatically routes to the appropriate forward method based on the
+        current phase (train_forward, val_forward, or test_forward).
+
+        Args:
+            data: Input data from the dataset.
+
+        Returns:
+            Model output appropriate for the current phase.
+        """
         if self.phase == "train":
             return self.train_forward(data)
         elif self.phase == "val":

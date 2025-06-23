@@ -19,9 +19,19 @@ except ImportError:
     from timm.models.layers import convert_sync_batchnorm
 
 MODEL_REGISTRY = Registry("MODEL")
+"""Registry for model classes."""
 
 
 def build_model(cfg: ModelConfig, phase: PhaseStr = "train") -> BaseModel:
+    """Build a model instance from configuration.
+
+    Args:
+        cfg: Model configuration containing class name, arguments, and weights.
+        phase: Training phase for the model.
+
+    Returns:
+        Instantiated model with optional pre-trained weights loaded.
+    """
     model = MODEL_REGISTRY.get(cfg.class_name)(cfg.args, cfg.loss, phase)
     if cfg.pre_trained_weight:
         load_model_weight(cfg.pre_trained_weight, model)
@@ -29,6 +39,14 @@ def build_model(cfg: ModelConfig, phase: PhaseStr = "train") -> BaseModel:
 
 
 def calc_model_parameters(model: nn.Module) -> tuple[int, int, int]:
+    """Calculate the number of parameters in different model components.
+
+    Args:
+        model: PyTorch model to analyze.
+
+    Returns:
+        Tuple containing (total_params, trainable_params, backbone_params).
+    """
     num_params = num_backbone_params = num_trainable_params = 0
     for name, param in model.named_parameters():
         param_count = param.numel()
@@ -41,6 +59,11 @@ def calc_model_parameters(model: nn.Module) -> tuple[int, int, int]:
 
 
 def log_model_parameters(model: nn.Module) -> None:
+    """Log model parameter counts to the logger.
+
+    Args:
+        model: PyTorch model to analyze and log.
+    """
     num_params, num_trainable_params, num_backbone_params = calc_model_parameters(model)
     logger.info(f"Num Model Parameters: {num_params}")
     logger.info(f"Num Trainable Model Parameters: {num_trainable_params}")
@@ -49,11 +72,29 @@ def log_model_parameters(model: nn.Module) -> None:
 
 
 def create_model_ema(cfg: ExperimentConfig, model: nn.Module) -> ModelEmaV3:
+    """Create Exponential Moving Average wrapper for the model.
+
+    Args:
+        cfg: Experiment configuration containing EMA settings.
+        model: PyTorch model to wrap with EMA.
+
+    Returns:
+        ModelEMA instance wrapping the input model.
+    """
     logger.info("Use Model Exponential Moving Average(EMA)")
     return ModelEmaV3(model, decay=cfg.model.model_ema_decay, warmup=cfg.model.model_ema_warmup)
 
 
 def setup_ddp_model(cfg: ExperimentConfig, model: nn.Module) -> DistributedDataParallel:
+    """Setup model for Distributed Data Parallel training.
+
+    Args:
+        cfg: Experiment configuration containing DDP settings.
+        model: PyTorch model to wrap with DDP.
+
+    Returns:
+        Model wrapped with DistributedDataParallel.
+    """
     if cfg.model.use_sync_bn:
         model = convert_sync_batchnorm(model)
 
@@ -66,6 +107,15 @@ def setup_ddp_model(cfg: ExperimentConfig, model: nn.Module) -> DistributedDataP
 
 
 def setup_fsdp_model(cfg: ExperimentConfig, model: nn.Module) -> FullyShardedDataParallel:
+    """Setup model for Fully Sharded Data Parallel training.
+
+    Args:
+        cfg: Experiment configuration containing FSDP settings.
+        model: PyTorch model to wrap with FSDP.
+
+    Returns:
+        Model wrapped with FullyShardedDataParallel.
+    """
     amp_policy = None
     if cfg.use_amp:
         amp_policy = MixedPrecision(

@@ -29,10 +29,34 @@ load_dotenv()
 
 
 class MlflowLogger:
+    """MLflow logger for experiment tracking.
+
+    Provides methods to log metrics, parameters, artifacts, and figures
+    to MLflow tracking server.
+
+    Attributes:
+        run: Active MLflow run instance.
+    """
+
     def __init__(self, experiment_name: str, run_name: str) -> None:
+        """Initialize MLflow logger.
+
+        Args:
+            experiment_name: Name of the MLflow experiment.
+            run_name: Name of the MLflow run.
+        """
         self.run = self.setup(experiment_name, run_name)
 
     def setup(self, experiment_name: str, run_name: str) -> mlflow.ActiveRun:
+        """Set up MLflow tracking.
+
+        Args:
+            experiment_name: Name of the MLflow experiment.
+            run_name: Name of the MLflow run.
+
+        Returns:
+            Active MLflow run instance.
+        """
         mlflow_uri = os.environ.get("MLFLOW_TRACKING_URI", "./result/mlruns")
         mlflow.set_tracking_uri(mlflow_uri)
         experiment = mlflow.set_experiment(experiment_name=experiment_name)
@@ -79,7 +103,22 @@ class MlflowLogger:
 
 
 class WandbLogger:
+    """Weights & Biases logger for experiment tracking.
+
+    Provides methods to log metrics, parameters, and other experiment data
+    to Weights & Biases.
+
+    Attributes:
+        run: Active Weights & Biases run instance.
+    """
+
     def __init__(self, project_name: str, run_name: str) -> None:
+        """Initialize Weights & Biases logger.
+
+        Args:
+            project_name: Name of the W&B project.
+            run_name: Name of the W&B run.
+        """
         self.run = self.setup(project_name, run_name)
 
     def setup(self, project_name: str, run_name: str) -> wandb.sdk.wandb_run.Run:
@@ -107,14 +146,39 @@ class WandbLogger:
 
 
 def defaultdict_to_dict(d: defaultdict) -> dict:
+    """Convert defaultdict to regular dict recursively.
+
+    Args:
+        d: The defaultdict to convert.
+
+    Returns:
+        Regular dictionary with all nested defaultdicts converted.
+    """
     return {k: defaultdict_to_dict(v) if isinstance(v, defaultdict) else v for k, v in d.items()}
 
 
 class MetricLogger:
+    """Logger for tracking and visualizing training metrics.
+
+    Stores metric histories for different phases (train, val, test) and
+    provides functionality to generate plots and figures.
+
+    Attributes:
+        histories: Nested defaultdict storing metric values by name and phase.
+    """
+
     def __init__(self) -> None:
+        """Initialize the metric logger."""
         self.histories = defaultdict(lambda: defaultdict(list))
 
     def log_metric(self, metric_name: str, metric: int | float | str, phase: PhaseStr) -> None:
+        """Log a single metric value.
+
+        Args:
+            metric_name: Name of the metric.
+            metric: Value of the metric.
+            phase: Training phase (train, val, test).
+        """
         self.histories[metric_name][phase].append(metric)
 
     def log_metrics(self, metrics: dict[str, int | float | str], phase: PhaseStr) -> None:
@@ -173,6 +237,23 @@ class MetricLogger:
 
 
 class Logger:
+    """Unified logger that combines multiple logging backends.
+
+    Integrates basic logging, metric tracking, MLflow, and Weights & Biases
+    into a single interface for experiment logging.
+
+    Attributes:
+        output_dir: Directory for saving logs and artifacts.
+        last_epoch: Last completed epoch number.
+        phase: Current training phase.
+        level: Logging level.
+        metric_logger: Instance for tracking metric histories.
+        mlflow_logger: MLflow logger instance if enabled.
+        wandb_logger: Weights & Biases logger instance if enabled.
+        logger: Basic logger instance.
+        log_path: Path to the log file.
+    """
+
     def __init__(
         self,
         output_dir: PathLike | None,
@@ -184,6 +265,18 @@ class Logger:
         mlflow_run_name: str | None = None,
         wandb_project_name: str | None = None,
     ) -> None:
+        """Initialize the unified logger.
+
+        Args:
+            output_dir: Directory for saving logs and artifacts.
+            phase: Training phase (train, val, test).
+            level: Logging level.
+            use_mlflow: Whether to enable MLflow logging.
+            use_wandb: Whether to enable Weights & Biases logging.
+            mlflow_experiment_name: Name of the MLflow experiment.
+            mlflow_run_name: Name of the MLflow run.
+            wandb_project_name: Name of the W&B project.
+        """
         self.output_dir = output_dir
         self.last_epoch = 0
         self.phase = phase
@@ -204,7 +297,12 @@ class Logger:
         self._log_initial_info()
 
     def _setup_basic_logger(self, output_dir: PathLike | None, level: str) -> None:
-        """基本ロガーを設定する"""
+        """Set up the basic logger.
+
+        Args:
+            output_dir: Directory for saving log files.
+            level: Logging level.
+        """
         if output_dir is not None:
             self.log_path = output_dir / f"{self.phase}.log"
         else:
@@ -219,7 +317,13 @@ class Logger:
     def _setup_mlflow_logger(
         self, use_mlflow: bool, experiment_name: str | None, run_name: str | None
     ) -> None:
-        """MLflowロガーを設定する"""
+        """Set up the MLflow logger.
+
+        Args:
+            use_mlflow: Whether to enable MLflow logging.
+            experiment_name: Name of the MLflow experiment.
+            run_name: Name of the MLflow run.
+        """
         self.mlflow_logger: MlflowLogger | None = None
         if use_mlflow and experiment_name is not None and run_name is not None:
             self.mlflow_logger = MlflowLogger(experiment_name, run_name)
@@ -237,7 +341,13 @@ class Logger:
     def _setup_wandb_logger(
         self, use_wandb: bool, project_name: str | None, output_dir: PathLike | None
     ) -> None:
-        """Weights & Biasesロガーを設定する"""
+        """Set up the Weights & Biases logger.
+
+        Args:
+            use_wandb: Whether to enable W&B logging.
+            project_name: Name of the W&B project.
+            output_dir: Directory for saving artifacts.
+        """
         self.wandb_logger: WandbLogger | None = None
         if use_wandb and project_name is not None and output_dir is not None:
             self.wandb_logger = WandbLogger(project_name, output_dir.name)
@@ -364,11 +474,11 @@ class Logger:
                 self.mlflow_logger.log_artifacts(str(path))
 
     def log_result_dir(self, path: str | Path, ignore_dirs: list[str] | None = None) -> None:
-        """結果ディレクトリをログに記録する
+        """Log all files and directories in the result directory.
 
         Args:
-            path (Union[str, Path]): 結果ディレクトリのパス
-            ignore_dirs (Optional[list[str]], optional): 無視するディレクトリ名のリスト
+            path: Path to the result directory.
+            ignore_dirs: List of directory names to ignore.
         """
         if self.mlflow_logger is None:
             return

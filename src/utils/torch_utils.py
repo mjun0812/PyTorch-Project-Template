@@ -17,10 +17,13 @@ from ..types import PathLike
 
 
 def worker_init_fn(worker_id: int) -> None:
-    """Reset numpy random seed in PyTorch Dataloader
+    """Reset random seeds for PyTorch DataLoader workers.
+
+    Ensures reproducible random number generation across different
+    DataLoader worker processes.
 
     Args:
-        worker_id (int): random seed value
+        worker_id: Unique identifier for the DataLoader worker.
     """
     # random
     random.seed(random.getstate()[1][0] + worker_id)
@@ -31,13 +34,16 @@ def worker_init_fn(worker_id: int) -> None:
 
 
 def fix_seed(seed: int) -> int:
-    """Fix seed on random, numpy, torch module
+    """Set random seeds for reproducible results.
+
+    Sets seeds for Python's random module, NumPy, and PyTorch
+    to ensure reproducible results across runs.
 
     Args:
-        seed (int): seed parameter
+        seed: Random seed value.
 
     Returns:
-        int: seed parameter
+        The seed value that was set.
     """
     # random
     random.seed(seed)
@@ -50,12 +56,13 @@ def fix_seed(seed: int) -> int:
 
 
 def time_synchronized() -> float:
-    """Return time at synhronized CUDA and CPU.
+    """Return synchronized time between CUDA and CPU.
 
-    CUDAとCPUの計算が非同期なため，同期してから時間計算する．
+    Synchronizes CUDA operations with CPU before getting the current time
+    to ensure accurate timing measurements.
 
     Returns:
-        time: 関数呼び出し時の時刻
+        Current time after CUDA synchronization.
     """
     # pytorch-accurate time
     if torch.cuda.is_available():

@@ -24,18 +24,38 @@ except ImportError:
 
 
 class to_channels_first(nn.Module):
+    """Convert tensor from channels-last to channels-first format."""
+
     def __init__(self) -> None:
         super().__init__()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Convert input from (N,H,W,C) to (N,C,H,W) format.
+
+        Args:
+            x: Input tensor of shape (N, H, W, C).
+
+        Returns:
+            Tensor of shape (N, C, H, W).
+        """
         return x.permute(0, 3, 1, 2)
 
 
 class to_channels_last(nn.Module):
+    """Convert tensor from channels-first to channels-last format."""
+
     def __init__(self) -> None:
         super().__init__()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Convert input from (N,C,H,W) to (N,H,W,C) format.
+
+        Args:
+            x: Input tensor of shape (N, C, H, W).
+
+        Returns:
+            Tensor of shape (N, H, W, C).
+        """
         return x.permute(0, 2, 3, 1)
 
 
@@ -46,6 +66,21 @@ def build_norm_layer(
     out_format: str = "channels_last",
     eps: float = 1e-6,
 ) -> nn.Sequential:
+    """Build normalization layer with format conversion.
+
+    Args:
+        dim: Number of channels.
+        norm_layer: Type of normalization layer ("BN" or "LN").
+        in_format: Input format ("channels_first" or "channels_last").
+        out_format: Output format ("channels_first" or "channels_last").
+        eps: Epsilon value for LayerNorm.
+
+    Returns:
+        Sequential module containing format conversions and normalization.
+
+    Raises:
+        NotImplementedError: If norm_layer is not supported.
+    """
     layers = []
     if norm_layer == "BN":
         if in_format == "channels_last":
@@ -65,6 +100,17 @@ def build_norm_layer(
 
 
 def build_act_layer(act_layer: str) -> nn.Module:
+    """Build activation layer.
+
+    Args:
+        act_layer: Type of activation layer ("ReLU", "SiLU", or "GELU").
+
+    Returns:
+        Activation layer module.
+
+    Raises:
+        NotImplementedError: If act_layer is not supported.
+    """
     if act_layer == "ReLU":
         return nn.ReLU(inplace=True)
     elif act_layer == "SiLU":
@@ -76,6 +122,17 @@ def build_act_layer(act_layer: str) -> nn.Module:
 
 
 def _is_power_of_2(n: int) -> bool:
+    """Check if a number is a power of 2.
+
+    Args:
+        n: Integer to check.
+
+    Returns:
+        True if n is a power of 2, False otherwise.
+
+    Raises:
+        ValueError: If input is not a non-negative integer.
+    """
     if (not isinstance(n, int)) or (n < 0):
         raise ValueError(f"invalid input for _is_power_of_2: {n} (type: {type(n)})")
 
@@ -83,12 +140,24 @@ def _is_power_of_2(n: int) -> bool:
 
 
 class CenterFeatureScaleModule(nn.Module):
+    """Module for center feature scaling in DCNv3."""
+
     def forward(
         self,
         query: torch.Tensor,
         center_feature_scale_proj_weight: torch.Tensor,
         center_feature_scale_proj_bias: torch.Tensor,
     ) -> torch.Tensor:
+        """Apply center feature scaling.
+
+        Args:
+            query: Input query tensor.
+            center_feature_scale_proj_weight: Projection weight tensor.
+            center_feature_scale_proj_bias: Projection bias tensor.
+
+        Returns:
+            Scaled feature tensor.
+        """
         center_feature_scale = F.linear(
             query,
             weight=center_feature_scale_proj_weight,
@@ -192,6 +261,7 @@ class DCNv3_pytorch(nn.Module):
             self.center_feature_scale_module = CenterFeatureScaleModule()
 
     def _reset_parameters(self) -> None:
+        """Reset module parameters to initial values."""
         constant_(self.offset.weight.data, 0.0)
         constant_(self.offset.bias.data, 0.0)
         constant_(self.mask.weight.data, 0.0)
@@ -280,6 +350,32 @@ def dcnv3_core_pytorch(
     im2col_step: int,
     remove_center: int,
 ) -> torch.Tensor:
+    """Core PyTorch implementation of DCNv3 operation.
+
+    Args:
+        input: Input tensor of shape (N, H, W, C).
+        offset: Offset tensor for deformable sampling.
+        mask: Mask tensor for weighted sampling.
+        kernel_h: Kernel height.
+        kernel_w: Kernel width.
+        stride_h: Stride in height dimension.
+        stride_w: Stride in width dimension.
+        pad_h: Padding in height dimension.
+        pad_w: Padding in width dimension.
+        dilation_h: Dilation in height dimension.
+        dilation_w: Dilation in width dimension.
+        group: Number of groups.
+        group_channels: Number of channels per group.
+        offset_scale: Scaling factor for offsets.
+        im2col_step: Step size for im2col operation.
+        remove_center: Whether to remove center position.
+
+    Returns:
+        Output tensor of DCNv3 operation.
+
+    Raises:
+        ValueError: If remove_center is used with invalid kernel configuration.
+    """
     # for debug and test only,
     # need to use cuda version instead
 
@@ -373,6 +469,23 @@ def _get_reference_points(
     stride_h: int = 1,
     stride_w: int = 1,
 ) -> torch.Tensor:
+    """Generate reference points for deformable convolution.
+
+    Args:
+        spatial_shapes: Tuple of (N, H, W, C) dimensions.
+        device: Target device for tensor creation.
+        kernel_h: Kernel height.
+        kernel_w: Kernel width.
+        dilation_h: Dilation in height dimension.
+        dilation_w: Dilation in width dimension.
+        pad_h: Padding in height dimension.
+        pad_w: Padding in width dimension.
+        stride_h: Stride in height dimension.
+        stride_w: Stride in width dimension.
+
+    Returns:
+        Reference points tensor.
+    """
     _, H_, W_, _ = spatial_shapes
     H_out = (H_ - (dilation_h * (kernel_h - 1) + 1)) // stride_h + 1
     W_out = (W_ - (dilation_w * (kernel_w - 1) + 1)) // stride_w + 1
@@ -415,6 +528,20 @@ def _generate_dilation_grids(
     group: int,
     device: torch.device,
 ) -> torch.Tensor:
+    """Generate dilation grids for deformable convolution.
+
+    Args:
+        spatial_shapes: Tuple of (N, H, W, C) dimensions.
+        kernel_h: Kernel height.
+        kernel_w: Kernel width.
+        dilation_h: Dilation in height dimension.
+        dilation_w: Dilation in width dimension.
+        group: Number of groups.
+        device: Target device for tensor creation.
+
+    Returns:
+        Dilation grid tensor.
+    """
     _, H_, W_, _ = spatial_shapes
     points_list = []
     x, y = torch.meshgrid(
@@ -445,6 +572,16 @@ def _generate_dilation_grids(
 def remove_center_sampling_locations(
     sampling_locations: torch.Tensor, kernel_w: int, kernel_h: int
 ) -> torch.Tensor:
+    """Remove center sampling locations from deformable convolution.
+
+    Args:
+        sampling_locations: Tensor containing sampling locations.
+        kernel_w: Kernel width.
+        kernel_h: Kernel height.
+
+    Returns:
+        Sampling locations with center positions removed.
+    """
     idx = list(range(sampling_locations.shape[-2]))
     C = (kernel_w * kernel_h - 1) // 2
     idx = [i for i in idx if i != C and (i - C) % (C * 2 + 1) != 0]

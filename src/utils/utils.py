@@ -21,10 +21,10 @@ from ..types import PathLike
 
 
 def get_git_hash() -> str:
-    """gitハッシュを取得する
+    """Get the current Git commit hash.
 
     Returns:
-        string: Gitのハッシュ値
+        Git commit hash as a short string, or error message if not in a Git repository.
     """
     cmd = "git rev-parse --short HEAD"
     try:
@@ -37,14 +37,14 @@ def get_git_hash() -> str:
 
 
 def get_cmd() -> str:
-    """実行コマンドを取得する
+    """Get the command line used to execute the current script.
 
     Returns:
-        string: 実行コマンド
+        Command line string including python and all arguments.
 
     Examples:
-        get_cmd()
-        -> python hoge.py --huga
+        >>> get_cmd()
+        'python train.py config/dummy.yaml batch=32'
     """
     cmd = "python " + " ".join(sys.argv)
     return cmd
@@ -55,24 +55,21 @@ def make_output_dirs(
     prefix: str | None = None,
     child_dirs: list[str] | None = None,
 ) -> Path:
-    """Mkdir YYYYMMDD_HHmmSS (+ _prefix)
+    """Create timestamped output directory with optional subdirectories.
 
     Args:
-        output_base_path (str): make output dir path.
-        prefix (str, optional): add prefix mkdir. Defaults to "".
-        child_dirs ([type], optional): mkdir child dir list. Defaults to None.
+        output_base_path: Base path where the output directory will be created.
+        prefix: Optional prefix to add to the directory name.
+        child_dirs: List of subdirectory names to create.
 
     Returns:
-        str: YYYYMMDD_HHmmSS
+        Path to the created output directory.
 
     Examples:
-        ```python
-        out = make_output_dirs("./result", prefix="MODEL", child_dirs=["models", "figs"])
-
-        ./result/21010812_120000
-        ├── models
-        └── figs
-        ```
+        >>> out = make_output_dirs("./result", prefix="MODEL", child_dirs=["models", "figs"])
+        >>> # Creates: ./result/20240108_120000_MODEL/
+        >>> #          ├── models/
+        >>> #          └── figs/
     """
     today = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     if prefix:
@@ -86,15 +83,14 @@ def make_output_dirs(
 
 
 def make_result_dirs(base_path: PathLike, prefix: str = "") -> Path:
-    """
-    Creates a directory for storing results.
+    """Create a timestamped directory for storing experiment results.
 
     Args:
-        base_path (PathLike): The base path where the directory will be created.
-        prefix (str, optional): The prefix to be added to the directory name. Defaults to "".
+        base_path: The base path where the directory will be created.
+        prefix: Optional prefix to be added to the directory name.
 
     Returns:
-        Path: The path of the created directory.
+        Path to the created result directory.
     """
     dir_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     if prefix:
@@ -105,6 +101,14 @@ def make_result_dirs(base_path: PathLike, prefix: str = "") -> Path:
 
 
 def plot_graph(title: str, labels: list[str], data: list, output_dir: PathLike) -> None:
+    """Plot multiple data series on a single graph.
+
+    Args:
+        title: Title for the plot.
+        labels: Labels for each data series.
+        data: List of data series to plot.
+        output_dir: Path where the plot will be saved.
+    """
     matplotlib.use("Agg")
 
     plt.gcf().clear()
@@ -121,6 +125,14 @@ def plot_graph(title: str, labels: list[str], data: list, output_dir: PathLike) 
 
 
 def plot_multi_graph(filename: str, titles: list[str], data: dict, dpi: int = 300) -> None:
+    """Create multiple subplots in a single figure.
+
+    Args:
+        filename: Output filename for the plot.
+        titles: Titles for each subplot.
+        data: Dictionary containing plot data for each title.
+        dpi: Resolution for the saved figure.
+    """
     matplotlib.use("Agg")
     font_manager.fontManager.addfont("./etc/Times_New_Roman.ttf")
     plt.rcParams.update({"font.family": "Times New Roman", "font.size": 10})
@@ -146,7 +158,17 @@ def plot_multi_graph(filename: str, titles: list[str], data: dict, dpi: int = 30
     plt.close()
 
 
-def post_slack(channel: str = "#通知", username: str = "通知", message: str = "") -> None:
+def post_slack(channel: str = "#notifications", username: str = "Bot", message: str = "") -> None:
+    """Send a message to Slack using either token or webhook.
+
+    Automatically detects and uses either SLACK_TOKEN or SLACK_WEBHOOK_URL
+    from environment variables. Environment variables override function arguments.
+
+    Args:
+        channel: Slack channel to send the message to.
+        username: Username to display as the sender.
+        message: Message content to send.
+    """
     load_dotenv(dotenv_path=f"{os.environ['HOME']}/.env")
     load_dotenv()
     token = os.getenv("SLACK_TOKEN")
@@ -168,18 +190,18 @@ def post_slack(channel: str = "#通知", username: str = "通知", message: str 
 
 
 def _post_slack(
-    token: str, channel: str = "#通知", username: str = "通知", message: str = ""
+    token: str, channel: str = "#notifications", username: str = "Bot", message: str = ""
 ) -> int:
-    """slackにメッセージを送る. send slack message
+    """Send a message to Slack using API token.
 
     Args:
-        token (str): Slack Token
-        channel (str, optional): メッセージを送る通知先. Defaults to "#通知".
-        username (str, optional): メッセージを送るユーザーの名前. Defaults to "通知".
-        message (str, optional): send message. Defaults to "".
+        token: Slack API token.
+        channel: Slack channel to send the message to.
+        username: Username to display as the sender.
+        message: Message content to send.
 
     Returns:
-        int: http status code
+        HTTP status code from the Slack API response.
     """
     response = requests.post(
         "https://slack.com/api/chat.postMessage",
@@ -195,18 +217,18 @@ def _post_slack(
 
 
 def _post_slack_webhook(
-    webhook_url: str, channel: str = "#通知", username: str = "通知", message: str = ""
+    webhook_url: str, channel: str = "#notifications", username: str = "Bot", message: str = ""
 ) -> int:
-    """slackにwebhook経由でメッセージを送る. send slack message via webhook
+    """Send a message to Slack using webhook URL.
 
     Args:
-        webhook_url (str): Slack Webhook URL
-        channel (str, optional): メッセージを送る通知先. Defaults to "#通知".
-        username (str, optional): メッセージを送るユーザーの名前. Defaults to "通知".
-        message (str, optional): send message. Defaults to "".
+        webhook_url: Slack webhook URL.
+        channel: Slack channel to send the message to.
+        username: Username to display as the sender.
+        message: Message content to send.
 
     Returns:
-        int: http status code
+        HTTP status code from the webhook response.
     """
     payload = {
         "channel": channel,
@@ -223,7 +245,21 @@ def _post_slack_webhook(
 
 
 class JsonEncoder(json.JSONEncoder):
+    """Custom JSON encoder for NumPy arrays and PyTorch tensors.
+
+    Extends the default JSON encoder to handle NumPy arrays, NumPy scalars,
+    and PyTorch tensors by converting them to Python native types.
+    """
+
     def default(self, obj: Any) -> Any:
+        """Convert special objects to JSON-serializable types.
+
+        Args:
+            obj: Object to serialize.
+
+        Returns:
+            JSON-serializable representation of the object.
+        """
         if isinstance(obj, np.ndarray):
             return obj.tolist()
         elif isinstance(obj, (np.floating, np.complexfloating)):
@@ -238,6 +274,14 @@ class JsonEncoder(json.JSONEncoder):
 
 
 def import_submodules(module: ModuleType) -> list[ModuleType]:
+    """Import all Python submodules from a given module.
+
+    Args:
+        module: Parent module to import submodules from.
+
+    Returns:
+        List of imported submodules.
+    """
     return [
         importlib.import_module(f"{module.__name__}.{f.stem}")
         for f in Path(module.__file__).parent.glob("[a-zA-Z0-9]*.py")
@@ -245,23 +289,30 @@ def import_submodules(module: ModuleType) -> list[ModuleType]:
 
 
 class HidePrints:
-    """標準出力を無効にする
+    """Context manager to suppress standard output.
 
     Example:
-        ```python
-        with HidePrints():
-            print("aaaa")
-        ```
+        >>> with HidePrints():
+        ...     print("This won't be printed")
     """
 
     def __init__(self) -> None:
+        """Initialize the context manager."""
         self.stdout = None
 
     def __enter__(self) -> None:
+        """Enter context and suppress stdout."""
         self.stdout = sys.stdout
         sys.stdout = open(os.devnull, "w")
 
     def __exit__(self, ex_type: Any, ex_value: Any, trace: Any) -> None:
+        """Exit context and restore stdout.
+
+        Args:
+            ex_type: Exception type.
+            ex_value: Exception value.
+            trace: Exception traceback.
+        """
         sys.stdout = self.stdout
 
 
@@ -297,19 +348,37 @@ def create_symlink(target: PathLike, dst: PathLike) -> None:
 
 
 def get_shm_size() -> int:
+    """Get the total size of shared memory filesystem.
+
+    Returns:
+        Total shared memory size in bytes.
+    """
     stats = os.statvfs("/dev/shm")
     shm_bytes = stats.f_bsize * stats.f_blocks
     return shm_bytes
 
 
 def get_free_shm_size() -> int:
+    """Get the available size of shared memory filesystem.
+
+    Returns:
+        Available shared memory size in bytes.
+    """
     stats = os.statvfs("/dev/shm")
     free_shm_bytes = stats.f_bsize * stats.f_bavail
     return free_shm_bytes
 
 
 def filter_kwargs(cls: type, kwargs: dict[str, Any]) -> dict[str, Any]:
-    """クラスの__init__メソッドに必要な引数だけをkwargsから抽出する"""
+    """Filter kwargs to only include arguments accepted by a class's __init__ method.
+
+    Args:
+        cls: Class to inspect for valid arguments.
+        kwargs: Dictionary of keyword arguments to filter.
+
+    Returns:
+        Dictionary containing only valid arguments for the class.
+    """
     # クラスの__init__メソッドのシグネチャを取得
     sig = inspect.signature(cls.__init__)
 
