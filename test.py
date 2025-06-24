@@ -34,7 +34,12 @@ def do_test(
         batched_transform = None
     dataset = build_dataset(cfg.dataset.test, transform)
     _, batch_sampler = build_sampler(dataset, phase="test", batch_size=cfg.batch)
-    dataloader = build_dataloader(dataset, num_workers=cfg.num_worker, batch_sampler=batch_sampler)
+    dataloader = build_dataloader(
+        dataset,
+        num_workers=cfg.num_worker,
+        batch_sampler=batch_sampler,
+        pin_memory=device.type != "mps",
+    )
     logger.info("Complete Load Dataset")
 
     logger.info("Building Model...")

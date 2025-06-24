@@ -18,10 +18,15 @@ import wandb
 from dotenv import load_dotenv
 from loguru import logger
 from matplotlib import font_manager
+from mlflow.data.dataset_source_registry import resolve_dataset_source
+from mlflow.data.meta_dataset import MetaDataset
 from omegaconf import DictConfig, ListConfig, OmegaConf
 from torch import Tensor
+from torch.nn import Module as TorchModule
 
 from ..config import ExperimentConfig, LogParamsConfig
+from ..dataloaders.base import BaseDataset
+from ..dataloaders.types import DatasetOutput
 from ..types import PathLike, PhaseStr
 from .utils import get_cmd, get_git_hash
 
@@ -36,6 +41,7 @@ class MlflowLogger:
 
     Attributes:
         run: Active MLflow run instance.
+        model_info: Model information.
     """
 
     def __init__(self, experiment_name: str, run_name: str) -> None:
@@ -46,6 +52,7 @@ class MlflowLogger:
             run_name: Name of the MLflow run.
         """
         self.run = self.setup(experiment_name, run_name)
+        self.model_info = None
 
     def setup(self, experiment_name: str, run_name: str) -> mlflow.ActiveRun:
         """Set up MLflow tracking.
@@ -65,6 +72,11 @@ class MlflowLogger:
         )
 
     def get_run_uri(self) -> str:
+        """Get the URI of the MLflow run.
+
+        Returns:
+            str: The URI of the MLflow run.
+        """
         run = mlflow.get_run(self.run.info.run_id)
         artifact_uri = run.info.artifact_uri
 
@@ -75,28 +87,82 @@ class MlflowLogger:
             return f"{tracking_uri}/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}"
 
     def log_metric(self, name: str, metric: int | float | Tensor, step: int) -> None:
+        """Log a single metric value.
+
+        Args:
+            name: Name of the metric.
+            metric: Value of the metric.
+            step: Step number.
+        """
         mlflow.log_metric(name, metric, step)
 
     def log_metrics(self, metrics: dict, step: int) -> None:
+        """Log multiple metric values.
+
+        Args:
+            metrics: Dictionary of metric names and values.
+            step: Step number.
+        """
         mlflow.log_metrics(metrics, step)
 
     def log_params(self, parameters: dict) -> None:
+        """Log parameters.
+
+        Args:
+            parameters: Dictionary of parameter names and values.
+        """
         mlflow.log_params(parameters)
 
     def log_tag(self, key: str, value: str) -> None:
+        """Log a tag.
+
+        Args:
+            key: Name of the tag.
+            value: Value of the tag.
+        """
         mlflow.set_tag(key, value)
 
     def log_artifact(self, path: str | Path) -> None:
+        """Log an artifact.
+
+        Args:
+            path: Path to the artifact.
+        """
         mlflow.log_artifact(str(path))
 
     def log_figure(self, fig: matplotlib.figure.Figure, path: str | Path) -> None:
+        """Log a figure.
+
+        Args:
+            fig: Figure to log.
+            path: Path to the figure.
+        """
         mlflow.log_figure(fig, str(path))
 
     def log_artifacts(self, path: str | Path) -> None:
+        """Log multiple artifacts.
+
+        Args:
+            path: Path to the artifacts.
+        """
         mlflow.log_artifacts(str(path))
 
     def log_table(self, dict_data: dict[str, Any]) -> None:
         mlflow.log_table(data=dict_data)
+
+    def log_model(self, model: TorchModule, model_name: str) -> None:
+        input_example = {key: None for key in DatasetOutput.__annotations__}
+        self.model_info = mlflow.pytorch.log_model(
+            pytorch_model=model,
+            input_example=input_example,
+            name=model_name,
+            registered_model_name=model_name,
+        )
+
+    def log_dataset(self, dataset: BaseDataset, name: str, context: str | None) -> None:
+        dataset_source = resolve_dataset_source(dataset)
+        meta_dataset = MetaDataset(name=name, source=dataset_source)
+        mlflow.log_input(dataset=meta_dataset, context=context, model=self.model_info)
 
     def close(self, status: Literal["FINISHED", "FAILED"] = "FINISHED") -> None:
         mlflow.end_run(status=status)
@@ -524,6 +590,16 @@ class Logger:
             else:
                 log_params[p.name] = value
         self.log_params(log_params)
+
+    def log_model(self, model: TorchModule, model_name: str) -> None:
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_model"):
+                self.mlflow_logger.log_model(model, model_name)
+
+    def log_dataset(self, dataset: BaseDataset, name: str, context: str | None) -> None:
+        if self.mlflow_logger:
+            with self._safe_operation("mlflow.log_dataset"):
+                self.mlflow_logger.log_dataset(dataset, name, context)
 
     def close(self, status: str = "FINISHED") -> None:
         if self.mlflow_logger:

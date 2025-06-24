@@ -93,6 +93,7 @@ def build_dataloader(
     use_iter_loop: bool = False,
     max_iter: int | None = None,
     step_iter: int | None = None,
+    pin_memory: bool = True,
 ) -> DataLoader:
     """Build a DataLoader from dataset and configuration.
 
@@ -103,12 +104,13 @@ def build_dataloader(
         use_iter_loop: Whether to use iteration-based training.
         max_iter: Maximum number of iterations for iter-based training.
         step_iter: Number of iterations per step for iter-based training.
+        pin_memory: Whether to pin memory for faster data transfer.
 
     Returns:
         DataLoader instance, optionally wrapped for iteration-based training.
     """
     common_kwargs = {
-        "pin_memory": True,
+        "pin_memory": pin_memory,
         "num_workers": num_workers,
         "batch_sampler": batch_sampler,
         "worker_init_fn": worker_init_fn,

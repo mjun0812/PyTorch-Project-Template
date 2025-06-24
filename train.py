@@ -5,7 +5,6 @@ from pathlib import Path
 
 import torch
 import torch.distributed as dist
-from torch.distributed.elastic.multiprocessing.errors import record
 from torch.nn import DataParallel
 from torch.utils.data import DataLoader, Sampler
 from torchmetrics import MetricCollection
@@ -82,7 +81,7 @@ def build_train_model(cfg: ExperimentConfig, device: torch.device, logger: Logge
 
 
 def build_phase_dataloader(
-    cfg: ExperimentConfig, phase: str
+    cfg: ExperimentConfig, phase: str, pin_memory: bool = True
 ) -> tuple[BaseDataset, DataLoader, Compose | None, Sampler]:
     cfg_dataset: DatasetConfig = cfg.dataset.get(phase)
 
@@ -100,11 +99,11 @@ def build_phase_dataloader(
         use_iter_loop=cfg.use_iter_loop and phase == "train",
         max_iter=cfg.max_iter if phase == "train" else None,
         step_iter=cfg.step_iter if phase == "train" else None,
+        pin_memory=pin_memory,
     )
     return dataset, dataloader, batched_transform, sampler
 
 
-@record
 def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logger: Logger) -> None:
     fix_seed(cfg.seed + int(os.environ.get("LOCAL_RANK", -1)))
 
@@ -124,7 +123,7 @@ def do_train(cfg: ExperimentConfig, device: torch.device, output_dir: Path, logg
     for phase in ["train", "val"]:
         # Build Dataset, Dataloader, Batched Transform, Sampler
         datasets[phase], dataloaders[phase], batched_transforms[phase], samplers[phase] = (
-            build_phase_dataloader(cfg, phase)
+            build_phase_dataloader(cfg, phase, pin_memory=device.type != "mps")
         )
         phase_cap = phase.capitalize()
         logger.info(
