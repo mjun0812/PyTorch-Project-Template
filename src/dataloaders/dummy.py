@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import torch
 from torchvision.transforms.v2 import Compose
 
 from .base import BaseDataset
@@ -58,4 +57,4 @@ class DummyDataset(BaseDataset):
         Returns:
             Synthetic data sample with ones tensor and modulo label.
         """
-        return DatasetOutput(data=torch.ones(8), label=idx % 4)
+        return DatasetOutput.dummy()

@@ -1,13 +1,13 @@
 from pathlib import Path
 
 import pytest
-import torch
 import yaml
 from torchmetrics import MetricCollection
 
 from src.config.config import EvaluatorConfig
 from src.dataloaders.types import DatasetOutput
 from src.evaluator.build import EVALUATOR_REGISTRY
+from src.models.types import PredOutput
 
 CONFIG_PATH = "config/__base__/evaluator/dummy_evaluator.yaml"
 
@@ -17,18 +17,13 @@ class TestEvaluatorHelpers:
 
     @staticmethod
     def create_dataset_data(batch_size: int = 2) -> DatasetOutput:
-        """Create mock HODatasetData for testing"""
-        data = DatasetOutput()
-        data["data"] = torch.rand(batch_size, 3, 224, 224)
-        data["label"] = torch.randint(0, 10, (batch_size,))
-        return data
+        """Create mock dataset data for testing"""
+        return DatasetOutput.dummy(batch=batch_size)
 
     @staticmethod
-    def create_pred_output(batch_size: int = 2) -> dict:
-        """Create mock HOPEPredOutput for testing"""
-        output = {}
-        output["pred"] = torch.rand(batch_size, 10)
-        return output
+    def create_pred_output(batch_size: int = 2) -> PredOutput:
+        """Create mock pred output for testing"""
+        return PredOutput.dummy(batch=batch_size)
 
 
 class TestEvaluatorFromConfig:

@@ -1,5 +1,6 @@
 from typing import NotRequired, TypedDict
 
+import torch
 from torch import Tensor
 
 
@@ -11,5 +12,24 @@ class DatasetOutput(TypedDict, total=False):
         label: The target label as integer (optional).
     """
 
+    # GPUに転送するキーのリスト
+    __gpu_keys__: tuple[str] = ("data", "label")
+
     data: NotRequired[Tensor]
     label: NotRequired[int]
+
+    @classmethod
+    def dummy(cls, batch: int | None = None) -> "DatasetOutput":
+        """Create dummy DatasetOutput for testing.
+
+        Args:
+            batch: Batch size. If None, returns single sample with label as int.
+                   If specified, returns batched data with label as Tensor.
+
+        Returns:
+            DatasetOutput with dummy values.
+        """
+        if batch is None:
+            return cls(data=torch.randn(3, 224, 224), label=torch.randint(0, 1000, (1,)).item())
+        else:
+            return cls(data=torch.randn(batch, 3, 224, 224), label=torch.randint(0, 1000, (batch,)))

@@ -278,7 +278,7 @@ class BaseTrainer:
             with torch.set_grad_enabled(state.phase == "train"):
                 # Prepare Input
                 for k, v in inputs.items():
-                    if isinstance(v, torch.Tensor):
+                    if isinstance(v, torch.Tensor) and k in DatasetOutput.__gpu_keys__:
                         inputs[k] = v.to(self.device, non_blocking=True)
                 if self.batched_transforms[state.phase]:
                     inputs = self.batched_transforms[state.phase](inputs)

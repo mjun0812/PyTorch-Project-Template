@@ -20,15 +20,6 @@ DATASET_REGISTRY = Registry("DATASET")
 """Registry for dataset classes."""
 
 
-def is_ram_cache_supported() -> bool:
-    """Check if RAM cache is supported on the current platform.
-
-    Returns:
-        bool: True if RAM cache is supported (Linux only), False otherwise.
-    """
-    return platform.system() == "Linux"
-
-
 def validate_ram_cache_config(use_ram_cache: bool, verbose: bool = True) -> bool:
     """Validate RAM cache configuration for current platform.
 
@@ -39,7 +30,7 @@ def validate_ram_cache_config(use_ram_cache: bool, verbose: bool = True) -> bool
     Returns:
         bool: True if RAM cache can be used, False otherwise.
     """
-    if use_ram_cache and not is_ram_cache_supported():
+    if use_ram_cache and platform.system() != "Linux":
         if verbose:
             logger.warning(
                 f"RAM cache is only supported on Linux. Current OS: {platform.system()}. "
@@ -161,7 +152,7 @@ def build_sampler(
     return sampler, batch_sampler
 
 
-def collate(batch: list[DatasetOutput]) -> dict[str, torch.Tensor]:
+def collate(batch: list[DatasetOutput]) -> DatasetOutput:
     """Collate function for combining dataset outputs into batches.
 
     Automatically handles stacking of tensors and conversion of numeric
@@ -183,4 +174,4 @@ def collate(batch: list[DatasetOutput]) -> dict[str, torch.Tensor]:
             output[k] = torch.stack(output[k], dim=0)
         elif isinstance(output[k][0], (int, float)):
             output[k] = torch.tensor(output[k])
-    return output
+    return DatasetOutput(**output)

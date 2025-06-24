@@ -123,7 +123,9 @@ def test_dataloader() -> None:
         transform = build_transforms(dataset_cfg.test.transforms)
         dataset = build_dataset(dataset_cfg.test, transform)
         _, batch_sampler = build_sampler(dataset, phase="test", batch_size=2)
-        dataloader = build_dataloader(dataset, num_workers=2, batch_sampler=batch_sampler)
+        dataloader = build_dataloader(
+            dataset, num_workers=2, batch_sampler=batch_sampler, pin_memory=False
+        )
         if dataset_cfg.test.batch_transforms is not None:
             batched_transform = build_batched_transform(dataset_cfg.test.batch_transforms)
         else:
