@@ -1,6 +1,6 @@
 [project]
 name = "pytorch-project-template"
-version = "5.0.0"
+version = "6.0.0"
 description = ""
 authors = [{ name = "Junya Morioka", email = "mjun@mjunya.com" }]
 requires-python = ">=3.11"
