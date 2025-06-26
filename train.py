@@ -249,6 +249,7 @@ def main(cfg: ExperimentConfig) -> None:
     device = setup_device(
         device_type=cfg.gpu.device,
         device_index=cfg.gpu.use,
+        rank=local_rank,
         use_cudnn=cfg.gpu.use_cudnn,
         verbose=local_rank in [-1, 0],
         allow_tf32=cfg.gpu.use_tf32,
