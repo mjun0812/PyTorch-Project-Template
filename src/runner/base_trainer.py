@@ -427,14 +427,38 @@ class BaseTrainer:
             create_symlink(weight_path, final_model_path)
 
             save_optimizer(self.optimizer, optimizer_path)
+            # 保存したoptimizer_path以外のoptimizerファイルを削除
+            optimizer_dir = Path(output_dir) / "optimizers"
+            for optimizer_file in optimizer_dir.glob("optimizer_epoch_*.pth"):
+                if (
+                    str(optimizer_file) != optimizer_path
+                    and str(optimizer_file) != final_optimizer_path
+                ):
+                    optimizer_file.unlink()
             create_symlink(optimizer_path, final_optimizer_path)
 
             if self.epoch_lr_scheduler:
                 save_lr_scheduler(self.epoch_lr_scheduler, epoch_scheduler_path)
+                # 保存したschedulerファイル以外のschedulerファイルを削除
+                scheduler_dir = Path(output_dir) / "schedulers"
+                for scheduler_file in scheduler_dir.glob("epoch_scheduler_epoch_*.pth"):
+                    if (
+                        str(scheduler_file) != epoch_scheduler_path
+                        and str(scheduler_file) != final_epoch_scheduler_path
+                    ):
+                        scheduler_file.unlink()
                 create_symlink(epoch_scheduler_path, final_epoch_scheduler_path)
 
             if self.iter_lr_scheduler:
                 save_lr_scheduler(self.iter_lr_scheduler, iter_scheduler_path)
+                # 保存したschedulerファイル以外のschedulerファイルを削除
+                scheduler_dir = Path(output_dir) / "schedulers"
+                for scheduler_file in scheduler_dir.glob("iter_scheduler_epoch_*.pth"):
+                    if (
+                        str(scheduler_file) != iter_scheduler_path
+                        and str(scheduler_file) != final_iter_scheduler_path
+                    ):
+                        scheduler_file.unlink()
                 create_symlink(iter_scheduler_path, final_iter_scheduler_path)
 
     def load_state(

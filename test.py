@@ -29,7 +29,7 @@ def do_test(
     logger.info("Loading Dataset...")
     transform = build_transforms(cfg.dataset.test.transforms)
     if cfg.dataset.test.batch_transforms is not None:
-        batched_transform = build_batched_transform(cfg.dataset.test.batch_transforms)
+        batched_transform = build_batched_transform(cfg.dataset.test.batch_transforms).to(device)
     else:
         batched_transform = None
     dataset = build_dataset(cfg.dataset.test, transform)

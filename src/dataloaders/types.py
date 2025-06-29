@@ -1,3 +1,4 @@
+import random
 from typing import NotRequired, TypedDict
 
 import torch
@@ -30,6 +31,8 @@ class DatasetOutput(TypedDict, total=False):
             DatasetOutput with dummy values.
         """
         if batch is None:
-            return cls(data=torch.randn(3, 224, 224), label=torch.randint(0, 1000, (1,)).item())
+            return cls(data=torch.randn(8), label=random.randint(0, 1000))
         else:
-            return cls(data=torch.randn(batch, 3, 224, 224), label=torch.randint(0, 1000, (batch,)))
+            return cls(
+                data=torch.randn(batch, 8), label=[random.randint(0, 1000) for _ in range(batch)]
+            )
