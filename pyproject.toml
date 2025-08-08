@@ -5,8 +5,8 @@ description = ""
 authors = [{ name = "Junya Morioka", email = "mjun@mjunya.com" }]
 requires-python = ">=3.11"
 dependencies = [
-    "torch==2.7.1",
-    "torchvision==0.22.1",
+    "torch==2.8.0",
+    "torchvision==0.23.0",
     "mlflow>=3.1.0",
     "torchmetrics>=1.4.1",
     "tqdm>=4.66.5",
