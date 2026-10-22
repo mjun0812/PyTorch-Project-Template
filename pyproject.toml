@@ -33,7 +33,7 @@ doc = [
     "sphinx-autoapi>=3.6.0",
     "sphinx-autobuild>=2024.10.3",
 ]
-dev = ["mypy>=1.16.0", "pre-commit>=4.2.0", "pytest>=8.3.2", "ruff>=0.6.2"]
+dev = ["mypy>=1.16.0", "pre-commit>=4.2.0", "pytest>=8.3.2", "ruff>=0.17.1"]
 
 [build-system]
 requires = ["hatchling"]
@@ -98,41 +98,38 @@ select = [
     "W",   # pycodestyle warnings
 ]
 ignore = [
-    "ANN401", # Checks that function arguments are annotated with a more specific type than Any.
-    "B007",   # Unused loop variable
-    "B008",   # Function call in default argument
-    "B905",   # `zip()` without `strict=True`
-    "COM812", # Missing trailing comma
-    "COM819", # Trailing comma prohibited
-    "D1",     # Missing docstring in public module, class, function, or method
-    "D203",   # One blank line required before class docstring (ignored because D211 is prioritized in pydocstyle convention 'google')
-    "D205",   # 1 blank line required between summary line and description
-    "D212",   # Multi-line docstring summary should start at the first line
-    "D213",   # Multi-line docstring summary should start at the second line
-    "D400",   # First line of docstring should end with a period
-    "D415",   # First line of docstring should end with punctuation (period, question mark, or exclamation point)
-    "E114",   # Indentation is not a multiple of four (comment)
-    "G004",   # Logging statement uses f-string
-    "ISC001", # Implicit string concatenation on a single line
-    "ISC002", # Implicit string concatenation on multiple lines
-    "PTH123", # `open()` should be replaced by `Path.open()`
-    "Q000",   # Single quotes found when double quotes are preferred
-    "Q001",   # Single quotes found when double quotes are preferred for multi-line strings
-    "Q002",   # Single quotes found when double quotes are preferred for docstrings
-    "RUF002", # 無効なUnicodeエスケープシーケンスを無視
-    "RUF003", # 無効なUnicode文字を無視
-    "SIM105", # try-except-pass blocks that can be replaced with the contextlib.suppress context manager.
-    "SIM108", # Use ternary operator instead of `if`-`else`-block
-    "SIM116", # Use a dictionary instead of consecutive `if` statements
-    "UP038",  # (Deprecated) Use `X | Y` in `isinstance` call instead of `(X, Y)`
+    "D1", # Missing docstring in public module, class, function, or method
+    "any-type",
+    "unused-loop-control-variable",
+    "function-call-in-default-argument",
+    "zip-without-explicit-strict",
+    "missing-trailing-comma",
+    "prohibited-trailing-comma",
+    "incorrect-blank-line-before-class", # D211 is prioritized in pydocstyle convention 'google'
+    "missing-blank-line-after-summary",
+    "multi-line-summary-first-line",
+    "multi-line-summary-second-line",
+    "missing-trailing-period",
+    "missing-terminal-punctuation",
+    "indentation-with-invalid-multiple-comment",
+    "logging-f-string",
+    "single-line-implicit-string-concatenation",
+    "multi-line-implicit-string-concatenation",
+    "builtin-open",
+    "bad-quotes-inline-string",
+    "bad-quotes-multiline-string",
+    "bad-quotes-docstring",
+    "ambiguous-unicode-character-docstring",
+    "ambiguous-unicode-character-comment",
+    "suppressible-exception",
+    "if-else-block-instead-of-if-exp",
+    "if-else-block-instead-of-dict-lookup",
 ]
-unfixable = [
-    "F401", # unused import
-    "F841", # unused variable
-]
+unfixable = ["unused-import", "unused-variable"]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
+# Package __init__ modules call import_submodules() so that importing a package registers its submodules.
+"__init__.py" = ["unused-import", "non-empty-init-module"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

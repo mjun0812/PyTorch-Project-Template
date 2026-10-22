@@ -55,8 +55,10 @@ All components must be registered to be discoverable:
 ```python
 from src.models import MODEL_REGISTRY
 
+
 @MODEL_REGISTRY.register()  # Auto-registers with class name
 class MyModel(nn.Module): ...
+
 
 @MODEL_REGISTRY.register("custom_name")  # Registers with custom name
 class AnotherModel(nn.Module): ...

@@ -109,7 +109,7 @@ class CosineAnnealingWarmupReduceRestarts(optim.lr_scheduler._LRScheduler):
                     + self.warmup_steps
                 )
         elif epoch >= self.first_cycle_steps:
-            if self.cycle_mult == 1.0:
+            if math.isclose(self.cycle_mult, 1.0):
                 self.step_in_cycle = epoch % self.first_cycle_steps
                 self.cycle = epoch // self.first_cycle_steps
             else:
