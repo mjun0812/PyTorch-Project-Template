@@ -3,7 +3,7 @@
 cd $(dirname $0)
 cd ../
 
-CUDA_VERSION="12.8.1"
+CUDA_VERSION="12.9.1"
 
 DESCRIPTION=$(cat <<< "PyTorch Project Docker
 Option:

@@ -21,8 +21,8 @@ A comprehensive, production-ready PyTorch project template with modular architec
 
 - **Python**: 3.11+
 - **Package Manager**: uv
-- **CUDA**: 12.8 (for GPU training)
-- **PyTorch**: 2.7.1
+- **CUDA**: 12.9 (for GPU training)
+- **PyTorch**: 2.13.0
 
 ## Quick Start
 
